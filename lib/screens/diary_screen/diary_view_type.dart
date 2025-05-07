@@ -1,9 +1,9 @@
 enum DiaryViewType {
   daily('Hoje'),
-  weekly('Semana'),
-  monthly('Mês'),
-  yearly('Ano'),
-  mood('Humor');
+  monthly('Por Mês'),
+  mood('Humor'),
+  tags('Tags'),
+  favorites('Favoritos');
 
   final String label;
   const DiaryViewType(this.label);

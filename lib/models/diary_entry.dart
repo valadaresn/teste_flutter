@@ -1,3 +1,6 @@
+import 'package:flutter/material.dart';
+
+@immutable
 class DiaryEntry {
   final String id;
   final String? title;
@@ -5,15 +8,17 @@ class DiaryEntry {
   final DateTime dateTime;
   final String? mood;
   final List<String> tags;
+  final bool isFavorite;
 
-  DiaryEntry({
+  const DiaryEntry({
     required this.id,
     this.title,
     required this.content,
     required this.dateTime,
     this.mood,
-    List<String>? tags,
-  }) : tags = tags ?? [];
+    this.tags = const [],
+    this.isFavorite = false,
+  });
 
   DiaryEntry copyWith({
     String? id,
@@ -22,6 +27,7 @@ class DiaryEntry {
     DateTime? dateTime,
     String? mood,
     List<String>? tags,
+    bool? isFavorite,
   }) {
     return DiaryEntry(
       id: id ?? this.id,
@@ -30,6 +36,7 @@ class DiaryEntry {
       dateTime: dateTime ?? this.dateTime,
       mood: mood ?? this.mood,
       tags: tags ?? this.tags,
+      isFavorite: isFavorite ?? this.isFavorite,
     );
   }
 }

@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 
 class ExpandableGroup extends StatefulWidget {
+  // Mapa estático para armazenar o estado de expansão de cada grupo
+  static final Map<String, bool> _expandedStates = {};
+
   final String title;
   final String? count;
   final List<Widget> children;
@@ -24,55 +27,69 @@ class _ExpandableGroupState extends State<ExpandableGroup> {
   @override
   void initState() {
     super.initState();
-    _isExpanded = widget.initiallyExpanded;
+    // Verifica se já existe um estado salvo para este grupo
+    if (ExpandableGroup._expandedStates.containsKey(widget.title)) {
+      _isExpanded = ExpandableGroup._expandedStates[widget.title]!;
+    } else {
+      // Usa o valor inicial apenas na primeira vez
+      _isExpanded = widget.initiallyExpanded;
+      ExpandableGroup._expandedStates[widget.title] = _isExpanded;
+    }
+  }
+
+  @override
+  void didUpdateWidget(ExpandableGroup oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Não resetamos o _isExpanded aqui para manter o estado
   }
 
   @override
   Widget build(BuildContext context) {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         InkWell(
-          onTap: () => setState(() => _isExpanded = !_isExpanded),
+          onTap: () {
+            setState(() {
+              _isExpanded = !_isExpanded;
+              // Atualiza o mapa estático quando o estado muda
+              ExpandableGroup._expandedStates[widget.title] = _isExpanded;
+            });
+          },
           child: Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.symmetric(
+              horizontal: 16.0,
+              vertical: 8.0,
+            ),
             child: Row(
               children: [
-                Icon(
-                  _isExpanded ? Icons.expand_more : Icons.chevron_right,
-                  color: Colors.grey,
-                ),
-                const SizedBox(width: 8),
                 Text(
                   widget.title,
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.grey,
-                  ),
+                  style: Theme.of(context).textTheme.titleMedium,
                 ),
                 if (widget.count != null) ...[
                   const SizedBox(width: 8),
                   Text(
                     widget.count!,
-                    style: const TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey,
-                    ),
+                    style: Theme.of(context).textTheme.bodySmall,
                   ),
                 ],
+                const Spacer(),
+                RotatedBox(
+                  quarterTurns: _isExpanded ? 1 : 3,
+                  child: const Icon(Icons.chevron_right),
+                ),
               ],
             ),
           ),
         ),
-        AnimatedCrossFade(
-          firstChild: Column(children: widget.children),
-          secondChild: const SizedBox.shrink(),
-          crossFadeState: _isExpanded 
-              ? CrossFadeState.showFirst 
-              : CrossFadeState.showSecond,
-          duration: const Duration(milliseconds: 300),
-        ),
+        if (_isExpanded)
+          Padding(
+            padding: const EdgeInsets.only(left: 16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: widget.children,
+            ),
+          ),
       ],
     );
   }

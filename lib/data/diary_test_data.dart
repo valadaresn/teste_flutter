@@ -1,6 +1,6 @@
 import '../models/diary_entry.dart';
 
-// Função auxiliar para criar data
+// Função auxiliar para criar data com horário específico
 DateTime _createDate(
   int year,
   int month,
@@ -12,151 +12,208 @@ DateTime _createDate(
 }
 
 final List<DiaryEntry> testEntries = [
-  // Entradas de Hoje
+  // Hoje
   DiaryEntry(
     id: '1',
-    title: 'Reunião Produtiva',
+    title: 'Reunião de Planejamento',
     content:
-        'A reunião de hoje foi muito produtiva. Conseguimos definir todos os próximos passos do projeto.',
-    dateTime: DateTime.now().copyWith(hour: 14, minute: 30),
+        'Excelente reunião hoje! Definimos as principais metas do próximo trimestre.',
+    dateTime: DateTime.now().copyWith(hour: 15, minute: 30),
     mood: '😊',
-    tags: ['trabalho', 'reunião'],
+    tags: ['trabalho', 'planejamento'],
+    isFavorite: true,
   ),
   DiaryEntry(
     id: '2',
-    content: 'Preciso revisar aquele bug estranho que apareceu hoje de manhã.',
-    dateTime: DateTime.now().copyWith(hour: 9, minute: 15),
+    content: 'Preciso revisar aquele bug no módulo de notificações.',
+    dateTime: DateTime.now().copyWith(hour: 10, minute: 15),
     mood: '🤔',
     tags: ['trabalho', 'bugs'],
   ),
 
-  // Entradas desta semana
+  // Ontem
   DiaryEntry(
     id: '3',
-    title: 'Bug Resolvido!',
+    title: 'Avanço no Projeto',
     content:
-        'Finalmente consegui resolver aquele bug que estava me incomodando há dias.',
-    dateTime: DateTime.now().subtract(const Duration(days: 2)),
+        'Consegui implementar todas as funcionalidades planejadas para hoje.',
+    dateTime: DateTime.now().subtract(const Duration(days: 1, hours: 2)),
     mood: '😊',
     tags: ['trabalho', 'conquistas'],
   ),
+
+  // Esta semana
   DiaryEntry(
     id: '4',
-    content: 'Dia cansativo hoje. Muitas reuniões e pouco código.',
+    content: 'Dia muito corrido. Várias reuniões e pouco tempo para codar.',
     dateTime: DateTime.now().subtract(const Duration(days: 3)),
     mood: '😐',
     tags: ['trabalho'],
   ),
-
-  // Entradas da semana passada
   DiaryEntry(
     id: '5',
-    title: 'Início do Novo Projeto',
-    content:
-        'Começamos o novo projeto hoje. Muitas ideias interessantes surgiram na reunião de kickoff.',
-    dateTime: DateTime.now().subtract(const Duration(days: 8)),
-    mood: '😊',
-    tags: ['trabalho', 'projetos'],
+    title: 'Novo Framework',
+    content: 'Comecei a estudar um framework novo hoje. Parece promissor!',
+    dateTime: DateTime.now().subtract(const Duration(days: 4, hours: 5)),
+    mood: '🤔',
+    tags: ['estudo', 'tecnologia'],
+    isFavorite: true,
   ),
+
+  // Semana passada
   DiaryEntry(
     id: '6',
+    title: 'Apresentação do Projeto',
     content:
-        'Dia difícil com o Git. Tive que resolver vários conflitos de merge.',
+        'A apresentação foi um sucesso! O cliente adorou as novas features.',
+    dateTime: DateTime.now().subtract(const Duration(days: 8)),
+    mood: '😊',
+    tags: ['trabalho', 'apresentação', 'cliente'],
+    isFavorite: true,
+  ),
+  DiaryEntry(
+    id: '7',
+    content:
+        'Problemas com merge conflicts hoje. Git pode ser frustrante às vezes.',
     dateTime: DateTime.now().subtract(const Duration(days: 10)),
     mood: '😡',
     tags: ['trabalho', 'git'],
   ),
 
-  // Entradas deste mês (dias anteriores)
-  DiaryEntry(
-    id: '7',
-    title: 'Feedbacks do Cliente',
-    content:
-        'Recebemos feedbacks muito positivos do cliente sobre a última entrega.',
-    dateTime: DateTime.now().subtract(const Duration(days: 15)),
-    mood: '😊',
-    tags: ['trabalho', 'cliente'],
-  ),
+  // Mais antigos este mês
   DiaryEntry(
     id: '8',
+    title: 'Feedback da Equipe',
     content:
-        'Trabalhando no novo feature de notificações. Está mais complexo do que imaginei.',
-    dateTime: DateTime.now().subtract(const Duration(days: 20)),
-    mood: '🤔',
-    tags: ['trabalho', 'desenvolvimento'],
+        'Reunião de feedback trimestral. Muitos pontos positivos destacados.',
+    dateTime: DateTime.now().subtract(const Duration(days: 15)),
+    mood: '😊',
+    tags: ['trabalho', 'feedback'],
   ),
-
-  // Entradas do mês passado
   DiaryEntry(
     id: '9',
-    title: 'Refatoração Concluída',
-    content:
-        'Finalizei a grande refatoração do módulo principal. O código está muito mais limpo agora.',
-    dateTime: _createDate(2025, 3, 15, 16, 30),
-    mood: '😊',
-    tags: ['trabalho', 'refatoração'],
-  ),
-  DiaryEntry(
-    id: '10',
-    content:
-        'Problemas com o servidor de produção hoje. Foi um dia estressante.',
-    dateTime: _createDate(2025, 3, 10, 18, 45),
-    mood: '😡',
-    tags: ['trabalho', 'produção'],
+    content: 'Não dormi bem essa noite, muita coisa na cabeça sobre o projeto.',
+    dateTime: DateTime.now().subtract(const Duration(days: 18)),
+    mood: '😴',
+    tags: ['pessoal', 'sono'],
   ),
 
-  // Entradas de dois meses atrás
+  // Mês passado
+  DiaryEntry(
+    id: '10',
+    title: 'Deploy em Produção',
+    content: 'Grande deploy hoje. Tudo correu bem, sem problemas.',
+    dateTime: _createDate(2025, 3, 25, 17, 30),
+    mood: '😊',
+    tags: ['trabalho', 'deploy', 'produção'],
+    isFavorite: true,
+  ),
   DiaryEntry(
     id: '11',
-    title: 'Novo Framework',
-    content: 'Começamos a estudar um novo framework hoje. Parece promissor!',
-    dateTime: _createDate(2025, 2, 20, 11, 0),
-    mood: '🤔',
-    tags: ['estudo', 'tecnologia'],
+    content:
+        'Dia difícil com o servidor de produção. Muitos problemas inesperados.',
+    dateTime: _createDate(2025, 3, 15, 14, 20),
+    mood: '😡',
+    tags: ['trabalho', 'problemas', 'servidor'],
   ),
   DiaryEntry(
     id: '12',
+    title: 'Workshop de Arquitetura',
     content:
-        'Participei de um workshop muito interessante sobre arquitetura de software.',
-    dateTime: _createDate(2025, 2, 15, 14, 20),
-    mood: '😊',
-    tags: ['estudo', 'workshop'],
+        'Participei de um workshop incrível sobre arquitetura de software.',
+    dateTime: _createDate(2025, 3, 10, 9, 0),
+    mood: '🤔',
+    tags: ['estudo', 'arquitetura', 'workshop'],
   ),
 
-  // Entradas do início do ano
+  // Abril 2025 - 100 entradas
+  DiaryEntry(
+    id: 'abril_1',
+    title: 'Reunião de Planejamento Q2',
+    content:
+        'Iniciamos o segundo trimestre com grande planejamento estratégico.',
+    dateTime: _createDate(2025, 4, 30, 15, 30),
+    mood: '😊',
+    tags: ['trabalho', 'planejamento', 'Q2'],
+  ),
+  DiaryEntry(
+    id: 'abril_2',
+    content: 'Sprint review mostrou ótimos resultados da equipe.',
+    dateTime: _createDate(2025, 4, 30, 11, 0),
+    mood: '😊',
+    tags: ['trabalho', 'sprint', 'review'],
+  ),
+  ...List.generate(98, (index) {
+    final day = 30 - (index ~/ 4); // Distribui 4 entradas por dia
+    final hour = 9 + (index % 8); // Varia o horário entre 9 e 16
+    final moodOptions = ['😊', '😐', '😢', '😡', '🤔', '😴'];
+    final tagOptions = [
+      ['trabalho', 'desenvolvimento'],
+      ['pessoal', 'reflexão'],
+      ['estudo', 'aprendizado'],
+      ['projeto', 'milestone'],
+      ['saúde', 'exercício'],
+      ['família', 'evento'],
+      ['reunião', 'planejamento'],
+      ['código', 'review'],
+    ];
+
+    return DiaryEntry(
+      id: 'abril_${index + 3}',
+      title: index % 3 == 0 ? 'Entrada ${index + 3} de Abril' : null,
+      content:
+          'Conteúdo da entrada ${index + 3} do dia $day de abril de 2025. ' +
+          [
+            'Avançamos bem no desenvolvimento do projeto.',
+            'Resolvemos vários bugs pendentes.',
+            'Participei de uma excelente reunião de equipe.',
+            'Implementei novas funcionalidades.',
+            'Code review do novo módulo.',
+            'Planejamento do próximo sprint.',
+            'Estudando novas tecnologias.',
+            'Documentação do projeto atualizada.',
+          ][index % 8],
+      dateTime: _createDate(2025, 4, day, hour, index % 60),
+      mood: moodOptions[index % moodOptions.length],
+      tags: tagOptions[index % tagOptions.length],
+      isFavorite: index % 10 == 0,
+    );
+  }),
+
+  // Meses anteriores
   DiaryEntry(
     id: '13',
-    title: 'Metas do Ano',
-    content:
-        'Definindo as metas de desenvolvimento para este ano. Muitos desafios pela frente!',
-    dateTime: _createDate(2025, 1, 5, 9, 0),
+    title: 'Início do Projeto',
+    content: 'Começamos o novo projeto hoje. Muitas ideias interessantes!',
+    dateTime: _createDate(2025, 2, 15, 10, 0),
     mood: '😊',
-    tags: ['planejamento', 'metas'],
+    tags: ['trabalho', 'início', 'projeto'],
+    isFavorite: true,
   ),
   DiaryEntry(
     id: '14',
     content:
-        'Primeiro dia de trabalho do ano. Ainda me adaptando depois das férias.',
-    dateTime: _createDate(2025, 1, 2, 8, 30),
-    mood: '😴',
-    tags: ['trabalho', 'adaptação'],
+        'Revisão de código o dia todo. Encontramos vários pontos de melhoria.',
+    dateTime: _createDate(2025, 2, 8, 16, 45),
+    mood: '🤔',
+    tags: ['trabalho', 'código', 'revisão'],
   ),
 
-  // Entradas do ano passado
+  // Janeiro
   DiaryEntry(
     id: '15',
-    title: 'Retrospectiva 2024',
+    title: 'Metas do Ano',
     content:
-        'Fazendo a retrospectiva do ano. Foi um ano de muito aprendizado e crescimento.',
-    dateTime: _createDate(2024, 12, 28, 15, 0),
+        'Definindo as metas profissionais para 2025. Muitos desafios pela frente!',
+    dateTime: _createDate(2025, 1, 5, 11, 0),
     mood: '😊',
-    tags: ['retrospectiva', 'reflexão'],
+    tags: ['trabalho', 'metas', 'planejamento'],
   ),
   DiaryEntry(
     id: '16',
-    content: 'Último deploy do ano! Tudo funcionando perfeitamente.',
-    dateTime: _createDate(2024, 12, 20, 17, 30),
-    mood: '😊',
-    tags: ['trabalho', 'deploy'],
+    content: 'Primeiro dia após as férias. Ainda me adaptando ao ritmo.',
+    dateTime: _createDate(2025, 1, 2, 9, 0),
+    mood: '😴',
+    tags: ['trabalho', 'retorno'],
   ),
 ];

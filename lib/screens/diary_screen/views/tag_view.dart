@@ -4,27 +4,27 @@ import './diary_view_base.dart';
 import '../widgets/diary_card.dart';
 import '../widgets/expandable_group.dart';
 
-class MoodView extends DiaryViewBase {
+class TagView extends DiaryViewBase {
   final DiaryCardLayout cardLayout;
   final Function(String, bool)? onToggleFavorite;
   final Map<String, bool> favorites;
 
-  const MoodView({
+  const TagView({
     super.key,
     required super.entries,
     required super.onTap,
     required super.onDelete,
-    this.cardLayout = DiaryCardLayout.standard,
+    required this.cardLayout,
     this.onToggleFavorite,
     this.favorites = const {},
   });
 
-  Map<String, List<DiaryEntry>> _groupByMood() {
+  Map<String, List<DiaryEntry>> _groupByTags() {
     final groups = <String, List<DiaryEntry>>{};
 
     for (final entry in entries) {
-      if (entry.mood != null) {
-        groups.putIfAbsent(entry.mood!, () => []).add(entry);
+      for (final tag in entry.tags) {
+        groups.putIfAbsent(tag, () => []).add(entry);
       }
     }
 
@@ -33,14 +33,13 @@ class MoodView extends DiaryViewBase {
 
   @override
   Widget build(BuildContext context) {
-    final groupedEntries = _groupByMood();
+    final groupedEntries = _groupByTags();
 
     if (groupedEntries.isEmpty) {
-      return const Center(child: Text('Nenhuma entrada com humor definido'));
+      return const Center(child: Text('Nenhuma entrada com tags'));
     }
 
-    // Ordena os humores por quantidade de entradas
-    final sortedMoods =
+    final sortedTags =
         groupedEntries.keys.toList()..sort(
           (a, b) =>
               groupedEntries[b]!.length.compareTo(groupedEntries[a]!.length),
@@ -48,21 +47,19 @@ class MoodView extends DiaryViewBase {
 
     return ListView.builder(
       padding: const EdgeInsets.symmetric(horizontal: 16),
-      itemCount: sortedMoods.length,
+      itemCount: sortedTags.length,
       itemBuilder: (context, index) {
-        final mood = sortedMoods[index];
-        final moodEntries = groupedEntries[mood]!;
+        final tag = sortedTags[index];
+        final tagEntries = groupedEntries[tag]!;
 
-        // Ordena as entradas por data mais recente
-        moodEntries.sort((a, b) => b.dateTime.compareTo(a.dateTime));
+        tagEntries.sort((a, b) => b.dateTime.compareTo(a.dateTime));
 
         return ExpandableGroup(
-          title: mood,
-          count: '(${moodEntries.length})',
-          // O humor com mais entradas começa expandido
+          title: '#$tag',
+          count: '(${tagEntries.length})',
           initiallyExpanded: index == 0,
           children:
-              moodEntries
+              tagEntries
                   .map(
                     (entry) => Dismissible(
                       key: Key(entry.id),

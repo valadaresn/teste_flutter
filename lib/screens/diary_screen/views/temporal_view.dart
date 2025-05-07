@@ -3,10 +3,12 @@ import '../../../models/diary_entry.dart';
 import './diary_view_base.dart';
 import '../widgets/diary_card.dart';
 import '../diary_view_type.dart';
-import '../widgets/expandable_group.dart';
 
 class TemporalView extends DiaryViewBase {
   final DiaryViewType viewType;
+  final DiaryCardLayout cardLayout;
+  final Function(String, bool)? onToggleFavorite;
+  final Map<String, bool> favorites;
 
   const TemporalView({
     super.key,
@@ -14,103 +16,68 @@ class TemporalView extends DiaryViewBase {
     required super.onTap,
     required super.onDelete,
     required this.viewType,
+    this.cardLayout = DiaryCardLayout.standard,
+    this.onToggleFavorite,
+    this.favorites = const {},
   });
-
-  Map<String, List<DiaryEntry>> _groupEntriesByMonth() {
-    final groups = <String, List<DiaryEntry>>{};
-    final now = DateTime.now();
-
-    for (final entry in entries) {
-      if (entry.dateTime.year == now.year &&
-          entry.dateTime.month == now.month) {
-        // Para o mês atual, agrupa por dia
-        final dayKey =
-            '${entry.dateTime.day.toString().padLeft(2, '0')}/${entry.dateTime.month.toString().padLeft(2, '0')}';
-        groups.putIfAbsent(dayKey, () => []).add(entry);
-      } else {
-        // Para outros meses, agrupa por mês
-        final months = [
-          'Janeiro',
-          'Fevereiro',
-          'Março',
-          'Abril',
-          'Maio',
-          'Junho',
-          'Julho',
-          'Agosto',
-          'Setembro',
-          'Outubro',
-          'Novembro',
-          'Dezembro',
-        ];
-        final monthKey =
-            '${months[entry.dateTime.month - 1]} ${entry.dateTime.year}';
-        groups.putIfAbsent(monthKey, () => []).add(entry);
-      }
-    }
-    return groups;
-  }
 
   Map<String, List<DiaryEntry>> _groupEntries() {
     final groups = <String, List<DiaryEntry>>{};
     final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final yesterday = today.subtract(const Duration(days: 1));
 
     for (final entry in entries) {
       String key;
-      switch (viewType) {
-        case DiaryViewType.daily:
-          if (entry.dateTime.year == now.year &&
-              entry.dateTime.month == now.month &&
-              entry.dateTime.day == now.day) {
-            key = 'Hoje';
-          } else if (entry.dateTime.year == now.year &&
-              entry.dateTime.month == now.month &&
-              entry.dateTime.day == now.day - 1) {
-            key = 'Ontem';
-          } else {
-            key =
-                '${entry.dateTime.day.toString().padLeft(2, '0')}/'
-                '${entry.dateTime.month.toString().padLeft(2, '0')}/'
-                '${entry.dateTime.year}';
-          }
-          break;
+      final entryDate = DateTime(
+        entry.dateTime.year,
+        entry.dateTime.month,
+        entry.dateTime.day,
+      );
 
-        case DiaryViewType.weekly:
-          // Calcula o início da semana (domingo)
-          final firstDayOfWeek = now.subtract(Duration(days: now.weekday));
-          final entryWeekStart = entry.dateTime.subtract(
-            Duration(days: entry.dateTime.weekday),
-          );
-
-          if (entryWeekStart.isAtSameMomentAs(firstDayOfWeek)) {
-            key = 'Esta Semana';
-          } else if (entryWeekStart.isAtSameMomentAs(
-            firstDayOfWeek.subtract(const Duration(days: 7)),
-          )) {
-            key = 'Semana Passada';
-          } else {
-            final weekNumber =
-                (firstDayOfWeek.difference(entryWeekStart).inDays / 7).ceil();
-            key = 'Há $weekNumber semanas';
-          }
-          break;
-
-        case DiaryViewType.monthly:
-          return _groupEntriesByMonth();
-
-        case DiaryViewType.yearly:
-          if (entry.dateTime.year == now.year) {
-            key = 'Este Ano';
-          } else {
-            key = entry.dateTime.year.toString();
-          }
-          break;
-
-        default:
-          key = 'Sem Data';
+      if (viewType == DiaryViewType.daily) {
+        // Visualização diária
+        if (entryDate.isAtSameMomentAs(today)) {
+          key = 'Hoje';
+        } else if (entryDate.isAtSameMomentAs(yesterday)) {
+          key = 'Ontem';
+        } else {
+          key =
+              '${entry.dateTime.day.toString().padLeft(2, '0')}/${entry.dateTime.month.toString().padLeft(2, '0')}/${entry.dateTime.year}';
+        }
+      } else {
+        // Visualização mensal
+        if (entry.dateTime.year == now.year &&
+            entry.dateTime.month == now.month) {
+          key = 'Este Mês';
+        } else {
+          final months = [
+            'Janeiro',
+            'Fevereiro',
+            'Março',
+            'Abril',
+            'Maio',
+            'Junho',
+            'Julho',
+            'Agosto',
+            'Setembro',
+            'Outubro',
+            'Novembro',
+            'Dezembro',
+          ];
+          key = '${months[entry.dateTime.month - 1]} ${entry.dateTime.year}';
+        }
       }
 
-      groups.putIfAbsent(key, () => []).add(entry);
+      if (!groups.containsKey(key)) {
+        groups[key] = [];
+      }
+      groups[key]!.add(entry);
+    }
+
+    // Ordenar entradas dentro de cada grupo
+    for (var entries in groups.values) {
+      entries.sort((a, b) => b.dateTime.compareTo(a.dateTime));
     }
 
     return groups;
@@ -119,29 +86,56 @@ class TemporalView extends DiaryViewBase {
   @override
   Widget build(BuildContext context) {
     final groupedEntries = _groupEntries();
-    
+
     if (groupedEntries.isEmpty) {
-      return const Center(
-        child: Text('Nenhuma entrada encontrada'),
-      );
+      return const Center(child: Text('Nenhuma entrada encontrada'));
     }
 
-    // Ordena as chaves de acordo com a data mais recente
-    final sortedKeys = groupedEntries.keys.toList()
-      ..sort((a, b) {
-        if (a.contains('Hoje')) return -1;
-        if (b.contains('Hoje')) return 1;
-        if (a.contains('Ontem')) return -1;
-        if (b.contains('Ontem')) return 1;
-        if (a.contains('Esta')) return -1;
-        if (b.contains('Esta')) return 1;
-        if (viewType == DiaryViewType.monthly && 
-            a.contains('/') && b.contains('/')) {
-          // Para dias do mês atual, ordena por dia
-          return int.parse(b.split('/')[0]).compareTo(int.parse(a.split('/')[0]));
-        }
-        return b.compareTo(a); // ordem decrescente para outros casos
-      });
+    final sortedKeys =
+        groupedEntries.keys.toList()..sort((a, b) {
+          // Função auxiliar para obter o valor numérico da data do grupo
+          int getDateValue(String key) {
+            if (key == 'Hoje') return 99999999;
+            if (key == 'Ontem') return 99999998;
+            if (key == 'Este Mês') return 99999997;
+
+            // Para outros meses, extrai o mês e ano
+            final months = {
+              'Janeiro': 1,
+              'Fevereiro': 2,
+              'Março': 3,
+              'Abril': 4,
+              'Maio': 5,
+              'Junho': 6,
+              'Julho': 7,
+              'Agosto': 8,
+              'Setembro': 9,
+              'Outubro': 10,
+              'Novembro': 11,
+              'Dezembro': 12,
+            };
+
+            for (var month in months.keys) {
+              if (key.contains(month)) {
+                final year = int.parse(key.split(' ').last);
+                return year * 12 + months[month]!;
+              }
+            }
+
+            // Para datas no formato dd/mm/yyyy
+            if (key.contains('/')) {
+              final parts = key.split('/');
+              final year = int.parse(parts[2]);
+              final month = int.parse(parts[1]);
+              final day = int.parse(parts[0]);
+              return year * 10000 + month * 100 + day;
+            }
+
+            return 0;
+          }
+
+          return getDateValue(b).compareTo(getDateValue(a));
+        });
 
     return ListView.builder(
       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -149,34 +143,55 @@ class TemporalView extends DiaryViewBase {
       itemBuilder: (context, index) {
         final period = sortedKeys[index];
         final periodEntries = groupedEntries[period]!;
-        
-        // Ordena as entradas do período por data mais recente
+
         periodEntries.sort((a, b) => b.dateTime.compareTo(a.dateTime));
 
-        return ExpandableGroup(
-          title: period,
-          count: '(${periodEntries.length})',
-          // Períodos recentes começam expandidos
-          initiallyExpanded: period.contains('Hoje') || 
-                           period.contains('Ontem') || 
-                           period.contains('Esta'),
-          children: periodEntries.map((entry) => 
-            Dismissible(
-              key: Key(entry.id),
-              onDismissed: (_) => onDelete(entry.id),
-              direction: DismissDirection.endToStart,
-              background: Container(
-                color: Colors.red,
-                alignment: Alignment.centerRight,
-                padding: const EdgeInsets.only(right: 16),
-                child: const Icon(Icons.delete, color: Colors.white),
+        return ExpansionTile(
+          key: PageStorageKey(period),
+          title: Row(
+            children: [
+              Text(period, style: Theme.of(context).textTheme.titleMedium),
+              const SizedBox(width: 8),
+              Text(
+                '(${periodEntries.length})',
+                style: Theme.of(context).textTheme.bodySmall,
               ),
-              child: DiaryCard(
-                entry: entry,
-                onTap: () => onTap(entry),
-              ),
-            ),
-          ).toList(),
+            ],
+          ),
+          subtitle: null,
+          initiallyExpanded:
+              period.contains('Hoje') ||
+              period.contains('Ontem') ||
+              period == 'Este Mês',
+          children:
+              periodEntries
+                  .map(
+                    (entry) => Dismissible(
+                      key: Key(entry.id),
+                      onDismissed: (_) => onDelete(entry.id),
+                      direction: DismissDirection.endToStart,
+                      background: Container(
+                        color: Colors.red,
+                        alignment: Alignment.centerRight,
+                        padding: const EdgeInsets.only(right: 16),
+                        child: const Icon(Icons.delete, color: Colors.white),
+                      ),
+                      child: DiaryCard(
+                        entry: entry,
+                        onTap: () => onTap(entry),
+                        layout: cardLayout,
+                        isFavorite: favorites[entry.id] ?? false,
+                        onToggleFavorite:
+                            onToggleFavorite != null
+                                ? () => onToggleFavorite!(
+                                  entry.id,
+                                  !(favorites[entry.id] ?? false),
+                                )
+                                : null,
+                      ),
+                    ),
+                  )
+                  .toList(),
         );
       },
     );
