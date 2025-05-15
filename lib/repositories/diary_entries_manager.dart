@@ -45,13 +45,13 @@ class DiaryEntriesManager {
 
   List<DiaryEntry> getEntries({bool favoritesOnly = false}) {
     if (favoritesOnly) {
-      _favoriteEntries ??= 
+      _favoriteEntries ??=
           _entriesMap.values.where((e) => _favorites[e.id] ?? false).toList()
             ..sort((a, b) => b.dateTime.compareTo(a.dateTime));
       return _favoriteEntries!;
     }
 
-    _sortedEntries ??= 
+    _sortedEntries ??=
         _entriesMap.values.toList()
           ..sort((a, b) => b.dateTime.compareTo(a.dateTime));
     return _sortedEntries!;

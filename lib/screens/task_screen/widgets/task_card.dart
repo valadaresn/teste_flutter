@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import '../../../models/task.dart';
+import '../../../models/project.dart';
+import '../../../models/task_filters.dart';
 import '../../../services/pomodoro_service.dart';
+import '../../task_screen/task_edit_screen.dart';
 import 'task_content.dart';
 import 'pomodoro_controls.dart';
 
@@ -11,6 +14,9 @@ class TaskCard extends StatelessWidget {
   final PomodoroService pomodoroService;
   final Function(String) onToggleComplete;
   final Function(String, bool) onTogglePomodoro;
+  final Function(Task)? onTaskUpdated;
+  final List<Project>? projects;
+  final DateFilter? activeFilter;
 
   const TaskCard({
     super.key,
@@ -18,6 +24,9 @@ class TaskCard extends StatelessWidget {
     required this.pomodoroService,
     required this.onToggleComplete,
     required this.onTogglePomodoro,
+    this.onTaskUpdated,
+    this.projects,
+    this.activeFilter,
   });
 
   @override
@@ -27,31 +36,51 @@ class TaskCard extends StatelessWidget {
       elevation: 1,
       color: Colors.white,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: IntrinsicHeight(
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            // Checkbox de completar tarefa
-            Padding(
-              padding: const EdgeInsets.only(left: 8.0),
-              child: Checkbox(
-                value: task.isCompleted,
-                onChanged: (_) => onToggleComplete(task.id),
-                shape: const CircleBorder(),
-                activeColor: Theme.of(context).colorScheme.primary,
+      child: InkWell(
+        onTap: () {
+          // Se temos os projetos e a função de callback,
+          // navegamos para a tela de edição
+          if (projects != null && onTaskUpdated != null) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder:
+                    (context) => TaskEditScreen(
+                      task: task,
+                      projects: projects!,
+                      onTaskUpdated: onTaskUpdated!,
+                    ),
               ),
-            ),
+            );
+          }
+        },
+        borderRadius: BorderRadius.circular(12),
+        child: IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              // Checkbox de completar tarefa
+              Padding(
+                padding: const EdgeInsets.only(left: 8.0),
+                child: Checkbox(
+                  value: task.isCompleted,
+                  onChanged: (_) => onToggleComplete(task.id),
+                  shape: const CircleBorder(),
+                  activeColor: Theme.of(context).colorScheme.primary,
+                ),
+              ),
 
-            // Conteúdo da tarefa (título e descrição)
-            TaskContent(task: task),
+              // Conteúdo da tarefa (título e descrição)
+              TaskContent(task: task, activeFilter: activeFilter),
 
-            // Controles do pomodoro (timer e botões)
-            PomodoroControls(
-              task: task,
-              pomodoroService: pomodoroService,
-              onTogglePomodoro: onTogglePomodoro,
-            ),
-          ],
+              // Controles do pomodoro (timer e botões)
+              PomodoroControls(
+                task: task,
+                pomodoroService: pomodoroService,
+                onTogglePomodoro: onTogglePomodoro,
+              ),
+            ],
+          ),
         ),
       ),
     );
