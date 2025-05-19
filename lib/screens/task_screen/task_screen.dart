@@ -6,6 +6,7 @@ import '../../models/task_filters.dart';
 import '../../services/pomodoro_service.dart';
 import '../../data/sample_projects.dart';
 import '../../data/sample_tasks.dart';
+import '../project_screen/project_management_screen.dart';
 import 'widgets/task_list.dart' as task_list_widget;
 import 'widgets/empty_state.dart';
 import 'widgets/add_task_modal.dart';
@@ -432,6 +433,54 @@ class _TaskScreenState extends State<TaskScreen> {
                     });
                   }
                 });
+              },
+              onManageProjects: () {
+                // Navegar para a tela de gerenciamento de projetos
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder:
+                        (context) => ProjectManagementScreen(
+                          projects: _projects,
+                          onAddProject: (project) {
+                            setState(() {
+                              _projects.add(project);
+                            });
+                          },
+                          onUpdateProject: (project) {
+                            setState(() {
+                              final index = _projects.indexWhere(
+                                (p) => p.id == project.id,
+                              );
+                              if (index != -1) {
+                                _projects[index] = project;
+
+                                // Atualizar projeto selecionado se necessário
+                                if (_selectedProject?.id == project.id) {
+                                  _selectedProject = project;
+                                }
+                              }
+                            });
+                          },
+                          onDeleteProject: (projectId) {
+                            setState(() {
+                              // Remover tarefas associadas ao projeto
+                              _tasks.removeWhere(
+                                (task) => task.projectId == projectId,
+                              );
+
+                              // Se o projeto excluído for o selecionado, resetar
+                              if (_selectedProject?.id == projectId) {
+                                _selectedProject = null;
+                              }
+
+                              // Remover o projeto
+                              _projects.removeWhere((p) => p.id == projectId);
+                            });
+                          },
+                        ),
+                  ),
+                );
               },
             ),
           ],
