@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "108343092318",
+    "project_id": "mytimo",
+    "storage_bucket": "mytimo.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:108343092318:android:08c0ce8f0eb5ea8eaf40cf",
+        "android_client_info": {
+          "package_name": "com.example.teste_flutter"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDmejprPrh7oiOqqCzWXyQZ0fr2zwbLOss"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
