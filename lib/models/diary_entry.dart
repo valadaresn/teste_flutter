@@ -39,4 +39,29 @@ class DiaryEntry {
       isFavorite: isFavorite ?? this.isFavorite,
     );
   }
+
+  // NOVO: Método para converter para Map para Firebase (não usado pelo repositório, mas útil para debug)
+  Map<String, dynamic> toMap() {
+    return {
+      'title': title,
+      'content': content,
+      'dateTime': dateTime.toIso8601String(),
+      'mood': mood,
+      'tags': tags,
+      'isFavorite': isFavorite,
+    };
+  }
+
+  // NOVO: Método para criar DiaryEntry a partir de Map (não usado pelo repositório, mas útil para debug)
+  factory DiaryEntry.fromMap(Map<String, dynamic> map, String id) {
+    return DiaryEntry(
+      id: id,
+      title: map['title'],
+      content: map['content'] ?? '',
+      dateTime: DateTime.parse(map['dateTime']),
+      mood: map['mood'],
+      tags: List<String>.from(map['tags'] ?? []),
+      isFavorite: map['isFavorite'] ?? false,
+    );
+  }
 }

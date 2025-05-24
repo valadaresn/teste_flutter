@@ -5,8 +5,9 @@ import 'views/temporal_view.dart';
 import 'views/mood_view.dart';
 import 'views/tag_view.dart';
 import 'widgets/diary_card.dart';
-import '../../data/diary_test_data.dart';
+//import '../../data/diary_test_data.dart';
 import 'diary_view_type.dart';
+import '../../repositories/firebase_diary_repository.dart'; // NOVO: importando repositório
 
 class DiaryScreen extends StatefulWidget {
   const DiaryScreen({super.key});
@@ -18,6 +19,9 @@ class DiaryScreen extends StatefulWidget {
 class _DiaryScreenState extends State<DiaryScreen> {
   late List<DiaryEntry> _entries;
   final _uuid = Uuid(); // Removed const
+  final FirebaseDiaryRepository _repository =
+      FirebaseDiaryRepository(); // NOVO: repositório Firebase
+
   final List<String> _moodOptions = ['😊', '😐', '😢', '😡', '🤔', '😴'];
   final List<String> _availableTags = [
     'trabalho',
@@ -35,15 +39,63 @@ class _DiaryScreenState extends State<DiaryScreen> {
   String _currentView = 'timeline'; // timeline, mood, tags, favorites
   final Map<String, bool> _favorites = {};
 
+  // NOVO: controle de estado Firebase
+  bool _isLoading = false;
+  String? _error;
+
   @override
   void initState() {
     super.initState();
-    _entries = List.from(testEntries);
-    // Inicializa favoritos dos dados de teste
-    for (var entry in _entries) {
-      if (entry.isFavorite) {
-        _favorites[entry.id] = true;
-      }
+    _entries = []; // ALTERADO: inicia vazio, carrega do Firebase
+
+    // CORRIGIDO: usando addPostFrameCallback para garantir que o widget esteja montado
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadEntries(); // Agora é seguro chamar
+    });
+  }
+
+  // CORRIGIDO: método para logs - evitando erro no initState
+  void _registrarLog(String mensagem) {
+    print("[DIARY FIREBASE] $mensagem");
+
+    // Só mostra SnackBar se o widget estiver montado
+    if (mounted) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(mensagem)));
+    }
+  }
+
+  // NOVO: carregar entradas do Firebase
+  Future<void> _loadEntries() async {
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+
+    try {
+      _registrarLog("Carregando entradas do Firebase...");
+      final entries = await _repository.getAllEntries();
+      setState(() {
+        _entries = entries;
+        // Atualiza favoritos
+        _favorites.clear();
+        for (var entry in _entries) {
+          if (entry.isFavorite) {
+            _favorites[entry.id] = true;
+          }
+        }
+      });
+      _registrarLog("${entries.length} entradas carregadas com sucesso!");
+    } catch (e) {
+      setState(() {
+        _error = e.toString();
+      });
+      _registrarLog("Erro ao carregar entradas: $e");
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
     }
   }
 
@@ -209,28 +261,44 @@ class _DiaryScreenState extends State<DiaryScreen> {
     );
   }
 
+  // ALTERADO: agora salva no Firebase
   void _addEntry() async {
     final result = await _showEntryDialog();
 
     if (result != null) {
       setState(() {
-        _entries.insert(
-          0,
-          DiaryEntry(
-            id: _uuid.v4(),
-            title: result['title'].isEmpty ? null : result['title'],
-            content: result['content'],
-            dateTime: DateTime.now(),
-            mood: result['mood'],
-            tags: result['tags'] as List<String>,
-          ),
-        );
-        // Ensure entries are sorted by date
-        _entries.sort((a, b) => b.dateTime.compareTo(a.dateTime));
+        _isLoading = true;
       });
+
+      try {
+        final entry = DiaryEntry(
+          id: _uuid.v4(),
+          title: result['title'].isEmpty ? null : result['title'],
+          content: result['content'],
+          dateTime: DateTime.now(),
+          mood: result['mood'],
+          tags: result['tags'] as List<String>,
+        );
+
+        _registrarLog("Adicionando entrada ao Firebase...");
+        final success = await _repository.addEntry(entry);
+        if (success) {
+          await _loadEntries(); // Recarrega do Firebase
+          _registrarLog("Entrada adicionada com sucesso!");
+        } else {
+          _registrarLog("Falha ao adicionar entrada");
+        }
+      } catch (e) {
+        _registrarLog("Erro ao adicionar entrada: $e");
+      } finally {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 
+  // ALTERADO: agora atualiza no Firebase
   void _editEntry(DiaryEntry entry) async {
     final result = await _showEntryDialog(
       title: entry.title,
@@ -242,33 +310,73 @@ class _DiaryScreenState extends State<DiaryScreen> {
 
     if (result != null) {
       setState(() {
-        final index = _entries.indexWhere((e) => e.id == entry.id);
-        if (index != -1) {
-          _entries[index] = DiaryEntry(
-            id: entry.id,
-            title: result['title'].isEmpty ? null : result['title'],
-            content: result['content'],
-            dateTime: entry.dateTime,
-            mood: result['mood'],
-            tags: result['tags'] as List<String>,
-            isFavorite: _favorites[entry.id] ?? false,
-          );
+        _isLoading = true;
+      });
+
+      try {
+        final updatedEntry = entry.copyWith(
+          title: result['title'].isEmpty ? null : result['title'],
+          content: result['content'],
+          mood: result['mood'],
+          tags: result['tags'] as List<String>,
+        );
+
+        _registrarLog("Atualizando entrada no Firebase...");
+        final success = await _repository.updateEntry(updatedEntry);
+        if (success) {
+          await _loadEntries(); // Recarrega do Firebase
+          _registrarLog("Entrada atualizada com sucesso!");
+        } else {
+          _registrarLog("Falha ao atualizar entrada");
         }
+      } catch (e) {
+        _registrarLog("Erro ao atualizar entrada: $e");
+      } finally {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  // ALTERADO: agora deleta do Firebase
+  void _deleteEntry(String id) async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      _registrarLog("Deletando entrada do Firebase...");
+      final success = await _repository.deleteEntry(id);
+      if (success) {
+        await _loadEntries(); // Recarrega do Firebase
+        _registrarLog("Entrada deletada com sucesso!");
+      } else {
+        _registrarLog("Falha ao deletar entrada");
+      }
+    } catch (e) {
+      _registrarLog("Erro ao deletar entrada: $e");
+    } finally {
+      setState(() {
+        _isLoading = false;
       });
     }
   }
 
-  void _deleteEntry(String id) {
-    setState(() {
-      _entries.removeWhere((entry) => entry.id == id);
-      _favorites.remove(id);
-    });
-  }
-
-  void _toggleFavorite(String id, bool value) {
-    setState(() {
-      _favorites[id] = value;
-    });
+  // ALTERADO: agora atualiza no Firebase
+  void _toggleFavorite(String id, bool value) async {
+    try {
+      _registrarLog("Atualizando favorito no Firebase...");
+      final success = await _repository.updateFavorite(id, value);
+      if (success) {
+        await _loadEntries(); // Recarrega do Firebase
+        _registrarLog("Favorito atualizado!");
+      } else {
+        _registrarLog("Falha ao atualizar favorito");
+      }
+    } catch (e) {
+      _registrarLog("Erro ao atualizar favorito: $e");
+    }
   }
 
   List<DiaryEntry> _getFilteredEntries() {
@@ -318,6 +426,36 @@ class _DiaryScreenState extends State<DiaryScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // NOVO: tela de loading
+    if (_isLoading) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('Meu Diário')),
+        body: const Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    // NOVO: tela de erro
+    if (_error != null) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('Meu Diário')),
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.error, size: 64, color: Colors.red),
+              const SizedBox(height: 16),
+              Text('Erro: $_error'),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: _loadEntries,
+                child: const Text('Tentar novamente'),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Meu Diário'),
