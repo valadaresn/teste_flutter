@@ -4,7 +4,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 //import 'package:teste_flutter/screens/hello_world_screen.dart';
 //import 'package:teste_flutter/screens/notes_screen.dart';
-import 'package:teste_flutter/screens/notes_screen_selector.dart';
+import 'package:teste_flutter/features/note_screen/notes_screen.dart';
 import 'screens/task_screen/task_screen.dart';
 //import 'screens/diary_screen/diary_screen.dart';
 //import 'screens/diary_screen/diary_screen_optimized.dart'; // Nova tela
@@ -53,7 +53,7 @@ class _HomeScreenState extends State<HomeScreen> {
     //DiaryScreen(),
     // DiaryScreenOptimized(), // Nova tela otimizada
     // NotesScreen(),
-    NotesScreenSelector(),
+    NotesScreen(),
     //HelloWorldScreen(),
   ];
 
