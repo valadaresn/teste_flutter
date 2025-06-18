@@ -2,6 +2,7 @@
 
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:teste_flutter/features/habit_screen/habit_screen.dart';
 //import 'package:teste_flutter/screens/hello_world_screen.dart';
 //import 'package:teste_flutter/screens/notes_screen.dart';
 import 'package:teste_flutter/features/note_screen/notes_screen.dart';
@@ -54,6 +55,7 @@ class _HomeScreenState extends State<HomeScreen> {
     // DiaryScreenOptimized(), // Nova tela otimizada
     // NotesScreen(),
     NotesScreen(),
+    HabitsScreen(),
     //HelloWorldScreen(),
   ];
 
@@ -79,6 +81,10 @@ class _HomeScreenState extends State<HomeScreen> {
 
           //NavigationDestination(icon: Icon(Icons.note), label: 'Notas'),
           NavigationDestination(icon: Icon(Icons.note), label: 'NotasSele'),
+          NavigationDestination(
+            icon: Icon(Icons.fitness_center),
+            label: 'Habitos',
+          ),
 
           // ignore_for_file: lines_longer_than_80_chars
           // format-ignore
