@@ -18,7 +18,6 @@ class HabitsScreen extends StatefulWidget {
 }
 
 class _HabitsScreenState extends State<HabitsScreen> {
-  int _rebuildCount = 0;
   late HabitController _controller;
   Habit? _selectedHabit;
 
@@ -138,20 +137,64 @@ class _HabitsScreenState extends State<HabitsScreen> {
     return AppBar(
       title: const Text('Hábitos'),
       actions: [
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8),
-          alignment: Alignment.center,
-          child: Text(
-            'Rebuilds: $_rebuildCount',
-            style: const TextStyle(fontSize: 12),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+          child: Row(
+            children: [
+              _buildFilterButton(
+                'Ativos',
+                'active',
+                Icons.visibility,
+                _controller.selectedFilterTags.contains('active'),
+              ),
+              const SizedBox(width: 8),
+              _buildFilterButton(
+                'Hoje',
+                'today',
+                Icons.today,
+                _controller.selectedFilterTags.contains('today'),
+              ),
+            ],
           ),
         ),
-        IconButton(
-          icon: const Icon(Icons.refresh),
-          tooltip: 'Forçar rebuild',
-          onPressed: () => setState(() => _rebuildCount++),
-        ),
       ],
+    );
+  }
+
+  Widget _buildFilterButton(
+    String label,
+    String tag,
+    IconData icon,
+    bool isSelected,
+  ) {
+    return InkWell(
+      onTap: () => _controller.toggleFilterTag(tag),
+      borderRadius: BorderRadius.circular(50),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: isSelected ? Colors.blue : Colors.grey.shade200,
+          borderRadius: BorderRadius.circular(50),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              icon,
+              size: 16,
+              color: isSelected ? Colors.white : Colors.grey.shade700,
+            ),
+            const SizedBox(width: 4),
+            Text(
+              label,
+              style: TextStyle(
+                color: isSelected ? Colors.white : Colors.grey.shade700,
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -165,8 +208,6 @@ class _HabitsScreenState extends State<HabitsScreen> {
     if (isSmallScreen) {
       return Column(
         children: [
-          HabitFilterWidget(controller: controller),
-          HabitSearchWidget(controller: controller),
           Expanded(
             child: HabitList(
               controller: controller,
@@ -191,8 +232,6 @@ class _HabitsScreenState extends State<HabitsScreen> {
         Expanded(
           child: Column(
             children: [
-              HabitFilterWidget(controller: controller),
-              HabitSearchWidget(controller: controller),
               Expanded(
                 child: HabitList(
                   controller: controller,
