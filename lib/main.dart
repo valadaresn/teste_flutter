@@ -2,10 +2,14 @@
 
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:teste_flutter/features/habit_screen/habit_screen.dart';
 //import 'package:teste_flutter/screens/hello_world_screen.dart';
 //import 'package:teste_flutter/screens/notes_screen.dart';
 import 'package:teste_flutter/features/note_screen/notes_screen.dart';
+import 'package:teste_flutter/features/task_management/screens/task_management_screen.dart';
+import 'package:teste_flutter/features/task_management/controllers/task_controller.dart';
+import 'package:teste_flutter/features/task_management/themes/theme_provider.dart';
 import 'screens/task_screen/task_screen.dart';
 //import 'screens/diary_screen/diary_screen.dart';
 //import 'screens/diary_screen/diary_screen_optimized.dart'; // Nova tela
@@ -24,17 +28,21 @@ void main() async {
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
-
-  @override
+  const MyApp({super.key});  @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Teste Flutter',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-        useMaterial3: true,
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (context) => TaskController()),
+        ChangeNotifierProvider(create: (context) => ThemeProvider()),
+      ],
+      child: MaterialApp(
+        title: 'Teste Flutter',
+        theme: ThemeData(
+          colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+          useMaterial3: true,
+        ),
+        home: const HomeScreen(),
       ),
-      home: const HomeScreen(),
     );
   }
 }
@@ -56,6 +64,7 @@ class _HomeScreenState extends State<HomeScreen> {
     // NotesScreen(),
     NotesScreen(),
     HabitsScreen(),
+    TaskManagementScreen(),
     //HelloWorldScreen(),
   ];
 
@@ -85,6 +94,7 @@ class _HomeScreenState extends State<HomeScreen> {
             icon: Icon(Icons.fitness_center),
             label: 'Habitos',
           ),
+          NavigationDestination(icon: Icon(Icons.task_alt), label: 'Tarefas+'),
 
           // ignore_for_file: lines_longer_than_80_chars
           // format-ignore

@@ -1,11 +1,12 @@
 import 'dart:ui';
 import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../habit_model.dart';
 import '../../../services/notification_service.dart';
 
+/// 📱 Widget principal do cartão de hábito
+/// Responsável pela estrutura geral e gerenciamento de estado
 class HabitCard extends StatefulWidget {
   final Habit habit;
   final VoidCallback onTap;
@@ -45,7 +46,6 @@ class _HabitCardState extends State<HabitCard> {
     if (widget.habit.targetTime == null) return;
 
     setState(() {
-      // targetTime já está em segundos
       _remainingSeconds = widget.habit.targetTime!;
       _isTimerRunning = true;
     });
@@ -71,15 +71,11 @@ class _HabitCardState extends State<HabitCard> {
   }
 
   void _showTimerCompleteNotification() async {
-    HapticFeedback.heavyImpact();
-
-    // Notificação do sistema
     await showNotification(
       '⏰ Timer Concluído!',
       '🎉 ${widget.habit.title} - Timer finalizado! Marque como concluído.',
     );
 
-    // SnackBar no app
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -102,38 +98,6 @@ class _HabitCardState extends State<HabitCard> {
           ),
         ),
       );
-
-      // Dialog no app
-      showDialog(
-        context: context,
-        builder:
-            (context) => AlertDialog(
-              title: const Text('⏰ Timer Concluído!'),
-              content: Text(
-                'Parabéns! Você completou o timer de ${widget.habit.title}!',
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: const Text('OK'),
-                ),
-                ElevatedButton(
-                  onPressed: () {
-                    Navigator.pop(context);
-                    widget.onToggleTodayCompletion();
-                    setState(() {});
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: widget.habit.color,
-                  ),
-                  child: const Text(
-                    'Marcar como feito',
-                    style: TextStyle(color: Colors.white),
-                  ),
-                ),
-              ],
-            ),
-      );
     }
   }
 
@@ -143,10 +107,204 @@ class _HabitCardState extends State<HabitCard> {
     return '${minutes.toString().padLeft(2, '0')}:${remainingSeconds.toString().padLeft(2, '0')}';
   }
 
-  String _formatTargetTime() {
-    if (widget.habit.targetTime == null) return "";
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 16),
+      child: _CardContainer(
+        isSelected: widget.isSelected,
+        onTap: widget.onTap,
+        child: Row(
+          children: [
+            // Ícone ou checkmark do hábito
+            _HabitIcon(
+              habit: widget.habit,
+              onToggleCompletion: () {
+                widget.onToggleTodayCompletion();
+                setState(() {});
+              },
+            ),
 
-    final seconds = widget.habit.targetTime!;
+            const SizedBox(width: 16),
+
+            // Conteúdo principal (título, timer ativo)
+            _HabitContent(
+              habit: widget.habit,
+              isTimerRunning: _isTimerRunning,
+              remainingSeconds: _remainingSeconds,
+              formatTime: _formatTime,
+            ),
+
+            // Botão de timer (se aplicável)
+            if (widget.habit.hasTimer && widget.habit.targetTime != null)
+              _TimerButton(
+                habit: widget.habit,
+                isTimerRunning: _isTimerRunning,
+                onStartTimer: _startTimer,
+                onStopTimer: _stopTimer,
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// 🖼️ Container principal do card com visual e interatividade
+/// Gerencia o visual e interações de toque do card
+class _CardContainer extends StatelessWidget {
+  final bool isSelected;
+  final VoidCallback onTap;
+  final Widget child;
+
+  const _CardContainer({
+    Key? key,
+    required this.isSelected,
+    required this.onTap,
+    required this.child,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: isSelected ? Colors.blue.shade50 : Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+        border: isSelected ? Border.all(color: Colors.blue, width: 2) : null,
+      ),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(16),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(16),
+          // Sem efeitos visuais de animação para evitar atrasos
+          splashColor: Colors.transparent,
+          highlightColor: Colors.transparent,
+          hoverColor: Colors.transparent,
+          focusColor: Colors.transparent,
+          child: Padding(padding: const EdgeInsets.all(16), child: child),
+        ),
+      ),
+    );
+  }
+}
+
+/// 🎯 Ícone do hábito ou checkmark quando concluído
+/// Mostra o emoji do hábito ou o checkmark quando está concluído
+class _HabitIcon extends StatelessWidget {
+  final Habit habit;
+  final VoidCallback onToggleCompletion;
+
+  const _HabitIcon({
+    Key? key,
+    required this.habit,
+    required this.onToggleCompletion,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onToggleCompletion,
+      child: Container(
+        width: 48,
+        height: 48,
+        decoration: BoxDecoration(
+          color:
+              habit.isDoneToday() ? habit.color : habit.color.withOpacity(0.15),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Center(
+          child:
+              habit.isDoneToday()
+                  ? const Icon(Icons.check, color: Colors.white, size: 24)
+                  : Text(habit.emoji, style: const TextStyle(fontSize: 20)),
+        ),
+      ),
+    );
+  }
+}
+
+/// 📝 Conteúdo principal do card
+/// Exibe o título do hábito e informações do timer quando ativo
+class _HabitContent extends StatelessWidget {
+  final Habit habit;
+  final bool isTimerRunning;
+  final int remainingSeconds;
+  final String Function(int) formatTime;
+
+  const _HabitContent({
+    Key? key,
+    required this.habit,
+    required this.isTimerRunning,
+    required this.remainingSeconds,
+    required this.formatTime,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+
+    return Expanded(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            habit.title,
+            style: textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.w600,
+              color: Colors.black87,
+            ),
+          ),
+          if (isTimerRunning) ...[
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Icon(Icons.timer, size: 16, color: habit.color),
+                const SizedBox(width: 4),
+                Text(
+                  formatTime(remainingSeconds),
+                  style: textTheme.bodySmall?.copyWith(
+                    color: habit.color,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+/// ⏱️ Botão de controle do timer
+/// Permite iniciar/parar o timer e mostra o tempo-alvo
+class _TimerButton extends StatelessWidget {
+  final Habit habit;
+  final bool isTimerRunning;
+  final VoidCallback onStartTimer;
+  final VoidCallback onStopTimer;
+
+  const _TimerButton({
+    Key? key,
+    required this.habit,
+    required this.isTimerRunning,
+    required this.onStartTimer,
+    required this.onStopTimer,
+  }) : super(key: key);
+
+  String _formatTargetTime() {
+    if (habit.targetTime == null) return "";
+
+    final seconds = habit.targetTime!;
     if (seconds == 3) {
       return "3 seg";
     } else if (seconds < 60) {
@@ -159,193 +317,49 @@ class _HabitCardState extends State<HabitCard> {
 
   @override
   Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 16),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        decoration: BoxDecoration(
-          color:
-              widget.isSelected
-                  ? Colors
-                      .blue
-                      .shade50 // Cor de fundo quando selecionado
-                  : Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 10,
-              offset: const Offset(0, 2),
+    return GestureDetector(
+      onTap: () {
+        if (isTimerRunning) {
+          onStopTimer();
+        } else {
+          onStartTimer();
+        }
+      },
+      child: Column(
+        children: [
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color:
+                  isTimerRunning ? habit.color : habit.color.withOpacity(0.15),
+              shape: BoxShape.circle,
             ),
-          ],
-          // Borda quando selecionado
-          border:
-              widget.isSelected
-                  ? Border.all(color: Colors.blue, width: 2)
-                  : null,
-        ),
-        child: Material(
-          color: Colors.transparent,
-          borderRadius: BorderRadius.circular(16),
-          child: InkWell(
-            onTap: () {
-              HapticFeedback.selectionClick();
-              widget.onTap();
-            },
-            borderRadius: BorderRadius.circular(16),
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Row(
-                children: [
-                  // Ícone do hábito / Check button (estilo TickTick)
-                  GestureDetector(
-                    onTap: () {
-                      HapticFeedback.lightImpact();
-                      widget.onToggleTodayCompletion();
-                      setState(() {});
-                    },
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 200),
-                      width: 48,
-                      height: 48,
-                      decoration: BoxDecoration(
-                        color:
-                            widget.habit.isDoneToday()
-                                ? widget.habit.color
-                                : widget.habit.color.withOpacity(0.15),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Center(
-                        child: AnimatedSwitcher(
-                          duration: const Duration(milliseconds: 200),
-                          transitionBuilder: (child, animation) {
-                            return ScaleTransition(
-                              scale: animation,
-                              child: child,
-                            );
-                          },
-                          child:
-                              widget.habit.isDoneToday()
-                                  ? const Icon(
-                                    Icons.check,
-                                    color: Colors.white,
-                                    size: 24,
-                                    key: ValueKey('checked'),
-                                  )
-                                  : Text(
-                                    widget.habit.emoji,
-                                    style: const TextStyle(fontSize: 20),
-                                    key: ValueKey('emoji'),
-                                  ),
-                        ),
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(width: 16),
-
-                  // Conteúdo principal
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          widget.habit.title,
-                          style: textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.w600,
-                            color: Colors.black87,
-                          ),
-                        ),
-                        // Mostrar timer se estiver rodando
-                        if (_isTimerRunning) ...[
-                          const SizedBox(height: 8),
-                          Row(
-                            children: [
-                              Icon(
-                                Icons.timer,
-                                size: 16,
-                                color: widget.habit.color,
-                              ),
-                              const SizedBox(width: 4),
-                              Text(
-                                _formatTime(_remainingSeconds),
-                                style: textTheme.bodySmall?.copyWith(
-                                  color: widget.habit.color,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ],
-                    ),
-                  ),
-
-                  // Botão de timer (se habilitado e tem targetTime)
-                  if (widget.habit.hasTimer &&
-                      widget.habit.targetTime != null) ...[
-                    GestureDetector(
-                      onTap: () {
-                        HapticFeedback.lightImpact();
-                        if (_isTimerRunning) {
-                          _stopTimer();
-                        } else {
-                          _startTimer();
-                        }
-                      },
-                      child: Column(
-                        children: [
-                          AnimatedContainer(
-                            duration: const Duration(milliseconds: 200),
-                            width: 40,
-                            height: 40,
-                            decoration: BoxDecoration(
-                              color:
-                                  _isTimerRunning
-                                      ? widget.habit.color
-                                      : widget.habit.color.withOpacity(0.15),
-                              shape: BoxShape.circle,
-                            ),
-                            child: Icon(
-                              _isTimerRunning ? Icons.stop : Icons.play_arrow,
-                              color:
-                                  _isTimerRunning
-                                      ? Colors.white
-                                      : widget.habit.color,
-                              size: 20,
-                            ),
-                          ),
-                          if (!_isTimerRunning) ...[
-                            const SizedBox(height: 4),
-                            Text(
-                              _formatTargetTime(),
-                              style: TextStyle(
-                                fontSize: 10,
-                                color: Colors.grey.shade600,
-                              ),
-                            ),
-                          ],
-                        ],
-                      ),
-                    ),
-                    // Não há mais SizedBox aqui pois removemos o botão de menu
-                  ],
-                ],
-              ),
+            child: Icon(
+              isTimerRunning ? Icons.stop : Icons.play_arrow,
+              color: isTimerRunning ? Colors.white : habit.color,
+              size: 20,
             ),
           ),
-        ),
+          if (!isTimerRunning) ...[
+            const SizedBox(height: 4),
+            Text(
+              _formatTargetTime(),
+              style: TextStyle(fontSize: 10, color: Colors.grey.shade600),
+            ),
+          ],
+        ],
       ),
     );
   }
 }
 
-// Classes antigas que não são mais usadas mas mantenho para não quebrar nada
+/// 📅 Indicador visual dos dias da semana
+/// Mostra quais dias da semana o hábito está programado
 class _DayIndicator extends StatelessWidget {
   final List<String> daysOfWeek;
   final Color activeColor;
+
   const _DayIndicator({
     Key? key,
     required this.daysOfWeek,
@@ -375,10 +389,13 @@ class _DayIndicator extends StatelessWidget {
   }
 }
 
+/// 📊 Barra de progresso do hábito
+/// Visualiza o progresso da sequência atual vs. a melhor sequência
 class _HabitProgress extends StatelessWidget {
   final int streak;
   final int bestStreak;
   final Color color;
+
   const _HabitProgress({
     Key? key,
     required this.streak,
@@ -397,27 +414,24 @@ class _HabitProgress extends StatelessWidget {
           style: Theme.of(context).textTheme.bodySmall,
         ),
         const SizedBox(height: 4),
-        TweenAnimationBuilder<double>(
-          tween: Tween(begin: 0, end: progress),
-          duration: const Duration(milliseconds: 300),
-          builder: (context, value, child) {
-            return LinearProgressIndicator(
-              value: value,
-              minHeight: 6,
-              backgroundColor: color.withOpacity(0.3),
-              valueColor: AlwaysStoppedAnimation(color),
-            );
-          },
+        LinearProgressIndicator(
+          value: progress,
+          minHeight: 6,
+          backgroundColor: color.withOpacity(0.3),
+          valueColor: AlwaysStoppedAnimation(color),
         ),
       ],
     );
   }
 }
 
+/// 🔘 Botões de ação do hábito
+/// Contém botões para marcar como feito e ativar/pausar o hábito
 class _HabitActions extends StatelessWidget {
   final Habit habit;
   final VoidCallback onToggleTodayCompletion;
   final VoidCallback onToggleActive;
+
   const _HabitActions({
     Key? key,
     required this.habit,
@@ -431,50 +445,18 @@ class _HabitActions extends StatelessWidget {
       alignment: MainAxisAlignment.spaceBetween,
       children: [
         TextButton.icon(
-          onPressed: () {
-            HapticFeedback.lightImpact();
-            onToggleTodayCompletion();
-          },
-          icon: AnimatedSwitcher(
-            duration: const Duration(milliseconds: 300),
-            transitionBuilder:
-                (child, anim) => ScaleTransition(scale: anim, child: child),
-            child: Icon(
-              habit.isDoneToday()
-                  ? Icons.check_circle
-                  : Icons.radio_button_unchecked,
-              key: ValueKey(habit.isDoneToday()),
-            ),
+          onPressed: onToggleTodayCompletion,
+          icon: Icon(
+            habit.isDoneToday()
+                ? Icons.check_circle
+                : Icons.radio_button_unchecked,
           ),
-          label: AnimatedSwitcher(
-            duration: const Duration(milliseconds: 300),
-            child: Text(
-              habit.isDoneToday() ? 'Feito' : 'Marcar',
-              key: ValueKey(habit.isDoneToday()),
-            ),
-          ),
+          label: Text(habit.isDoneToday() ? 'Feito' : 'Marcar'),
         ),
         TextButton.icon(
-          onPressed: () {
-            HapticFeedback.lightImpact();
-            onToggleActive();
-          },
-          icon: AnimatedSwitcher(
-            duration: const Duration(milliseconds: 300),
-            transitionBuilder:
-                (child, anim) => ScaleTransition(scale: anim, child: child),
-            child: Icon(
-              habit.isActive ? Icons.pause_circle : Icons.play_circle,
-              key: ValueKey(habit.isActive),
-            ),
-          ),
-          label: AnimatedSwitcher(
-            duration: const Duration(milliseconds: 300),
-            child: Text(
-              habit.isActive ? 'Pausar' : 'Ativar',
-              key: ValueKey(habit.isActive),
-            ),
-          ),
+          onPressed: onToggleActive,
+          icon: Icon(habit.isActive ? Icons.pause_circle : Icons.play_circle),
+          label: Text(habit.isActive ? 'Pausar' : 'Ativar'),
         ),
       ],
     );

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import 'package:flutter/services.dart'; // Adicionado para o FilteringTextInputFormatter
 import 'package:provider/provider.dart';
 import 'habit_controller.dart';
 import 'habit_model.dart';
@@ -22,11 +22,9 @@ class _HabitsScreenState extends State<HabitsScreen> {
   late HabitController _controller;
   Habit? _selectedHabit;
 
-  // Cache de painéis para TODOS os hábitos
-  Map<String, Widget> _panelCache = {};
-
-  // Flag para ignorar o primeiro rebuild após a seleção
-  bool _justSelected = false;
+  // Cache do painel para evitar reconstrução
+  Widget? _cachedEditPanel;
+  String? _cachedHabitId;
 
   @override
   void initState() {
@@ -49,12 +47,10 @@ class _HabitsScreenState extends State<HabitsScreen> {
         !_controller.habits.any((h) => h.id == _selectedHabit!.id)) {
       setState(() {
         _selectedHabit = null;
-        _panelCache.remove(_selectedHabit?.id);
+        _cachedEditPanel = null;
+        _cachedHabitId = null;
       });
     }
-
-    // Pré-carrega painéis para todos os hábitos quando a lista muda
-    _preloadPanels();
 
     if (_controller.successMessage != null) {
       _showSnackBar(_controller.successMessage!, isError: false);
@@ -67,59 +63,8 @@ class _HabitsScreenState extends State<HabitsScreen> {
     }
   }
 
-  // ✅ NOVO: Pré-carregar painéis para todos os hábitos
-  void _preloadPanels() {
-    // Limite o número de painéis em cache para evitar uso excessivo de memória
-    final maxCachedPanels = 5;
-
-    if (_controller.habits.length > maxCachedPanels) {
-      // Criar painéis apenas para os primeiros hábitos
-      for (var i = 0; i < maxCachedPanels; i++) {
-        final habit = _controller.habits[i];
-        if (!_panelCache.containsKey(habit.id)) {
-          _createPanelForHabit(habit);
-        }
-      }
-    } else {
-      // Se poucos hábitos, criar todos os painéis
-      for (final habit in _controller.habits) {
-        if (!_panelCache.containsKey(habit.id)) {
-          _createPanelForHabit(habit);
-        }
-      }
-    }
-  }
-
-  // ✅ NOVO: Criar painel para um hábito específico
-  Widget _createPanelForHabit(Habit habit) {
-    final panel = HabitEditPanel(
-      habit: habit,
-      onSave: (updatedData) async {
-        await _updateHabit(habit, updatedData);
-        return Future<void>.value();
-      },
-      onClose: () {
-        setState(() {
-          _selectedHabit = null;
-        });
-      },
-      emojiOptions: _controller.emojiOptions,
-      colorOptions: _controller.colorOptions,
-      dayNames: _controller.dayNames,
-      dayLabels: _controller.dayLabels,
-    );
-
-    _panelCache[habit.id] = panel;
-    return panel;
-  }
-
   @override
   Widget build(BuildContext context) {
-    // ✅ OTIMIZAÇÃO: Ignorar rebuild imediato após trocar de card
-    if (_justSelected) {
-      _justSelected = false;
-    }
-
     return ChangeNotifierProvider.value(
       value: _controller,
       child: Consumer<HabitController>(
@@ -178,12 +123,26 @@ class _HabitsScreenState extends State<HabitsScreen> {
       );
     }
 
-    // ✅ OTIMIZADO: Usar o painel pré-carregado ou criar um novo se necessário
-    Widget? editPanel;
-    if (_selectedHabit != null) {
-      editPanel =
-          _panelCache[_selectedHabit!.id] ??
-          _createPanelForHabit(_selectedHabit!);
+    // Cache do painel de edição para evitar reconstrução completa a cada mudança
+    if (_selectedHabit != null &&
+        (_cachedHabitId != _selectedHabit!.id || _cachedEditPanel == null)) {
+      _cachedHabitId = _selectedHabit!.id;
+      _cachedEditPanel = HabitEditPanel(
+        habit: _selectedHabit!,
+        onSave: (updatedData) async {
+          await _updateHabit(_selectedHabit!, updatedData);
+          return Future<void>.value();
+        },
+        onClose: () {
+          setState(() {
+            _selectedHabit = null;
+          });
+        },
+        emojiOptions: _controller.emojiOptions,
+        colorOptions: _controller.colorOptions,
+        dayNames: _controller.dayNames,
+        dayLabels: _controller.dayLabels,
+      );
     }
 
     return Row(
@@ -203,12 +162,13 @@ class _HabitsScreenState extends State<HabitsScreen> {
             ],
           ),
         ),
+        // ✅ ALTERAÇÃO: SizedBox em vez de AnimatedContainer para exibição instantânea
         SizedBox(
           width:
               _selectedHabit != null
                   ? MediaQuery.of(context).size.width * 0.35
                   : 0,
-          child: editPanel,
+          child: _selectedHabit != null ? _cachedEditPanel : null,
         ),
       ],
     );
@@ -244,13 +204,7 @@ class _HabitsScreenState extends State<HabitsScreen> {
         ),
       );
     } else {
-      // ✅ OTIMIZAÇÃO: Pré-construir o painel antes de atualizar o estado
-      if (!_panelCache.containsKey(habit.id)) {
-        _createPanelForHabit(habit);
-      }
-
       setState(() {
-        _justSelected = true;
         if (_selectedHabit?.id == habit.id) {
           _selectedHabit = null;
         } else {
@@ -273,11 +227,11 @@ class _HabitsScreenState extends State<HabitsScreen> {
       if (success && mounted) {
         _showSnackBar('Hábito atualizado com sucesso!', isError: false);
         if (_selectedHabit?.id == habit.id) {
-          // ✅ MELHORADO: Remover do cache quando atualizado
-          _panelCache.remove(habit.id);
-
           setState(() {
             _selectedHabit = _controller.getHabitById(habit.id);
+            // Invalidar cache quando o hábito é atualizado
+            _cachedEditPanel = null;
+            _cachedHabitId = null;
           });
         }
       }

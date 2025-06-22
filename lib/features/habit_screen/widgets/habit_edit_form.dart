@@ -35,37 +35,75 @@ class _HabitEditFormState extends State<HabitEditForm> {
   bool _isActive = true;
   bool _isSaving = false;
 
+  // ✅ NOVO: Cache de cores para busca rápida
+  late Map<int, Color> _colorCache = {};
+
   @override
   void initState() {
     super.initState();
+
+    // ✅ NOVO: Pre-computar mapeamento de cores para evitar firstWhere
+    _buildColorCache();
+
     _initializeFields();
+  }
+
+  // ✅ NOVO: Construir cache de cores uma única vez
+  void _buildColorCache() {
+    _colorCache = {};
+    for (final color in widget.colorOptions) {
+      _colorCache[color.value] = color;
+    }
   }
 
   @override
   void didUpdateWidget(HabitEditForm oldWidget) {
     super.didUpdateWidget(oldWidget);
+
+    // ✅ NOVO: Reconstruir cache de cores apenas se as opções de cor mudarem
+    if (oldWidget.colorOptions != widget.colorOptions) {
+      _buildColorCache();
+    }
+
     if (oldWidget.habit?.id != widget.habit?.id) {
-      _initializeFields();
+      // ✅ MELHORADO: Carregar dados simples (muito rápido) imediatamente
+      _quickUpdateFields();
+
+      // ✅ NOVO: Adiar atualizações mais complexas para o próximo microtask
+      Future.microtask(() {
+        if (mounted) {
+          _completeInitialization();
+        }
+      });
+    }
+  }
+
+  // ✅ NOVO: Atualização rápida dos campos mais importantes
+  void _quickUpdateFields() {
+    if (widget.habit != null) {
+      _titleController.text = widget.habit!.title;
+      _selectedEmoji = widget.habit!.emoji;
     }
   }
 
   void _initializeFields() {
+    _quickUpdateFields();
+    _completeInitialization();
+  }
+
+  // ✅ SEPARADO: Inicialização completa (mais pesada)
+  void _completeInitialization() {
     if (widget.habit != null) {
-      _titleController.text = widget.habit!.title;
-      _selectedEmoji = widget.habit!.emoji;
       _selectedDays = List.from(widget.habit!.daysOfWeek);
       _isActive = widget.habit!.isActive;
 
-      // ✅ CORREÇÃO: Buscar cor compatível na lista disponível
+      // ✅ MELHORADO: Usar o cache em vez de firstWhere (muito mais rápido)
       final habitColor = widget.habit!.color;
-      _selectedColor = widget.colorOptions.firstWhere(
-        (color) => color.value == habitColor.value,
-        orElse:
-            () =>
-                widget.colorOptions.isNotEmpty
-                    ? widget.colorOptions.first
-                    : Colors.blue,
-      );
+      _selectedColor =
+          _colorCache[habitColor.value] ??
+          (widget.colorOptions.isNotEmpty
+              ? widget.colorOptions.first
+              : Colors.blue);
 
       if (widget.habit!.targetTime != null) {
         final seconds = widget.habit!.targetTime!;
@@ -92,6 +130,11 @@ class _HabitEditFormState extends State<HabitEditForm> {
               ? widget.colorOptions.first
               : Colors.blue;
       _isActive = true;
+    }
+
+    // Atualizar UI com todos os dados
+    if (mounted) {
+      setState(() {});
     }
   }
 
@@ -174,7 +217,6 @@ class _HabitEditFormState extends State<HabitEditForm> {
     return '$clean minutos';
   }
 
-  // ✅ NOVO: Modal para escolher emoji (como Notion)
   void _showEmojiPicker() {
     showDialog(
       context: context,
@@ -229,7 +271,6 @@ class _HabitEditFormState extends State<HabitEditForm> {
     );
   }
 
-  // ✅ MELHORADO: Mapeamento mais robusto de cores
   String _getColorName(Color color) {
     const colorNames = {
       0xFF2196F3: 'Azul', // Colors.blue
@@ -253,7 +294,6 @@ class _HabitEditFormState extends State<HabitEditForm> {
       return colorName;
     }
 
-    // Fallback: mostrar valor hex
     return '#${color.value.toRadixString(16).substring(2).toUpperCase()}';
   }
 
@@ -392,7 +432,7 @@ class _HabitEditFormState extends State<HabitEditForm> {
             ),
             const SizedBox(height: 16),
 
-            // ✅ SELETOR DE EMOJI MODERNO (como Notion)
+            // Seletor de emoji moderno
             Row(
               children: [
                 const Text(
@@ -418,7 +458,7 @@ class _HabitEditFormState extends State<HabitEditForm> {
             ),
             const SizedBox(height: 16),
 
-            // ✅ SELETOR DE COR MODERNO (como Todoist) - COM CORREÇÃO
+            // Seletor de cor moderno
             Row(
               children: [
                 const Text(
@@ -427,15 +467,7 @@ class _HabitEditFormState extends State<HabitEditForm> {
                 ),
                 const SizedBox(width: 12),
                 DropdownButton<Color>(
-                  // ✅ CORREÇÃO: Buscar cor por valor ao invés de referência
-                  value: widget.colorOptions.firstWhere(
-                    (color) => color.value == _selectedColor.value,
-                    orElse:
-                        () =>
-                            widget.colorOptions.isNotEmpty
-                                ? widget.colorOptions.first
-                                : Colors.blue,
-                  ),
+                  value: _selectedColor,
                   icon: const Icon(Icons.arrow_drop_down),
                   borderRadius: BorderRadius.circular(8),
                   onChanged: (color) {
@@ -471,7 +503,7 @@ class _HabitEditFormState extends State<HabitEditForm> {
             ),
             const SizedBox(height: 16),
 
-            // Seletor de Dias (mantido como FilterChip por ser mais eficiente)
+            // Seletor de Dias
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
