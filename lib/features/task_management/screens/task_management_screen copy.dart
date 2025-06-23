@@ -16,7 +16,10 @@ class TaskManagementScreen extends StatelessWidget {
       builder: (context, controller, _) {
         return Scaffold(
           appBar: _buildAppBar(context, controller),
-          body: _buildBody(context, controller), // ITEM #4 - controller como parâmetro
+          body: _buildBody(
+            context,
+            controller,
+          ), // ITEM #4 - controller como parâmetro
           floatingActionButton: _buildFloatingActionButton(context, controller),
         );
       },
@@ -26,9 +29,7 @@ class TaskManagementScreen extends StatelessWidget {
   // ITEM #4 das instruções - buildBody recebe controller como parâmetro
   Widget _buildBody(BuildContext context, TaskController controller) {
     if (controller.isLoading && controller.lists.isEmpty) {
-      return const Center(
-        child: CircularProgressIndicator(),
-      );
+      return const Center(child: CircularProgressIndicator());
     }
 
     if (controller.error != null) {
@@ -36,11 +37,7 @@ class TaskManagementScreen extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.error_outline,
-              size: 64,
-              color: Colors.red.shade300,
-            ),
+            Icon(Icons.error_outline, size: 64, color: Colors.red.shade300),
             const SizedBox(height: 16),
             Text(
               'Erro ao carregar dados',
@@ -82,7 +79,7 @@ class TaskManagementScreen extends StatelessWidget {
           // TODO: Substituir por ListPanel quando criado
           child: _buildTemporaryListPanel(context, controller),
         ),
-        
+
         // Área principal - Tarefas
         Expanded(
           child: Container(
@@ -95,7 +92,10 @@ class TaskManagementScreen extends StatelessWidget {
   }
 
   // Widget temporário até criar o ListPanel
-  Widget _buildTemporaryListPanel(BuildContext context, TaskController controller) {
+  Widget _buildTemporaryListPanel(
+    BuildContext context,
+    TaskController controller,
+  ) {
     return Column(
       children: [
         Container(
@@ -105,10 +105,7 @@ class TaskManagementScreen extends StatelessWidget {
             children: [
               const Text(
                 'Listas',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
               IconButton(
                 icon: const Icon(Icons.add, size: 20),
@@ -127,7 +124,9 @@ class TaskManagementScreen extends StatelessWidget {
               return ListTile(
                 leading: Text(list.emoji, style: const TextStyle(fontSize: 20)),
                 title: Text(list.name),
-                trailing: Text('${controller.countPendingTasksInList(list.id)}'),
+                trailing: Text(
+                  '${controller.countPendingTasksInList(list.id)}',
+                ),
                 selected: isSelected,
                 onTap: () => controller.selectList(isSelected ? null : list.id),
               );
@@ -139,9 +138,10 @@ class TaskManagementScreen extends StatelessWidget {
   }
 
   Widget _buildTaskArea(BuildContext context, TaskController controller) {
-    final selectedList = controller.selectedListId != null 
-        ? controller.getListById(controller.selectedListId!)
-        : null;
+    final selectedList =
+        controller.selectedListId != null
+            ? controller.getListById(controller.selectedListId!)
+            : null;
 
     return Column(
       children: [
@@ -160,10 +160,7 @@ class TaskManagementScreen extends StatelessWidget {
           child: Row(
             children: [
               if (selectedList != null) ...[
-                Text(
-                  selectedList.emoji,
-                  style: const TextStyle(fontSize: 24),
-                ),
+                Text(selectedList.emoji, style: const TextStyle(fontSize: 24)),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(
@@ -171,14 +168,15 @@ class TaskManagementScreen extends StatelessWidget {
                     children: [
                       Text(
                         selectedList.name,
-                        style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
+                        style: Theme.of(context).textTheme.headlineSmall
+                            ?.copyWith(fontWeight: FontWeight.bold),
                       ),
                       Text(
                         '${controller.countPendingTasksInList(selectedList.id)} tarefas pendentes',
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.onSurface.withOpacity(0.6),
                         ),
                       ),
                     ],
@@ -197,21 +195,22 @@ class TaskManagementScreen extends StatelessWidget {
                     children: [
                       Text(
                         'Todas as Tarefas',
-                        style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
+                        style: Theme.of(context).textTheme.headlineSmall
+                            ?.copyWith(fontWeight: FontWeight.bold),
                       ),
                       Text(
                         '${controller.tasks.where((t) => !t.isCompleted).length} tarefas pendentes',
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.onSurface.withOpacity(0.6),
                         ),
                       ),
                     ],
                   ),
                 ),
               ],
-              
+
               // Botões de ação do cabeçalho
               IconButton(
                 icon: const Icon(Icons.search),
@@ -228,17 +227,18 @@ class TaskManagementScreen extends StatelessWidget {
         ),
 
         // Lista de tarefas temporária
-        Expanded(
-          child: _buildTemporaryTaskList(context, controller),
-        ),
+        Expanded(child: _buildTemporaryTaskList(context, controller)),
       ],
     );
   }
 
   // Widget temporário até criar o TaskList
-  Widget _buildTemporaryTaskList(BuildContext context, TaskController controller) {
+  Widget _buildTemporaryTaskList(
+    BuildContext context,
+    TaskController controller,
+  ) {
     final tasks = controller.tasks;
-    
+
     if (tasks.isEmpty) {
       return const Center(
         child: Column(
@@ -267,10 +267,12 @@ class TaskManagementScreen extends StatelessWidget {
             title: Text(
               task.title,
               style: TextStyle(
-                decoration: task.isCompleted ? TextDecoration.lineThrough : null,
+                decoration:
+                    task.isCompleted ? TextDecoration.lineThrough : null,
               ),
             ),
-            subtitle: task.description.isNotEmpty ? Text(task.description) : null,
+            subtitle:
+                task.description.isNotEmpty ? Text(task.description) : null,
             trailing: IconButton(
               icon: Icon(
                 task.isImportant ? Icons.star : Icons.star_border,
@@ -284,7 +286,10 @@ class TaskManagementScreen extends StatelessWidget {
     );
   }
 
-  PreferredSizeWidget _buildAppBar(BuildContext context, TaskController controller) {
+  PreferredSizeWidget _buildAppBar(
+    BuildContext context,
+    TaskController controller,
+  ) {
     return AppBar(
       title: const Text('Gerenciador de Tarefas'),
       backgroundColor: Theme.of(context).colorScheme.surface,
@@ -303,7 +308,7 @@ class TaskManagementScreen extends StatelessWidget {
           ),
 
         // Botão de limpar filtros
-        if (controller.searchQuery.isNotEmpty || 
+        if (controller.searchQuery.isNotEmpty ||
             controller.selectedListId != null ||
             !controller.showCompletedTasks ||
             controller.selectedPriority != null ||
@@ -317,45 +322,49 @@ class TaskManagementScreen extends StatelessWidget {
         // Menu de opções
         PopupMenuButton<String>(
           onSelected: (value) => _handleMenuAction(context, controller, value),
-          itemBuilder: (context) => [
-            const PopupMenuItem(
-              value: 'toggle_completed',
-              child: Row(
-                children: [
-                  Icon(Icons.visibility),
-                  SizedBox(width: 8),
-                  Text('Mostrar/Ocultar Concluídas'),
-                ],
-              ),
-            ),
-            const PopupMenuItem(
-              value: 'show_important',
-              child: Row(
-                children: [
-                  Icon(Icons.star),
-                  SizedBox(width: 8),
-                  Text('Apenas Importantes'),
-                ],
-              ),
-            ),
-            const PopupMenuDivider(),
-            const PopupMenuItem(
-              value: 'debug',
-              child: Row(
-                children: [
-                  Icon(Icons.bug_report),
-                  SizedBox(width: 8),
-                  Text('Debug Info'),
-                ],
-              ),
-            ),
-          ],
+          itemBuilder:
+              (context) => [
+                const PopupMenuItem(
+                  value: 'toggle_completed',
+                  child: Row(
+                    children: [
+                      Icon(Icons.visibility),
+                      SizedBox(width: 8),
+                      Text('Mostrar/Ocultar Concluídas'),
+                    ],
+                  ),
+                ),
+                const PopupMenuItem(
+                  value: 'show_important',
+                  child: Row(
+                    children: [
+                      Icon(Icons.star),
+                      SizedBox(width: 8),
+                      Text('Apenas Importantes'),
+                    ],
+                  ),
+                ),
+                const PopupMenuDivider(),
+                const PopupMenuItem(
+                  value: 'debug',
+                  child: Row(
+                    children: [
+                      Icon(Icons.bug_report),
+                      SizedBox(width: 8),
+                      Text('Debug Info'),
+                    ],
+                  ),
+                ),
+              ],
         ),
       ],
     );
   }
 
-  Widget _buildFloatingActionButton(BuildContext context, TaskController controller) {
+  Widget _buildFloatingActionButton(
+    BuildContext context,
+    TaskController controller,
+  ) {
     return FloatingActionButton(
       onPressed: () => _showCreateTaskDialog(context, controller),
       tooltip: 'Nova Tarefa',
@@ -363,7 +372,11 @@ class TaskManagementScreen extends StatelessWidget {
     );
   }
 
-  void _handleMenuAction(BuildContext context, TaskController controller, String action) {
+  void _handleMenuAction(
+    BuildContext context,
+    TaskController controller,
+    String action,
+  ) {
     switch (action) {
       case 'toggle_completed':
         controller.toggleShowCompletedTasks();
@@ -401,30 +414,35 @@ class TaskManagementScreen extends StatelessWidget {
   void _showDebugDialog(BuildContext context, TaskController controller) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Debug Info'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Listas: ${controller.lists.length}'),
-            Text('Tarefas: ${controller.tasks.length}'),
-            Text('Lista selecionada: ${controller.selectedListId ?? "Todas"}'),
-            Text('Busca: "${controller.searchQuery}"'),
-            Text('Mostrar concluídas: ${controller.showCompletedTasks}'),
-            Text('Apenas importantes: ${controller.showOnlyImportant}'),
-            Text('Prioridade: ${controller.selectedPriority?.name ?? "Todas"}'),
-            Text('Loading: ${controller.isLoading}'),
-            if (controller.error != null) Text('Erro: ${controller.error}'),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Fechar'),
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Debug Info'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Listas: ${controller.lists.length}'),
+                Text('Tarefas: ${controller.tasks.length}'),
+                Text(
+                  'Lista selecionada: ${controller.selectedListId ?? "Todas"}',
+                ),
+                Text('Busca: "${controller.searchQuery}"'),
+                Text('Mostrar concluídas: ${controller.showCompletedTasks}'),
+                Text('Apenas importantes: ${controller.showOnlyImportant}'),
+                Text(
+                  'Prioridade: ${controller.selectedPriority?.name ?? "Todas"}',
+                ),
+                Text('Loading: ${controller.isLoading}'),
+                if (controller.error != null) Text('Erro: ${controller.error}'),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Fechar'),
+              ),
+            ],
           ),
-        ],
-      ),
     );
   }
 }

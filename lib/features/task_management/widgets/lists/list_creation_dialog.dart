@@ -5,10 +5,8 @@ import '../../models/list_model.dart';
 class ListCreationDialog extends StatefulWidget {
   final TaskController controller;
 
-  const ListCreationDialog({
-    Key? key,
-    required this.controller,
-  }) : super(key: key);
+  const ListCreationDialog({Key? key, required this.controller})
+    : super(key: key);
 
   @override
   State<ListCreationDialog> createState() => _ListCreationDialogState();
@@ -17,19 +15,30 @@ class ListCreationDialog extends StatefulWidget {
 class _ListCreationDialogState extends State<ListCreationDialog> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
-  final _descriptionController = TextEditingController();
   String _selectedEmoji = '📋';
   Color _selectedColor = Colors.blue;
+  String? _selectedProjectId;
   bool _isLoading = false;
 
-  // Lista de emojis comuns para listas
   final List<String> _emojiOptions = [
-    '📋', '📝', '✅', '📌', '🎯', '⭐', '🏠', '💼', 
-    '🎓', '🛒', '💡', '🚀', '❤️', '🎉', '🔥', '⚡',
-    '🌟', '🎪', '🎨', '🏆', '🎮', '📚', '🎬', '🎵',
+    '📋',
+    '📝',
+    '✅',
+    '📌',
+    '🎯',
+    '⭐',
+    '🏠',
+    '💼',
+    '🎓',
+    '🛒',
+    '💡',
+    '🚀',
+    '❤️',
+    '🎉',
+    '🔥',
+    '⚡',
   ];
 
-  // Lista de cores predefinidas
   final List<Color> _colorOptions = [
     Colors.blue,
     Colors.green,
@@ -39,17 +48,48 @@ class _ListCreationDialogState extends State<ListCreationDialog> {
     Colors.teal,
     Colors.indigo,
     Colors.pink,
-    Colors.amber,
-    Colors.cyan,
-    Colors.lime,
-    Colors.deepOrange,
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedProjectId = widget.controller.selectedProjectId;
+  }
 
   @override
   void dispose() {
     _nameController.dispose();
-    _descriptionController.dispose();
     super.dispose();
+  }
+
+  void _createList() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final newList = TaskList.create(
+        id: '',
+        name: _nameController.text.trim(),
+        color: _selectedColor,
+        emoji: _selectedEmoji,
+        isDefault: false,
+        sortOrder: 0,
+        projectId: _selectedProjectId,
+      );
+
+      await widget.controller.createList(newList);
+      Navigator.of(context).pop();
+    } catch (e) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Erro ao criar lista: $e')));
+      setState(() {
+        _isLoading = false;
+      });
+    }
   }
 
   @override
@@ -64,59 +104,74 @@ class _ListCreationDialogState extends State<ListCreationDialog> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Campo nome
+              // Nome da lista
               TextFormField(
                 controller: _nameController,
                 decoration: const InputDecoration(
-                  labelText: 'Nome da Lista',
+                  labelText: 'Nome da lista',
                   border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.list),
                 ),
                 validator: (value) {
                   if (value == null || value.trim().isEmpty) {
                     return 'Nome é obrigatório';
                   }
-                  if (value.trim().length < 2) {
-                    return 'Nome deve ter pelo menos 2 caracteres';
-                  }
                   return null;
                 },
-                onFieldSubmitted: (_) => _createList(),
               ),
-
               const SizedBox(height: 16),
 
-              // Campo descrição
-              TextFormField(
-                controller: _descriptionController,
-                decoration: const InputDecoration(
-                  labelText: 'Descrição (opcional)',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.description),
-                ),
-                maxLines: 2,
-              ),
-
-              const SizedBox(height: 16),
-
-              // Seleção de emoji
-              const Text(
-                'Emoji:',
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
+              // Projeto (dropdown)
+              Text('Projeto', style: Theme.of(context).textTheme.bodyLarge),
               const SizedBox(height: 8),
-              SizedBox(
-                height: 100,
+              DropdownButtonFormField<String?>(
+                value: _selectedProjectId,
+                decoration: const InputDecoration(border: OutlineInputBorder()),
+                items: [
+                  const DropdownMenuItem<String?>(
+                    value: null,
+                    child: Text('Sem projeto'),
+                  ),
+                  ...widget.controller.projects.map(
+                    (project) => DropdownMenuItem<String?>(
+                      value: project.id,
+                      child: Row(
+                        children: [
+                          Text(project.emoji),
+                          const SizedBox(width: 8),
+                          Text(project.name),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+                onChanged: (value) {
+                  setState(() {
+                    _selectedProjectId = value;
+                  });
+                },
+              ),
+              const SizedBox(height: 16),
+
+              // Emoji
+              Text('Ícone', style: Theme.of(context).textTheme.bodyLarge),
+              const SizedBox(height: 8),
+              Container(
+                decoration: BoxDecoration(
+                  border: Border.all(color: Colors.grey.shade300),
+                  borderRadius: BorderRadius.circular(4),
+                ),
                 child: GridView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
                   gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: 8,
-                    mainAxisSpacing: 4,
-                    crossAxisSpacing: 4,
+                    childAspectRatio: 1.0,
                   ),
                   itemCount: _emojiOptions.length,
                   itemBuilder: (context, index) {
                     final emoji = _emojiOptions[index];
                     final isSelected = emoji == _selectedEmoji;
+
                     return GestureDetector(
                       onTap: () {
                         setState(() {
@@ -125,15 +180,12 @@ class _ListCreationDialogState extends State<ListCreationDialog> {
                       },
                       child: Container(
                         decoration: BoxDecoration(
-                          color: isSelected 
-                              ? Theme.of(context).colorScheme.primary.withOpacity(0.2)
-                              : Colors.transparent,
+                          color:
+                              isSelected ? Colors.blue.withOpacity(0.2) : null,
                           border: Border.all(
-                            color: isSelected 
-                                ? Theme.of(context).colorScheme.primary
-                                : Colors.grey.withOpacity(0.3),
+                            color:
+                                isSelected ? Colors.blue : Colors.transparent,
                           ),
-                          borderRadius: BorderRadius.circular(8),
                         ),
                         child: Center(
                           child: Text(
@@ -146,58 +198,42 @@ class _ListCreationDialogState extends State<ListCreationDialog> {
                   },
                 ),
               ),
-
               const SizedBox(height: 16),
 
-              // Seleção de cor
-              const Text(
-                'Cor:',
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
+              // Cor
+              Text('Cor', style: Theme.of(context).textTheme.bodyLarge),
               const SizedBox(height: 8),
-              SizedBox(
-                height: 50,
-                child: ListView.builder(
-                  scrollDirection: Axis.horizontal,
-                  itemCount: _colorOptions.length,
-                  itemBuilder: (context, index) {
-                    final color = _colorOptions[index];
-                    final isSelected = color == _selectedColor;
-                    return Padding(
-                      padding: const EdgeInsets.only(right: 8),
-                      child: GestureDetector(
-                        onTap: () {
-                          setState(() {
-                            _selectedColor = color;
-                          });
-                        },
-                        child: Container(
-                          width: 40,
-                          height: 40,
-                          decoration: BoxDecoration(
-                            color: color,
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                              color: isSelected 
-                                  ? Colors.white
-                                  : Colors.transparent,
-                              width: 3,
+              Row(
+                children:
+                    _colorOptions.map((color) {
+                      final isSelected = color.value == _selectedColor.value;
+
+                      return Padding(
+                        padding: const EdgeInsets.only(right: 8.0),
+                        child: GestureDetector(
+                          onTap: () {
+                            setState(() {
+                              _selectedColor = color;
+                            });
+                          },
+                          child: Container(
+                            width: 32,
+                            height: 32,
+                            decoration: BoxDecoration(
+                              color: color,
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color:
+                                    isSelected
+                                        ? Colors.black
+                                        : Colors.transparent,
+                                width: isSelected ? 2 : 0,
+                              ),
                             ),
-                            boxShadow: isSelected
-                                ? [
-                                    BoxShadow(
-                                      color: color.withOpacity(0.4),
-                                      blurRadius: 8,
-                                      spreadRadius: 2,
-                                    ),
-                                  ]
-                                : null,
                           ),
                         ),
-                      ),
-                    );
-                  },
-                ),
+                      );
+                    }).toList(),
               ),
             ],
           ),
@@ -205,65 +241,21 @@ class _ListCreationDialogState extends State<ListCreationDialog> {
       ),
       actions: [
         TextButton(
-          onPressed: _isLoading ? null : () => Navigator.pop(context),
+          onPressed: _isLoading ? null : () => Navigator.of(context).pop(),
           child: const Text('Cancelar'),
         ),
         ElevatedButton(
           onPressed: _isLoading ? null : _createList,
-          child: _isLoading
-              ? const SizedBox(
-                  width: 16,
-                  height: 16,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-              : const Text('Criar Lista'),
+          child:
+              _isLoading
+                  ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                  : const Text('Criar Lista'),
         ),
       ],
     );
-  }
-
-  Future<void> _createList() async {
-    if (!_formKey.currentState!.validate()) {
-      return;
-    }
-
-    setState(() {
-      _isLoading = true;
-    });
-
-    try {      final newList = TaskList.create(
-        id: '', // Será substituído pelo controller
-        name: _nameController.text.trim(),
-        color: _selectedColor,
-        emoji: _selectedEmoji,
-      );
-
-      await widget.controller.createList(newList);
-
-      if (mounted) {
-        Navigator.pop(context);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Lista "${newList.name}" criada com sucesso!'),
-            backgroundColor: Colors.green,
-          ),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Erro ao criar lista: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
-    }
   }
 }

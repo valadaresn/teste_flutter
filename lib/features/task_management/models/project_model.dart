@@ -1,116 +1,127 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-class TaskList {
+class Project {
   final String id;
   final String name;
+  final String description;
   final Color color;
   final String emoji;
   final DateTime createdAt;
   final DateTime updatedAt;
   final bool isDefault;
   final int sortOrder;
-  final String? projectId; // Referência ao projeto pai
+  final bool isArchived;
 
-  const TaskList({
+  const Project({
     required this.id,
     required this.name,
+    this.description = '',
     required this.color,
     required this.emoji,
     required this.createdAt,
     required this.updatedAt,
     this.isDefault = false,
     this.sortOrder = 0,
-    this.projectId,
+    this.isArchived = false,
   });
-  // Factory para criar uma nova lista
-  factory TaskList.create({
+
+  // Factory para criar um novo projeto
+  factory Project.create({
     required String id,
     required String name,
+    String description = '',
     required Color color,
     required String emoji,
     bool isDefault = false,
     int sortOrder = 0,
-    String? projectId,
   }) {
     final now = DateTime.now();
-    return TaskList(
+    return Project(
       id: id,
       name: name,
+      description: description,
       color: color,
       emoji: emoji,
       createdAt: now,
       updatedAt: now,
       isDefault: isDefault,
       sortOrder: sortOrder,
-      projectId: projectId,
     );
   }
+
   // Factory para criar a partir de dados do formulário
-  factory TaskList.fromFormData(Map<String, dynamic> formData, String id) {
+  factory Project.fromFormData(Map<String, dynamic> formData, String id) {
     final now = DateTime.now();
-    return TaskList(
+    return Project(
       id: id,
       name: formData['name'] ?? '',
+      description: formData['description'] ?? '',
       color: formData['color'] ?? Colors.blue,
-      emoji: formData['emoji'] ?? '📋',
+      emoji: formData['emoji'] ?? '📁',
       createdAt: now,
       updatedAt: now,
       isDefault: formData['isDefault'] ?? false,
       sortOrder: formData['sortOrder'] ?? 0,
-      projectId: formData['projectId'],
+      isArchived: formData['isArchived'] ?? false,
     );
   }
+
   // Factory para criar a partir do Firestore
-  factory TaskList.fromMap(Map<String, dynamic> map, String id) {
-    return TaskList(
+  factory Project.fromMap(Map<String, dynamic> map, String id) {
+    return Project(
       id: id,
       name: map['name'] ?? '',
+      description: map['description'] ?? '',
       color: _parseColor(map['color']),
-      emoji: map['emoji'] ?? '📋',
+      emoji: map['emoji'] ?? '📁',
       createdAt: _parseDateTime(map['createdAt']) ?? DateTime.now(),
       updatedAt: _parseDateTime(map['updatedAt']) ?? DateTime.now(),
       isDefault: map['isDefault'] ?? false,
       sortOrder: map['sortOrder'] ?? 0,
-      projectId: map['projectId'],
+      isArchived: map['isArchived'] ?? false,
     );
   }
+
   // Converter para Map para o Firestore
   Map<String, dynamic> toMap() {
     return {
       'name': name,
+      'description': description,
       'color': color.value,
       'emoji': emoji,
       'createdAt': Timestamp.fromDate(createdAt),
       'updatedAt': Timestamp.fromDate(updatedAt),
       'isDefault': isDefault,
       'sortOrder': sortOrder,
-      'projectId': projectId,
+      'isArchived': isArchived,
     };
   }
 
   // Método para criar uma cópia com alterações
-  TaskList copyWith({
+  Project copyWith({
     String? id,
     String? name,
+    String? description,
     Color? color,
     String? emoji,
     DateTime? createdAt,
     DateTime? updatedAt,
     bool? isDefault,
     int? sortOrder,
-    String? projectId,
+    bool? isArchived,
   }) {
-    return TaskList(
+    return Project(
       id: id ?? this.id,
       name: name ?? this.name,
+      description: description ?? this.description,
       color: color ?? this.color,
       emoji: emoji ?? this.emoji,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? DateTime.now(),
       isDefault: isDefault ?? this.isDefault,
       sortOrder: sortOrder ?? this.sortOrder,
-      projectId: projectId ?? this.projectId,
+      isArchived: isArchived ?? this.isArchived,
     );
   }
 
@@ -146,16 +157,17 @@ class TaskList {
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
-    return other is TaskList &&
+    return other is Project &&
         other.id == id &&
         other.name == name &&
+        other.description == description &&
         other.color == color &&
         other.emoji == emoji &&
         other.createdAt == createdAt &&
         other.updatedAt == updatedAt &&
         other.isDefault == isDefault &&
         other.sortOrder == sortOrder &&
-        other.projectId == projectId;
+        other.isArchived == isArchived;
   }
 
   @override
@@ -163,18 +175,19 @@ class TaskList {
     return Object.hash(
       id,
       name,
+      description,
       color,
       emoji,
       createdAt,
       updatedAt,
       isDefault,
       sortOrder,
-      projectId,
+      isArchived,
     );
   }
 
   @override
   String toString() {
-    return 'TaskList(id: $id, name: $name, emoji: $emoji, isDefault: $isDefault, projectId: $projectId)';
+    return 'Project(id: $id, name: $name, emoji: $emoji, isDefault: $isDefault)';
   }
 }

@@ -3,15 +3,19 @@ import 'package:uuid/uuid.dart';
 import 'dart:async';
 import '../models/list_model.dart';
 import '../models/task_model.dart';
+import '../models/project_model.dart';
 import '../repositories/task_repository.dart';
+import '../repositories/project_repository.dart';
 
 class TaskController extends ChangeNotifier {
   final TaskRepository _repository = TaskRepository();
+  final ProjectRepository _projectRepository = ProjectRepository();
   final _uuid = Uuid();
 
   // StreamSubscriptions - CRÍTICO para evitar piscar
   StreamSubscription? _listsSubscription;
   StreamSubscription? _tasksSubscription;
+  StreamSubscription? _projectsSubscription;
 
   // Estado da UI
   bool _isLoading = false;
@@ -20,37 +24,54 @@ class TaskController extends ChangeNotifier {
   // Dados principais
   List<TaskList> _lists = [];
   List<Task> _tasks = [];
+  List<Project> _projects = [];
+
   // Estado de filtros e busca
   String _searchQuery = '';
   String? _selectedListId;
   String? _selectedTaskId;
+  String? _selectedProjectId;
   bool _showCompletedTasks = true;
   TaskPriority? _selectedPriority;
-  bool _showOnlyImportant = false;
-  // Getters públicos
+  bool _showOnlyImportant = false; // Getters públicos
   bool get isLoading => _isLoading;
   String? get error => _error;
-  List<TaskList> get lists => _lists;
+  List<TaskList> get lists => _getFilteredLists();
   List<Task> get tasks => _getFilteredTasks();
+  List<Project> get projects => _projects;
   String get searchQuery => _searchQuery;
   String? get selectedListId => _selectedListId;
   String? get selectedTaskId => _selectedTaskId;
+  String? get selectedProjectId => _selectedProjectId;
   bool get showCompletedTasks => _showCompletedTasks;
   TaskPriority? get selectedPriority => _selectedPriority;
   bool get showOnlyImportant => _showOnlyImportant;
-
   // Constructor com StreamSubscription - ITEM #2 das instruções
   TaskController() {
     _subscribeToStreams();
     _repository.createDefaultListIfNeeded();
+    _projectRepository.createDefaultProjectIfNeeded();
   }
 
   // ============================================================================
   // STREAM SUBSCRIPTIONS - CRÍTICO PARA NÃO PISCAR
   // ============================================================================
-
   void _subscribeToStreams() {
     _setLoading(true);
+
+    // Subscription para projetos
+    _projectsSubscription = _projectRepository.getProjectsStream().listen(
+      (projects) {
+        _projects = projects;
+        _setLoading(false);
+        _clearError();
+        notifyListeners();
+      },
+      onError: (error) {
+        _setError('Erro ao carregar projetos: $error');
+        _setLoading(false);
+      },
+    );
 
     // Subscription para listas
     _listsSubscription = _repository.getListsStream().listen(
@@ -86,12 +107,21 @@ class TaskController extends ChangeNotifier {
     // ITEM #8 das instruções - SEMPRE cancelar StreamSubscription
     _listsSubscription?.cancel();
     _tasksSubscription?.cancel();
+    _projectsSubscription?.cancel();
     super.dispose();
   }
 
   // ============================================================================
   // MÉTODOS ESPECÍFICOS PARA GenericSelectorList - ITEM #5 das instruções
   // ============================================================================
+  /// Método específico para GenericSelectorList - retorna mesma instância
+  Project? getProjectById(String id) {
+    try {
+      return _projects.firstWhere((project) => project.id == id);
+    } catch (e) {
+      return null;
+    }
+  }
 
   /// Método específico para GenericSelectorList - retorna mesma instância
   TaskList? getListById(String id) {
@@ -110,10 +140,24 @@ class TaskController extends ChangeNotifier {
       return null;
     }
   }
-
   // ============================================================================
   // MÉTODOS PRIVADOS PARA FILTROS - ITEM #9 das instruções
   // ============================================================================
+
+  /// Método privado para filtrar listas por projeto selecionado
+  List<TaskList> _getFilteredLists() {
+    List<TaskList> filtered = _lists;
+
+    // Filtro por projeto selecionado
+    if (_selectedProjectId != null) {
+      filtered =
+          filtered
+              .where((list) => list.projectId == _selectedProjectId)
+              .toList();
+    }
+
+    return filtered;
+  }
 
   /// Método privado para filtros - NUNCA use where().toList() direto em getters
   List<Task> _getFilteredTasks() {
@@ -121,16 +165,21 @@ class TaskController extends ChangeNotifier {
 
     // Filtro por lista selecionada
     if (_selectedListId != null) {
-      filtered = filtered.where((task) => task.listId == _selectedListId).toList();
+      filtered =
+          filtered.where((task) => task.listId == _selectedListId).toList();
     }
 
     // Filtro por busca
     if (_searchQuery.isNotEmpty) {
       final query = _searchQuery.toLowerCase();
-      filtered = filtered.where((task) => 
-        task.title.toLowerCase().contains(query) ||
-        task.description.toLowerCase().contains(query)
-      ).toList();
+      filtered =
+          filtered
+              .where(
+                (task) =>
+                    task.title.toLowerCase().contains(query) ||
+                    task.description.toLowerCase().contains(query),
+              )
+              .toList();
     }
 
     // Filtro por tarefas completas
@@ -140,7 +189,8 @@ class TaskController extends ChangeNotifier {
 
     // Filtro por prioridade
     if (_selectedPriority != null) {
-      filtered = filtered.where((task) => task.priority == _selectedPriority).toList();
+      filtered =
+          filtered.where((task) => task.priority == _selectedPriority).toList();
     }
 
     // Filtro por importantes
@@ -159,18 +209,21 @@ class TaskController extends ChangeNotifier {
 
   /// Obter tarefas de uma lista específica
   List<Task> getTasksByList(String listId) {
-    return _tasks.where((task) => 
-      task.listId == listId && task.parentTaskId == null
-    ).toList();
+    return _tasks
+        .where((task) => task.listId == listId && task.parentTaskId == null)
+        .toList();
   }
 
   /// Contar tarefas pendentes em uma lista
   int countPendingTasksInList(String listId) {
-    return _tasks.where((task) => 
-      task.listId == listId && 
-      !task.isCompleted && 
-      task.parentTaskId == null
-    ).length;
+    return _tasks
+        .where(
+          (task) =>
+              task.listId == listId &&
+              !task.isCompleted &&
+              task.parentTaskId == null,
+        )
+        .length;
   }
 
   // ============================================================================
@@ -198,14 +251,14 @@ class TaskController extends ChangeNotifier {
       if (currentList == null) {
         throw Exception('Lista não encontrada');
       }
-      
+
       final updatedList = currentList.copyWith(
         name: formData['name'],
         color: formData['color'],
         emoji: formData['emoji'],
         sortOrder: formData['sortOrder'],
       );
-      
+
       await _repository.updateList(updatedList);
       _clearError();
     } catch (e) {
@@ -219,15 +272,81 @@ class TaskController extends ChangeNotifier {
     try {
       _setLoading(true);
       await _repository.deleteList(listId);
-      
+
       // Se a lista deletada era a selecionada, limpar seleção
       if (_selectedListId == listId) {
         _selectedListId = null;
       }
-      
+
       _clearError();
     } catch (e) {
       _setError('Erro ao deletar lista: $e');
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  // ============================================================================
+  // CRUD - PROJETOS
+  // ============================================================================
+
+  Future<void> addProject(Map<String, dynamic> formData) async {
+    try {
+      _setLoading(true);
+      final id = _uuid.v4();
+      final project = Project.fromFormData(formData, id);
+      await _projectRepository.addProject(project);
+      _clearError();
+    } catch (e) {
+      _setError('Erro ao criar projeto: $e');
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  Future<void> updateProject(
+    String projectId,
+    Map<String, dynamic> formData,
+  ) async {
+    try {
+      _setLoading(true);
+      final currentProject = getProjectById(projectId);
+      if (currentProject == null) {
+        throw Exception('Projeto não encontrado');
+      }
+
+      final updatedProject = currentProject.copyWith(
+        name: formData['name'],
+        description: formData['description'],
+        color: formData['color'],
+        emoji: formData['emoji'],
+        sortOrder: formData['sortOrder'],
+        isArchived: formData['isArchived'],
+      );
+
+      await _projectRepository.updateProject(updatedProject);
+      _clearError();
+    } catch (e) {
+      _setError('Erro ao atualizar projeto: $e');
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  Future<void> deleteProject(String projectId) async {
+    try {
+      _setLoading(true);
+      await _projectRepository.deleteProject(projectId);
+
+      // Se o projeto deletado era o selecionado, limpar seleção
+      if (_selectedProjectId == projectId) {
+        _selectedProjectId = null;
+        _selectedListId = null;
+      }
+
+      _clearError();
+    } catch (e) {
+      _setError('Erro ao deletar projeto: $e');
     } finally {
       _setLoading(false);
     }
@@ -258,7 +377,7 @@ class TaskController extends ChangeNotifier {
       if (currentTask == null) {
         throw Exception('Tarefa não encontrada');
       }
-      
+
       final updatedTask = currentTask.copyWith(
         title: formData['title'],
         description: formData['description'],
@@ -268,7 +387,7 @@ class TaskController extends ChangeNotifier {
         isImportant: formData['isImportant'],
         notes: formData['notes'],
       );
-      
+
       await _repository.updateTask(updatedTask);
       _clearError();
     } catch (e) {
@@ -294,7 +413,7 @@ class TaskController extends ChangeNotifier {
     try {
       final task = getTaskById(taskId);
       if (task == null) return;
-      
+
       await _repository.toggleTaskCompletion(taskId, !task.isCompleted);
       _clearError();
     } catch (e) {
@@ -306,7 +425,7 @@ class TaskController extends ChangeNotifier {
     try {
       final task = getTaskById(taskId);
       if (task == null) return;
-      
+
       await _repository.toggleTaskImportant(taskId, !task.isImportant);
       _clearError();
     } catch (e) {
@@ -340,6 +459,17 @@ class TaskController extends ChangeNotifier {
       notifyListeners();
     }
   }
+
+  void selectProject(String? projectId) {
+    if (_selectedProjectId != projectId) {
+      _selectedProjectId = projectId;
+      // Limpar seleção de lista quando mudar de projeto
+      _selectedListId = null;
+      _selectedTaskId = null;
+      notifyListeners();
+    }
+  }
+
   void selectList(String? listId) {
     if (_selectedListId != listId) {
       _selectedListId = listId;
@@ -384,35 +514,41 @@ class TaskController extends ChangeNotifier {
 
   void clearAllFilters() {
     bool hasChanges = false;
-    
+
     if (_searchQuery.isNotEmpty) {
       _searchQuery = '';
       hasChanges = true;
     }
-    
+
+    if (_selectedProjectId != null) {
+      _selectedProjectId = null;
+      hasChanges = true;
+    }
+
     if (_selectedListId != null) {
       _selectedListId = null;
       hasChanges = true;
     }
-    
+
     if (!_showCompletedTasks) {
       _showCompletedTasks = true;
       hasChanges = true;
     }
-    
+
     if (_selectedPriority != null) {
       _selectedPriority = null;
       hasChanges = true;
     }
-    
+
     if (_showOnlyImportant) {
       _showOnlyImportant = false;
       hasChanges = true;
     }
-      if (hasChanges) {
+    if (hasChanges) {
       notifyListeners();
     }
   }
+
   // ============================================================================
   // CRUD - LISTAS
   // ============================================================================
@@ -425,8 +561,9 @@ class TaskController extends ChangeNotifier {
         emoji: list.emoji,
         isDefault: list.isDefault,
         sortOrder: list.sortOrder,
+        projectId: list.projectId,
       );
-      
+
       await _repository.addList(newList);
     } catch (e) {
       _setError('Erro ao criar lista: $e');
@@ -448,7 +585,7 @@ class TaskController extends ChangeNotifier {
         parentTaskId: task.parentTaskId,
         notes: task.notes,
       );
-      
+
       await _repository.addTask(newTask);
     } catch (e) {
       _setError('Erro ao criar tarefa: $e');
@@ -483,12 +620,14 @@ class TaskController extends ChangeNotifier {
   // ============================================================================
   // MÉTODOS PARA DEBUG
   // ============================================================================
-
   void debugPrintState() {
     print('🔍 TaskController Debug:');
+    print('  Projects: ${_projects.length}');
     print('  Lists: ${_lists.length}');
+    print('  Filtered Lists: ${lists.length}');
     print('  Tasks: ${_tasks.length}');
     print('  Filtered Tasks: ${tasks.length}');
+    print('  Selected Project: $_selectedProjectId');
     print('  Selected List: $_selectedListId');
     print('  Search Query: "$_searchQuery"');
     print('  Loading: $_isLoading');
