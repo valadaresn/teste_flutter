@@ -2,10 +2,11 @@ import 'package:flutter/material.dart';
 import '../../controllers/task_controller.dart';
 import '../../models/list_model.dart' as Models;
 
-/// **ListFormDialog** - Diálogo para criação de listas
+/// **ListFormDialog** - Diálogo para criação e edição de listas
 ///
 /// Este componente é responsável por:
 /// - Exibir formulário para criar novas listas
+/// - Exibir formulário para editar listas existentes
 /// - Validar dados de entrada
 /// - Permitir seleção de emoji e cor
 /// - Mostrar informações do projeto selecionado
@@ -16,11 +17,17 @@ import '../../models/list_model.dart' as Models;
 /// - Seleção de cor de uma paleta predefinida
 /// - Informação contextual do projeto ativo
 /// - Validação de nome obrigatório
-/// - Integração com TaskController para criação
+/// - Integração com TaskController para operações CRUD
+/// - Suporte para criação (list = null) e edição (list != null)
 class ListFormDialog extends StatefulWidget {
   final TaskController controller;
+  final Models.TaskList? list; // null = criação, não-null = edição
 
-  const ListFormDialog({Key? key, required this.controller}) : super(key: key);
+  const ListFormDialog({
+    Key? key,
+    required this.controller,
+    this.list, // Parâmetro opcional para edição
+  }) : super(key: key);
 
   @override
   State<ListFormDialog> createState() => _ListFormDialogState();
@@ -60,10 +67,20 @@ class _ListFormDialogState extends State<ListFormDialog> {
   void initState() {
     super.initState();
 
-    // Inicializar com valores padrão para criação
-    _nameController = TextEditingController();
-    _selectedEmoji = '📋';
-    _selectedColor = Colors.blue;
+    // Inicializar campos baseado no modo (criação vs edição)
+    final editingList = widget.list;
+
+    if (editingList != null) {
+      // Modo edição - pré-preencher com dados existentes
+      _nameController = TextEditingController(text: editingList.name);
+      _selectedEmoji = editingList.emoji;
+      _selectedColor = editingList.color;
+    } else {
+      // Modo criação - valores padrão
+      _nameController = TextEditingController();
+      _selectedEmoji = '📋';
+      _selectedColor = Colors.blue;
+    }
   }
 
   @override
@@ -84,10 +101,10 @@ class _ListFormDialogState extends State<ListFormDialog> {
     return AlertDialog(
       title: Row(
         children: [
-          const Text('Nova Lista'),
+          Text(widget.list != null ? 'Editar Lista' : 'Nova Lista'),
 
-          // Mostrar projeto selecionado
-          if (selectedProject != null) ...[
+          // Mostrar projeto selecionado (apenas para criação)
+          if (widget.list == null && selectedProject != null) ...[
             const SizedBox(width: 8),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
@@ -206,7 +223,7 @@ class _ListFormDialogState extends State<ListFormDialog> {
                     );
                   }).toList(),
             ), // Informação do projeto (apenas para criação)
-            if (selectedProject != null) ...[
+            if (widget.list == null && selectedProject != null) ...[
               const SizedBox(height: 20),
               Container(
                 padding: const EdgeInsets.all(12),
@@ -250,17 +267,16 @@ class _ListFormDialogState extends State<ListFormDialog> {
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
           child: const Text('Cancelar'),
-        ),
-        // Botão de ação principal
+        ), // Botão de ação principal
         ElevatedButton(
           onPressed: () => _saveList(),
-          child: const Text('Criar'),
+          child: Text(widget.list != null ? 'Salvar' : 'Criar'),
         ),
       ],
     );
   }
 
-  /// Salva a lista (criação)
+  /// Salva a lista (criação ou edição)
   void _saveList() {
     final name = _nameController.text.trim();
 
@@ -275,15 +291,41 @@ class _ListFormDialogState extends State<ListFormDialog> {
       return;
     }
 
-    // Criação de nova lista
-    final newList = Models.TaskList.create(
-      id: '', // ID será gerado automaticamente
-      name: name,
-      color: _selectedColor,
-      emoji: _selectedEmoji,
-      projectId: widget.controller.selectedProjectId,
-    );
-    widget.controller.createList(newList);
+    final editingList = widget.list;
+    if (editingList != null) {
+      // Modo edição - atualizar lista existente
+      final formData = {
+        'name': name,
+        'color': _selectedColor,
+        'emoji': _selectedEmoji,
+        'sortOrder': editingList.sortOrder, // Manter ordem atual
+      };
+      widget.controller.updateList(editingList.id, formData);
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Lista atualizada com sucesso'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    } else {
+      // Modo criação - criar nova lista
+      final newList = Models.TaskList.create(
+        id: '', // ID será gerado automaticamente
+        name: name,
+        color: _selectedColor,
+        emoji: _selectedEmoji,
+        projectId: widget.controller.selectedProjectId,
+      );
+      widget.controller.createList(newList);
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Lista criada com sucesso'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    }
 
     Navigator.of(context).pop();
   }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../controllers/task_controller.dart';
 import '../../models/list_model.dart' as Models;
 import 'list_form_dialog.dart';
+import 'list_item.dart';
 
 /// **ListPanel** - Painel de gerenciamento de listas de tarefas
 ///
@@ -112,44 +113,11 @@ class ListPanel extends StatelessWidget {
       itemBuilder: (context, index) {
         final list = lists[index];
         final isSelected = controller.selectedListId == list.id;
-        final pendingTasksCount = controller.countPendingTasksInList(list.id);
 
-        return ListTile(
-          dense: true,
-          leading: Text(list.emoji, style: const TextStyle(fontSize: 18)),
-          title: Text(
-            list.name,
-            style: TextStyle(
-              fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-            ),
-          ),
-          trailing: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-            decoration: BoxDecoration(
-              color:
-                  pendingTasksCount > 0
-                      ? Theme.of(context).colorScheme.primary.withOpacity(0.1)
-                      : Theme.of(context).colorScheme.outline.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Text(
-              '$pendingTasksCount',
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w500,
-                color:
-                    pendingTasksCount > 0
-                        ? Theme.of(context).colorScheme.primary
-                        : Theme.of(
-                          context,
-                        ).colorScheme.onSurface.withOpacity(0.6),
-              ),
-            ),
-          ),
-          selected: isSelected,
-          selectedTileColor: Theme.of(
-            context,
-          ).colorScheme.primary.withOpacity(0.1),
+        return ListItem(
+          list: list,
+          controller: controller,
+          isSelected: isSelected,
           onTap: () => _selectList(list),
         );
       },
