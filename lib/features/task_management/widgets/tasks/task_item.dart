@@ -1,10 +1,13 @@
+// Arquivo renomeado de task_card.dart para task_item.dart para padronização com outros componentes do projeto.
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../controllers/task_controller.dart';
 import '../../models/task_model.dart';
 import '../../themes/theme_provider.dart';
+import '../../themes/app_theme.dart';
 
-class TaskCard extends StatelessWidget {
+class TaskItem extends StatelessWidget {
   final Task task;
   final TaskController controller;
   final VoidCallback onToggleComplete;
@@ -13,7 +16,7 @@ class TaskCard extends StatelessWidget {
   final VoidCallback onEdit;
   final VoidCallback onDelete;
 
-  const TaskCard({
+  const TaskItem({
     Key? key,
     required this.task,
     required this.controller,
@@ -22,38 +25,55 @@ class TaskCard extends StatelessWidget {
     required this.onTap,
     required this.onEdit,
     required this.onDelete,
-  }) : super(key: key);  @override
+  }) : super(key: key);
+  @override
   Widget build(BuildContext context) {
     final isSelected = controller.selectedTaskId == task.id;
-    final selectedList = controller.selectedListId != null 
-        ? controller.getListById(controller.selectedListId!)
-        : null;
-    
+    final selectedList =
+        controller.selectedListId != null
+            ? controller.getListById(controller.selectedListId!)
+            : null;
+
     // Cor baseada na lista selecionada ou cor padrão
     final listColor = selectedList?.color ?? Theme.of(context).primaryColor;
-    
+
     // Usar o ThemeProvider para obter configurações
-    final themeProvider = Provider.of<ThemeProvider>(context);    return Container(
+    final themeProvider = Provider.of<ThemeProvider>(context);
+
+    // Determinar cor da borda e propriedades quando selecionado
+    Color borderColor;
+    if (isSelected && themeProvider.cardStyle == CardStyle.clean) {
+      // Clean style: usar cor primary do tema quando selecionado
+      borderColor = Theme.of(context).colorScheme.primary;
+    } else {
+      // Dynamic style: comportamento original
+      borderColor = themeProvider.getCardBorderColor(isSelected, listColor);
+    }
+
+    return Container(
       margin: const EdgeInsets.symmetric(vertical: 0.2),
       decoration: BoxDecoration(
-        color: themeProvider.getCardGradient(isSelected) == null 
-            ? themeProvider.getCardColor(isSelected)
-            : null,
+        color:
+            themeProvider.getCardGradient(isSelected) == null
+                ? themeProvider.getCardColor(isSelected)
+                : null,
         gradient: themeProvider.getCardGradient(isSelected),
         borderRadius: BorderRadius.circular(themeProvider.getBorderRadius()),
         border: Border.all(
-          color: themeProvider.getCardBorderColor(isSelected, listColor),
+          color: borderColor,
           width: themeProvider.getCardBorderWidth(isSelected),
         ),
         boxShadow: themeProvider.getCardShadow(isSelected),
       ),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(themeProvider.getBorderRadius()),        child: Padding(
+        borderRadius: BorderRadius.circular(themeProvider.getBorderRadius()),
+        child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.center,
-            children: [              // Checkbox circular
+            children: [
+              // Checkbox circular
               GestureDetector(
                 onTap: onToggleComplete,
                 child: Container(
@@ -62,27 +82,25 @@ class TaskCard extends StatelessWidget {
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     border: Border.all(
-                      color: task.isCompleted 
-                          ? listColor
-                          : Colors.grey.shade400,
+                      color:
+                          task.isCompleted ? listColor : Colors.grey.shade400,
                       width: 2,
                     ),
-                    color: task.isCompleted 
-                        ? listColor
-                        : Colors.transparent,
+                    color: task.isCompleted ? listColor : Colors.transparent,
                   ),
-                  child: task.isCompleted
-                      ? const Icon(
-                          Icons.check,
-                          color: Colors.white,
-                          size: 14,
-                        )
-                      : null,
+                  child:
+                      task.isCompleted
+                          ? const Icon(
+                            Icons.check,
+                            color: Colors.white,
+                            size: 14,
+                          )
+                          : null,
                 ),
               ),
-              
+
               const SizedBox(width: 12),
-              
+
               // Conteúdo da tarefa
               Expanded(
                 child: Column(
@@ -94,17 +112,19 @@ class TaskCard extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w400,
-                        color: task.isCompleted
-                            ? Colors.grey.shade500
-                            : Colors.black87,
-                        decoration: task.isCompleted 
-                            ? TextDecoration.lineThrough 
-                            : null,
+                        color:
+                            task.isCompleted
+                                ? Colors.grey.shade500
+                                : Colors.black87,
+                        decoration:
+                            task.isCompleted
+                                ? TextDecoration.lineThrough
+                                : null,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    
+
                     // Informações secundárias (linha menor e discreta)
                     if (_hasSecondaryInfo()) ...[
                       const SizedBox(height: 2),
@@ -113,7 +133,7 @@ class TaskCard extends StatelessWidget {
                   ],
                 ),
               ),
-              
+
               // Ícone de estrela (importante)
               if (task.isImportant)
                 Padding(
@@ -127,7 +147,7 @@ class TaskCard extends StatelessWidget {
                     ),
                   ),
                 ),
-                // Menu de ações (pequeno e discreto)
+              // Menu de ações (pequeno e discreto)
               PopupMenuButton<String>(
                 onSelected: _handleMenuAction,
                 icon: Icon(
@@ -136,58 +156,63 @@ class TaskCard extends StatelessWidget {
                   color: Colors.grey.shade400,
                 ),
                 padding: EdgeInsets.zero,
-                itemBuilder: (context) => [
-                  const PopupMenuItem(
-                    value: 'edit',
-                    child: Row(
-                      children: [
-                        Icon(Icons.edit, size: 16),
-                        SizedBox(width: 8),
-                        Text('Editar'),
-                      ],
-                    ),
-                  ),
-                  const PopupMenuItem(
-                    value: 'duplicate',
-                    child: Row(
-                      children: [
-                        Icon(Icons.copy, size: 16),
-                        SizedBox(width: 8),
-                        Text('Duplicar'),
-                      ],
-                    ),
-                  ),
-                  const PopupMenuDivider(),
-                  const PopupMenuItem(
-                    value: 'delete',
-                    child: Row(
-                      children: [
-                        Icon(Icons.delete, size: 16, color: Colors.red),
-                        SizedBox(width: 8),
-                        Text('Excluir', style: TextStyle(color: Colors.red)),
-                      ],
-                    ),
-                  ),
-                ],
+                itemBuilder:
+                    (context) => [
+                      const PopupMenuItem(
+                        value: 'edit',
+                        child: Row(
+                          children: [
+                            Icon(Icons.edit, size: 16),
+                            SizedBox(width: 8),
+                            Text('Editar'),
+                          ],
+                        ),
+                      ),
+                      const PopupMenuItem(
+                        value: 'duplicate',
+                        child: Row(
+                          children: [
+                            Icon(Icons.copy, size: 16),
+                            SizedBox(width: 8),
+                            Text('Duplicar'),
+                          ],
+                        ),
+                      ),
+                      const PopupMenuDivider(),
+                      const PopupMenuItem(
+                        value: 'delete',
+                        child: Row(
+                          children: [
+                            Icon(Icons.delete, size: 16, color: Colors.red),
+                            SizedBox(width: 8),
+                            Text(
+                              'Excluir',
+                              style: TextStyle(color: Colors.red),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
               ),
             ],
           ),
         ),
       ),
-    );  }
+    );
+  }
 
   bool _hasSecondaryInfo() {
-    return task.description.isNotEmpty || 
-           task.dueDate != null || 
-           controller.getSubtasks(task.id).isNotEmpty;
+    return task.description.isNotEmpty ||
+        task.dueDate != null ||
+        controller.getSubtasks(task.id).isNotEmpty;
   }
 
   Widget _buildSecondaryInfo(BuildContext context) {
     final subtasks = controller.getSubtasks(task.id);
     final completedSubtasks = subtasks.where((s) => s.isCompleted).length;
-    
+
     List<Widget> infoWidgets = [];
-    
+
     // Descrição ou anotação
     if (task.description.isNotEmpty) {
       infoWidgets.add(
@@ -202,16 +227,13 @@ class TaskCard extends StatelessWidget {
             const SizedBox(width: 4),
             Text(
               'Anotação',
-              style: TextStyle(
-                fontSize: 12,
-                color: Colors.grey.shade600,
-              ),
+              style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
             ),
           ],
         ),
       );
     }
-    
+
     // Data de vencimento
     if (task.dueDate != null) {
       infoWidgets.add(
@@ -235,7 +257,7 @@ class TaskCard extends StatelessWidget {
         ),
       );
     }
-    
+
     // Subtarefas
     if (subtasks.isNotEmpty) {
       infoWidgets.add(
@@ -250,21 +272,18 @@ class TaskCard extends StatelessWidget {
             const SizedBox(width: 4),
             Text(
               '$completedSubtasks/${subtasks.length}',
-              style: TextStyle(
-                fontSize: 12,
-                color: Colors.grey.shade600,
-              ),
+              style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
             ),
           ],
         ),
       );
     }
-    
+
     return Row(
       children: [
         for (int i = 0; i < infoWidgets.length; i++) ...[
           infoWidgets[i],
-          if (i < infoWidgets.length - 1) 
+          if (i < infoWidgets.length - 1)
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 8),
               child: Container(
@@ -282,7 +301,7 @@ class TaskCard extends StatelessWidget {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
     final taskDate = DateTime(date.year, date.month, date.day);
-    
+
     if (taskDate == today) {
       return 'hoje';
     } else if (taskDate == today.add(const Duration(days: 1))) {
@@ -293,6 +312,7 @@ class TaskCard extends StatelessWidget {
       return '${date.day}/${date.month}';
     }
   }
+
   void _handleMenuAction(String action) {
     switch (action) {
       case 'edit':

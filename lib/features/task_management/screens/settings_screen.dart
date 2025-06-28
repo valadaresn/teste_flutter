@@ -25,6 +25,12 @@ class SettingsScreen extends StatelessWidget {
             children: [
               _buildSectionHeader(context, 'Aparência'),
               _buildThemeSelector(context, themeProvider),
+              const SizedBox(height: 24),
+              _buildSectionHeader(context, 'Estilo do Painel de Lista'),
+              _buildListStyleSelector(context, themeProvider),
+              const SizedBox(height: 24),
+              _buildSectionHeader(context, 'Estilo de Tarefas'),
+              _buildCardStyleSelector(context, themeProvider),
               const SizedBox(height: 32),
               _buildSectionHeader(context, 'Sobre'),
               _buildAboutSection(context),
@@ -48,7 +54,10 @@ class SettingsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildThemeSelector(BuildContext context, ThemeProvider themeProvider) {
+  Widget _buildThemeSelector(
+    BuildContext context,
+    ThemeProvider themeProvider,
+  ) {
     return Column(
       children: [
         _buildThemeOption(
@@ -88,37 +97,41 @@ class SettingsScreen extends StatelessWidget {
     IconData icon,
   ) {
     final isSelected = themeProvider.currentTheme == theme;
-    
+
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: isSelected 
-              ? Theme.of(context).colorScheme.primary
-              : Theme.of(context).dividerColor,
+          color:
+              isSelected
+                  ? Theme.of(context).colorScheme.primary
+                  : Theme.of(context).dividerColor,
           width: isSelected ? 2 : 1,
         ),
-        color: isSelected 
-            ? Theme.of(context).colorScheme.primary.withOpacity(0.1)
-            : Theme.of(context).colorScheme.surface,
+        color:
+            isSelected
+                ? Theme.of(context).colorScheme.primary.withOpacity(0.1)
+                : Theme.of(context).colorScheme.surface,
       ),
       child: ListTile(
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         leading: Icon(
           icon,
-          color: isSelected 
-              ? Theme.of(context).colorScheme.primary
-              : Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+          color:
+              isSelected
+                  ? Theme.of(context).colorScheme.primary
+                  : Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
           size: 28,
         ),
         title: Text(
           title,
           style: Theme.of(context).textTheme.titleMedium?.copyWith(
             fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-            color: isSelected 
-                ? Theme.of(context).colorScheme.primary
-                : Theme.of(context).colorScheme.onSurface,
+            color:
+                isSelected
+                    ? Theme.of(context).colorScheme.primary
+                    : Theme.of(context).colorScheme.onSurface,
           ),
         ),
         subtitle: Text(
@@ -127,13 +140,195 @@ class SettingsScreen extends StatelessWidget {
             color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
           ),
         ),
-        trailing: isSelected 
-            ? Icon(
-                Icons.check_circle,
-                color: Theme.of(context).colorScheme.primary,
-              )
-            : const Icon(Icons.radio_button_unchecked),
+        trailing:
+            isSelected
+                ? Icon(
+                  Icons.check_circle,
+                  color: Theme.of(context).colorScheme.primary,
+                )
+                : const Icon(Icons.radio_button_unchecked),
         onTap: () => themeProvider.setTheme(theme),
+      ),
+    );
+  }
+
+  Widget _buildListStyleSelector(
+    BuildContext context,
+    ThemeProvider themeProvider,
+  ) {
+    return Column(
+      children: [
+        _buildListStyleOption(
+          context,
+          themeProvider,
+          ListPanelStyle.compact,
+          'Compacto',
+          'Layout minimalista com animações e borda lateral',
+          Icons.view_headline,
+        ),
+        _buildListStyleOption(
+          context,
+          themeProvider,
+          ListPanelStyle.decorated,
+          'Decorado',
+          'Visual moderno com ícones destacados estilo Monday.com',
+          Icons.view_module,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildListStyleOption(
+    BuildContext context,
+    ThemeProvider themeProvider,
+    ListPanelStyle style,
+    String title,
+    String description,
+    IconData icon,
+  ) {
+    final isSelected = themeProvider.listPanelStyle == style;
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color:
+              isSelected
+                  ? Theme.of(context).colorScheme.primary
+                  : Theme.of(context).dividerColor,
+          width: isSelected ? 2 : 1,
+        ),
+        color:
+            isSelected
+                ? Theme.of(context).colorScheme.primary.withOpacity(0.1)
+                : Theme.of(context).colorScheme.surface,
+      ),
+      child: ListTile(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        leading: Icon(
+          icon,
+          color:
+              isSelected
+                  ? Theme.of(context).colorScheme.primary
+                  : Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+          size: 28,
+        ),
+        title: Text(
+          title,
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+            fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+            color:
+                isSelected
+                    ? Theme.of(context).colorScheme.primary
+                    : Theme.of(context).colorScheme.onSurface,
+          ),
+        ),
+        subtitle: Text(
+          description,
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+          ),
+        ),
+        trailing:
+            isSelected
+                ? Icon(
+                  Icons.check_circle,
+                  color: Theme.of(context).colorScheme.primary,
+                )
+                : const Icon(Icons.radio_button_unchecked),
+        onTap: () => themeProvider.setListPanelStyle(style),
+      ),
+    );
+  }
+
+  // Novo método para seletor de estilo de cards
+  Widget _buildCardStyleSelector(
+    BuildContext context,
+    ThemeProvider themeProvider,
+  ) {
+    return Column(
+      children: [
+        _buildCardStyleOption(
+          context,
+          themeProvider,
+          CardStyle.dynamic,
+          'Dinâmico',
+          'Cards mudam de cor conforme a lista selecionada',
+          Icons.palette,
+        ),
+        _buildCardStyleOption(
+          context,
+          themeProvider,
+          CardStyle.clean,
+          'Clean',
+          'Design minimalista com cor de fundo constante',
+          Icons.format_color_reset,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildCardStyleOption(
+    BuildContext context,
+    ThemeProvider themeProvider,
+    CardStyle style,
+    String title,
+    String description,
+    IconData icon,
+  ) {
+    final isSelected = themeProvider.cardStyle == style;
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color:
+              isSelected
+                  ? Theme.of(context).colorScheme.primary
+                  : Theme.of(context).dividerColor,
+          width: isSelected ? 2 : 1,
+        ),
+        color:
+            isSelected
+                ? Theme.of(context).colorScheme.primary.withOpacity(0.1)
+                : Theme.of(context).colorScheme.surface,
+      ),
+      child: ListTile(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        leading: Icon(
+          icon,
+          color:
+              isSelected
+                  ? Theme.of(context).colorScheme.primary
+                  : Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+          size: 28,
+        ),
+        title: Text(
+          title,
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+            fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+            color:
+                isSelected
+                    ? Theme.of(context).colorScheme.primary
+                    : Theme.of(context).colorScheme.onSurface,
+          ),
+        ),
+        subtitle: Text(
+          description,
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+          ),
+        ),
+        trailing:
+            isSelected
+                ? Icon(
+                  Icons.check_circle,
+                  color: Theme.of(context).colorScheme.primary,
+                )
+                : const Icon(Icons.radio_button_unchecked),
+        onTap: () => themeProvider.setCardStyle(style),
       ),
     );
   }
@@ -176,7 +371,9 @@ class SettingsScreen extends StatelessWidget {
                     children: [
                       Chip(
                         label: const Text('Flutter'),
-                        backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                        backgroundColor: Theme.of(
+                          context,
+                        ).colorScheme.primary.withOpacity(0.1),
                         labelStyle: TextStyle(
                           color: Theme.of(context).colorScheme.primary,
                           fontWeight: FontWeight.w500,
@@ -185,7 +382,9 @@ class SettingsScreen extends StatelessWidget {
                       const SizedBox(width: 8),
                       Chip(
                         label: const Text('Provider'),
-                        backgroundColor: Theme.of(context).colorScheme.secondary.withOpacity(0.1),
+                        backgroundColor: Theme.of(
+                          context,
+                        ).colorScheme.secondary.withOpacity(0.1),
                         labelStyle: TextStyle(
                           color: Theme.of(context).colorScheme.secondary,
                           fontWeight: FontWeight.w500,
@@ -194,7 +393,9 @@ class SettingsScreen extends StatelessWidget {
                       const SizedBox(width: 8),
                       Chip(
                         label: const Text('Firebase'),
-                        backgroundColor: Theme.of(context).colorScheme.tertiary.withOpacity(0.1),
+                        backgroundColor: Theme.of(
+                          context,
+                        ).colorScheme.tertiary.withOpacity(0.1),
                         labelStyle: TextStyle(
                           color: Theme.of(context).colorScheme.tertiary,
                           fontWeight: FontWeight.w500,

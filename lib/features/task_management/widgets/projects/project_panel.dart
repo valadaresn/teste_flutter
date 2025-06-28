@@ -68,7 +68,8 @@ class ProjectPanel extends StatelessWidget {
 
   /// Item especial para mostrar todos os projetos
   Widget _buildAllProjectsItem(BuildContext context) {
-    final isSelected = controller.selectedProjectId == null;
+    final isSelected =
+        controller.selectedProjectId == null && !controller.showTodayView;
 
     return ListTile(
       dense: true,
@@ -82,7 +83,8 @@ class ProjectPanel extends StatelessWidget {
 
   /// Item individual de projeto com opções de ação
   Widget _buildProjectItem(BuildContext context, dynamic project) {
-    final isSelected = controller.selectedProjectId == project.id;
+    final isSelected =
+        controller.selectedProjectId == project.id && !controller.showTodayView;
 
     return ListTile(
       dense: true,

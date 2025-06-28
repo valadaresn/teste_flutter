@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../../controllers/task_controller.dart';
 import '../../models/list_model.dart' as Models;
 
-/// **TaskAreaHeader** - Cabeçalho da área de tarefas
+/// **TaskPanelHeader** - Cabeçalho da área de tarefas
 ///
 /// Este componente é responsável por:
 /// - Exibir informações da lista selecionada (nome, emoji, contador)
@@ -15,13 +15,13 @@ import '../../models/list_model.dart' as Models;
 /// - Contadores de tarefas pendentes contextual
 /// - Botões de ação integrados
 /// - Design responsivo e acessível
-class TaskAreaHeader extends StatelessWidget {
+class TaskPanelHeader extends StatelessWidget {
   final TaskController controller;
   final Models.TaskList? selectedList;
   final VoidCallback onShowSearch;
   final VoidCallback onShowFilter;
 
-  const TaskAreaHeader({
+  const TaskPanelHeader({
     Key? key,
     required this.controller,
     required this.selectedList,

@@ -3,6 +3,7 @@ import 'app_theme.dart';
 
 class ThemeConfig {
   final AppTheme theme;
+  final CardStyle cardStyle; // Nova propriedade
   final Color? cardColor;
   final Color? selectedCardColor;
   final Color? cardBorderColor;
@@ -21,6 +22,7 @@ class ThemeConfig {
 
   const ThemeConfig({
     required this.theme,
+    required this.cardStyle, // Inicializa a nova propriedade
     this.cardColor,
     this.selectedCardColor,
     this.cardBorderColor,
@@ -37,10 +39,10 @@ class ThemeConfig {
     this.selectedCardGradient,
     this.borderRadius = 8,
   });
-
   static ThemeConfig classic() {
     return const ThemeConfig(
       theme: AppTheme.classic,
+      cardStyle: CardStyle.dynamic, // Estilo dinâmico (padrão atual)
       cardColor: Colors.white,
       selectedCardOpacity: 0.2,
       selectedCardBorderWidth: 1,
@@ -50,14 +52,17 @@ class ThemeConfig {
   static ThemeConfig glass() {
     return const ThemeConfig(
       theme: AppTheme.glass,
+      cardStyle: CardStyle.dynamic, // Estilo dinâmico (padrão atual)
       cardOpacity: 0.15, // Todos os cards com glass
       selectedCardOpacity: 0.35, // Card selecionado mais intenso
       selectedCardBorderWidth: 2,
     );
   }
+
   static ThemeConfig modern() {
     return ThemeConfig(
       theme: AppTheme.modern,
+      cardStyle: CardStyle.dynamic, // Estilo dinâmico (padrão atual)
       cardColor: Colors.white,
       selectedCardColor: Colors.white,
       cardElevation: 4,
@@ -66,19 +71,12 @@ class ThemeConfig {
       cardGradient: LinearGradient(
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
-        colors: [
-          Colors.white,
-          Colors.grey.shade50,
-        ],
+        colors: [Colors.white, Colors.grey.shade50],
       ),
       selectedCardGradient: LinearGradient(
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
-        colors: [
-          Colors.blue.shade50,
-          Colors.indigo.shade50,
-          Colors.white,
-        ],
+        colors: [Colors.blue.shade50, Colors.indigo.shade50, Colors.white],
         stops: const [0.0, 0.3, 1.0],
       ),
       cardShadow: [
@@ -107,6 +105,27 @@ class ThemeConfig {
       ],
       selectedCardBorderWidth: 2,
       selectedCardBorderColor: Colors.blue.shade200,
+    );
+  }
+
+  // Novo factory method para tema clean
+  static ThemeConfig clean() {
+    return const ThemeConfig(
+      theme: AppTheme.classic, // Usa base classic
+      cardStyle: CardStyle.clean, // Estilo clean
+      cardColor: null, // Usa background color do tema
+      selectedCardColor: null, // Usa background color do tema
+      cardBorderColor: null, // Usa dividerColor do tema
+      selectedCardBorderColor: null, // Usa primary color do tema
+      cardBorderWidth: 1,
+      selectedCardBorderWidth: 2,
+      cardOpacity: 1.0,
+      selectedCardOpacity: 1.0,
+      cardElevation: 0,
+      selectedCardElevation: 0,
+      cardGradient: null, // Sem gradientes no clean
+      selectedCardGradient: null,
+      borderRadius: 8,
     );
   }
 

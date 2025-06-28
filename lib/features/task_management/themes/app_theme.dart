@@ -1,7 +1,29 @@
-enum AppTheme {
-  classic,
-  glass,
-  modern,
+enum AppTheme { classic, glass, modern }
+
+// Enum para estilos do painel de lista
+enum ListPanelStyle {
+  compact, // Estilo atual - minimalista com animações
+  decorated, // Estilo moderno - containers coloridos para emojis
+}
+
+// Enum para estilos de cards de tarefas
+enum CardStyle {
+  dynamic, // Estilo atual - muda com a lista selecionada
+  clean, // Estilo minimalista - cor de fundo constante
+}
+
+// Constantes de design para estilos de lista
+class ListStyleConstants {
+  // Estilo Compacto
+  static const double compactEmojiSize = 18.0;
+  static const bool compactDense = true;
+  static const double compactBorderWidth = 4.0;
+
+  // Estilo Decorado
+  static const double decoratedEmojiContainerSize = 40.0;
+  static const bool decoratedDense = false;
+  static const double decoratedContainerRadius = 8.0;
+  static const double decoratedEmojiSize = 20.0;
 }
 
 extension AppThemeExtension on AppTheme {

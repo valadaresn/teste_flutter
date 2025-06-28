@@ -123,7 +123,8 @@ class Task {
       'createdAt': Timestamp.fromDate(createdAt),
       'updatedAt': Timestamp.fromDate(updatedAt),
       'dueDate': dueDate != null ? Timestamp.fromDate(dueDate!) : null,
-      'completedAt': completedAt != null ? Timestamp.fromDate(completedAt!) : null,
+      'completedAt':
+          completedAt != null ? Timestamp.fromDate(completedAt!) : null,
       'tags': tags,
       'sortOrder': sortOrder,
       'isImportant': isImportant,
@@ -171,12 +172,15 @@ class Task {
   // Métodos de conveniência
   bool get isSubtask => parentTaskId != null;
   bool get isMainTask => parentTaskId == null;
-  bool get isOverdue => dueDate != null && !isCompleted && DateTime.now().isAfter(dueDate!);
+  bool get isOverdue =>
+      dueDate != null && !isCompleted && DateTime.now().isAfter(dueDate!);
   bool get isDueToday {
     if (dueDate == null) return false;
     final today = DateTime.now();
     final due = dueDate!;
-    return today.year == due.year && today.month == due.month && today.day == due.day;
+    return today.year == due.year &&
+        today.month == due.month &&
+        today.day == due.day;
   }
 
   // Marcar como completa/incompleta

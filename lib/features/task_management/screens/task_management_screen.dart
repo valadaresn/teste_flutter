@@ -5,8 +5,9 @@ import '../widgets/common/app_state_handler.dart'; // Novo componente extraído
 import '../widgets/common/task_app_bar.dart'; // Novo componente extraído
 import '../widgets/lists/list_panel.dart'; // Novo componente extraído
 import '../widgets/projects/project_panel.dart'; // Novo componente extraído
-import '../widgets/tasks/task_area.dart'; // Novo componente extraído
+import '../widgets/tasks/task_panel.dart'; // Novo componente extraído
 import '../widgets/tasks/task_detail_panel.dart';
+import '../widgets/today/today_panel.dart';
 
 class TaskManagementScreen extends StatelessWidget {
   const TaskManagementScreen({Key? key}) : super(key: key);
@@ -43,6 +44,10 @@ class TaskManagementScreen extends StatelessWidget {
           ),
           child: Column(
             children: [
+              // SEÇÃO HOJE - Botão sempre visível na sidebar
+              _buildTodaySection(context, controller),
+              Container(height: 1, color: Theme.of(context).dividerColor),
+
               // SEÇÃO DE PROJETOS - Extraída para componente separado
               ProjectPanel(controller: controller),
 
@@ -53,15 +58,20 @@ class TaskManagementScreen extends StatelessWidget {
               ListPanel(controller: controller),
             ],
           ),
-        ), // Área principal - Tarefas
+        ), // Área principal - Tarefas ou Visualização Hoje
         Expanded(
           child: Container(
             color: Theme.of(context).colorScheme.background,
-            child: TaskArea(
-              controller: controller,
-              onShowSearch: () => _showSearchDialog(context, controller),
-              onShowFilter: () => _showFilterDialog(context, controller),
-            ),
+            child:
+                controller.showTodayView
+                    ? _buildTodayPanel(context, controller)
+                    : TaskPanel(
+                      controller: controller,
+                      onShowSearch:
+                          () => _showSearchDialog(context, controller),
+                      onShowFilter:
+                          () => _showFilterDialog(context, controller),
+                    ),
           ),
         ),
 
@@ -110,5 +120,70 @@ class TaskManagementScreen extends StatelessWidget {
   void _showFilterDialog(BuildContext context, TaskController controller) {
     // TODO: Implementar diálogo de filtros
     print('🔽 Mostrar diálogo de filtros');
+  }
+
+  /// Constrói a seção "Hoje" na sidebar
+  Widget _buildTodaySection(BuildContext context, TaskController controller) {
+    final todayTasks = controller.getTodayTasks();
+    final overdueTasks = controller.getOverdueTasks();
+    final totalCount = todayTasks.length + overdueTasks.length;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: ListTile(
+        dense: true,
+        leading: Icon(
+          Icons.today,
+          size: 20,
+          color:
+              controller.showTodayView ? Theme.of(context).primaryColor : null,
+        ),
+        title: Text(
+          'Hoje',
+          style: TextStyle(
+            fontWeight:
+                controller.showTodayView ? FontWeight.bold : FontWeight.normal,
+            color:
+                controller.showTodayView
+                    ? Theme.of(context).primaryColor
+                    : null,
+          ),
+        ),
+        trailing:
+            totalCount > 0
+                ? Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 6,
+                    vertical: 2,
+                  ),
+                  decoration: BoxDecoration(
+                    color:
+                        controller.showTodayView
+                            ? Theme.of(context).primaryColor
+                            : Theme.of(context).colorScheme.outline,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Text(
+                    '$totalCount',
+                    style: TextStyle(
+                      color:
+                          controller.showTodayView
+                              ? Colors.white
+                              : Theme.of(context).colorScheme.onSurface,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                )
+                : null,
+        selected: controller.showTodayView,
+        onTap: () => controller.toggleTodayView(),
+      ),
+    );
+  }
+
+  /// Constrói o painel da visualização "Hoje" na área principal
+  Widget _buildTodayPanel(BuildContext context, TaskController controller) {
+    return TodayPanel(controller: controller);
   }
 }

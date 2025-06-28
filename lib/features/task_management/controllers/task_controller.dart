@@ -25,7 +25,6 @@ class TaskController extends ChangeNotifier {
   List<TaskList> _lists = [];
   List<Task> _tasks = [];
   List<Project> _projects = [];
-
   // Estado de filtros e busca
   String _searchQuery = '';
   String? _selectedListId;
@@ -33,7 +32,10 @@ class TaskController extends ChangeNotifier {
   String? _selectedProjectId;
   bool _showCompletedTasks = true;
   TaskPriority? _selectedPriority;
-  bool _showOnlyImportant = false; // Getters públicos
+  bool _showOnlyImportant = false;
+  bool _showTodayView = false; // Estado para visualização "Hoje"
+
+  // Getters públicos
   bool get isLoading => _isLoading;
   String? get error => _error;
   List<TaskList> get lists => _getFilteredLists();
@@ -46,6 +48,7 @@ class TaskController extends ChangeNotifier {
   bool get showCompletedTasks => _showCompletedTasks;
   TaskPriority? get selectedPriority => _selectedPriority;
   bool get showOnlyImportant => _showOnlyImportant;
+  bool get showTodayView => _showTodayView;
   // Constructor com StreamSubscription - ITEM #2 das instruções
   TaskController() {
     _subscribeToStreams();
@@ -163,6 +166,42 @@ class TaskController extends ChangeNotifier {
   List<Task> _getFilteredTasks() {
     List<Task> filtered = _tasks;
 
+    // PRIORIDADE: Se visualização "Hoje" está ativa, retornar tarefas combinadas
+    if (_showTodayView) {
+      List<Task> todayTasks = [];
+
+      // Adicionar tarefas atrasadas primeiro (prioridade)
+      todayTasks.addAll(getOverdueTasks());
+
+      // Adicionar tarefas de hoje
+      todayTasks.addAll(getTodayTasks());
+
+      // Aplicar filtros que ainda fazem sentido na visualização "Hoje"
+      if (_searchQuery.isNotEmpty) {
+        final query = _searchQuery.toLowerCase();
+        todayTasks =
+            todayTasks
+                .where(
+                  (task) =>
+                      task.title.toLowerCase().contains(query) ||
+                      task.description.toLowerCase().contains(query),
+                )
+                .toList();
+      }
+
+      // Filtro por prioridade (se aplicável)
+      if (_selectedPriority != null) {
+        todayTasks =
+            todayTasks
+                .where((task) => task.priority == _selectedPriority)
+                .toList();
+      }
+
+      return todayTasks;
+    }
+
+    // Lógica de filtros normal (quando não está na visualização "Hoje")
+
     // Filtro por lista selecionada
     if (_selectedListId != null) {
       filtered =
@@ -226,6 +265,147 @@ class TaskController extends ChangeNotifier {
         .length;
   }
 
+  // ============================================================================
+  // MÉTODOS PARA VISUALIZAÇÃO "HOJE" - ETAPA 2
+  // ============================================================================  /// Obter tarefas com prazo para hoje (não concluídas)
+  List<Task> getTodayTasks() {
+    final today = DateTime.now();
+    return _tasks
+        .where(
+          (task) =>
+              task.dueDate != null &&
+              _isSameDay(task.dueDate!, today) &&
+              !task.isCompleted &&
+              task.parentTaskId == null,
+        )
+        .toList()
+      ..sort((a, b) {
+        // 1. Primeiro ordenar por lista
+        final listA = getListById(a.listId);
+        final listB = getListById(b.listId);
+
+        if (listA != null && listB != null) {
+          int listComparison = listA.name.compareTo(listB.name);
+          if (listComparison != 0) return listComparison;
+        }
+
+        // 2. Depois por prioridade: urgente > alta > média > baixa
+        final priorityOrder = {
+          TaskPriority.urgent: 0,
+          TaskPriority.high: 1,
+          TaskPriority.medium: 2,
+          TaskPriority.low: 3,
+        };
+
+        int priorityComparison = (priorityOrder[a.priority] ?? 2).compareTo(
+          priorityOrder[b.priority] ?? 2,
+        );
+        if (priorityComparison != 0) return priorityComparison;
+
+        // 3. Depois por importância
+        if (a.isImportant && !b.isImportant) return -1;
+        if (!a.isImportant && b.isImportant) return 1;
+
+        // 4. Por fim, por ordem de criação (mais recentes primeiro)
+        return b.createdAt.compareTo(a.createdAt);
+      });
+  }
+
+  /// Obter tarefas atrasadas (vencidas e não concluídas)
+  List<Task> getOverdueTasks() {
+    final today = DateTime.now();
+    final todayStart = DateTime(today.year, today.month, today.day);
+    return _tasks
+        .where(
+          (task) =>
+              task.dueDate != null &&
+              task.dueDate!.isBefore(todayStart) &&
+              !task.isCompleted &&
+              task.parentTaskId == null,
+        )
+        .toList()
+      ..sort((a, b) {
+        // 1. Primeiro ordenar por lista
+        final listA = getListById(a.listId);
+        final listB = getListById(b.listId);
+
+        if (listA != null && listB != null) {
+          int listComparison = listA.name.compareTo(listB.name);
+          if (listComparison != 0) return listComparison;
+        }
+
+        // 2. Depois por data de vencimento (mais recentes primeiro = menos atrasadas)
+        int dateComparison = b.dueDate!.compareTo(a.dueDate!);
+        if (dateComparison != 0) return dateComparison;
+
+        // 3. Depois por prioridade
+        final priorityOrder = {
+          TaskPriority.urgent: 0,
+          TaskPriority.high: 1,
+          TaskPriority.medium: 2,
+          TaskPriority.low: 3,
+        };
+
+        int priorityComparison = (priorityOrder[a.priority] ?? 2).compareTo(
+          priorityOrder[b.priority] ?? 2,
+        );
+        if (priorityComparison != 0) return priorityComparison;
+
+        // 4. Por fim, por importância
+        if (a.isImportant && !b.isImportant) return -1;
+        if (!a.isImportant && b.isImportant) return 1;
+
+        return 0;
+      });
+  }
+
+  /// Obter tarefas importantes para visualização hoje
+  List<Task> getImportantTasks() {
+    return _tasks
+        .where(
+          (task) =>
+              task.isImportant &&
+              !task.isCompleted &&
+              task.parentTaskId == null,
+        )
+        .toList();
+  }
+
+  /// Contar tarefas para hoje
+  int countTodayTasks() {
+    return getTodayTasks().length;
+  }
+
+  /// Contar tarefas atrasadas
+  int countOverdueTasks() {
+    return getOverdueTasks().length;
+  }
+
+  /// Contar tarefas importantes
+  int countImportantTasks() {
+    return getImportantTasks().length;
+  }
+
+  /// Verificar se duas datas são do mesmo dia
+  bool _isSameDay(DateTime date1, DateTime date2) {
+    return date1.year == date2.year &&
+        date1.month == date2.month &&
+        date1.day == date2.day;
+  }
+
+  /// Verificar se uma tarefa tem prazo para hoje
+  bool isTaskDueToday(Task task) {
+    if (task.dueDate == null) return false;
+    return _isSameDay(task.dueDate!, DateTime.now());
+  }
+
+  /// Verificar se uma tarefa está atrasada
+  bool isTaskOverdue(Task task) {
+    if (task.dueDate == null) return false;
+    final today = DateTime.now();
+    final todayStart = DateTime(today.year, today.month, today.day);
+    return task.dueDate!.isBefore(todayStart) && !task.isCompleted;
+  }
   // ============================================================================
   // CRUD - LISTAS
   // ============================================================================
@@ -466,6 +646,10 @@ class TaskController extends ChangeNotifier {
       // Limpar seleção de lista quando mudar de projeto
       _selectedListId = null;
       _selectedTaskId = null;
+      // Sair da visualização "Hoje" quando um projeto for selecionado
+      if (_showTodayView) {
+        _showTodayView = false;
+      }
       notifyListeners();
     }
   }
@@ -475,6 +659,10 @@ class TaskController extends ChangeNotifier {
       _selectedListId = listId;
       // Limpar tarefa selecionada ao mudar de lista
       _selectedTaskId = null;
+      // Sair da visualização "Hoje" quando uma lista específica for selecionada
+      if (listId != null && _showTodayView) {
+        _showTodayView = false;
+      }
       notifyListeners();
     }
   }
@@ -484,6 +672,31 @@ class TaskController extends ChangeNotifier {
       _selectedTaskId = taskId;
       notifyListeners();
     }
+  }
+
+  /// Navegar para uma tarefa específica (útil quando clicada na visualização "Hoje")
+  void navigateToTask(String taskId) {
+    final task = getTaskById(taskId);
+    if (task == null) return;
+
+    // Sair da visualização "Hoje"
+    if (_showTodayView) {
+      _showTodayView = false;
+    }
+
+    // Selecionar a lista da tarefa
+    _selectedListId = task.listId;
+
+    // Selecionar a tarefa
+    _selectedTaskId = taskId;
+
+    // Limpar outros filtros para garantir que a tarefa seja visível
+    _searchQuery = '';
+    _selectedPriority = null;
+    _showOnlyImportant = false;
+    _showCompletedTasks = true;
+
+    notifyListeners();
   }
 
   Task? getSelectedTask() {
@@ -509,6 +722,20 @@ class TaskController extends ChangeNotifier {
 
   void toggleShowOnlyImportant() {
     _showOnlyImportant = !_showOnlyImportant;
+    notifyListeners();
+  }
+
+  /// Alternar visualização "Hoje"
+  void toggleTodayView() {
+    _showTodayView = !_showTodayView;
+
+    // Se ativar a visualização de hoje, limpar outros filtros
+    if (_showTodayView) {
+      _selectedListId = null;
+      _selectedProjectId = null;
+      _selectedTaskId = null;
+    }
+
     notifyListeners();
   }
 
@@ -539,11 +766,16 @@ class TaskController extends ChangeNotifier {
       _selectedPriority = null;
       hasChanges = true;
     }
-
     if (_showOnlyImportant) {
       _showOnlyImportant = false;
       hasChanges = true;
     }
+
+    if (_showTodayView) {
+      _showTodayView = false;
+      hasChanges = true;
+    }
+
     if (hasChanges) {
       notifyListeners();
     }
@@ -632,5 +864,31 @@ class TaskController extends ChangeNotifier {
     print('  Search Query: "$_searchQuery"');
     print('  Loading: $_isLoading');
     print('  Error: $_error');
+  }
+
+  /// Método de conveniência para criar uma tarefa com prazo para hoje
+  Future<void> addQuickTaskForToday(String title, String? listId) async {
+    final today = DateTime.now();
+    final todayEnd = DateTime(today.year, today.month, today.day, 23, 59, 59);
+
+    final formData = {
+      'title': title,
+      'description': '',
+      'listId': listId ?? getDefaultListId(),
+      'dueDate': todayEnd,
+      'priority': TaskPriority.medium,
+      'isImportant': false,
+      'tags': <String>[],
+      'notes': null,
+    };
+
+    await addTask(formData);
+  }
+
+  /// Obter ID da lista padrão
+  String getDefaultListId() {
+    if (_lists.isEmpty) return '';
+    // Retornar a primeira lista como padrão
+    return _lists.first.id;
   }
 }

@@ -44,7 +44,56 @@ class TaskAppBar extends StatelessWidget implements PreferredSizeWidget {
               height: 20,
               child: CircularProgressIndicator(strokeWidth: 2),
             ),
-          ),
+          ), // Botão Hoje (alternar visualização) com contador
+        Stack(
+          children: [
+            IconButton(
+              icon: Icon(
+                controller.showTodayView ? Icons.today : Icons.today_outlined,
+                color:
+                    controller.showTodayView
+                        ? Theme.of(context).colorScheme.primary
+                        : null,
+              ),
+              onPressed: controller.toggleTodayView,
+              tooltip:
+                  controller.showTodayView
+                      ? 'Sair da visualização Hoje'
+                      : 'Ver tarefas de hoje',
+            ),
+
+            // Indicador de contagem de tarefas
+            if (!controller.showTodayView && _getTotalTodayTasksCount() > 0)
+              Positioned(
+                right: 8,
+                top: 8,
+                child: Container(
+                  padding: const EdgeInsets.all(2),
+                  decoration: BoxDecoration(
+                    color: Colors.red.shade600,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(
+                      color: Theme.of(context).colorScheme.surface,
+                      width: 1,
+                    ),
+                  ),
+                  constraints: const BoxConstraints(
+                    minWidth: 16,
+                    minHeight: 16,
+                  ),
+                  child: Text(
+                    '${_getTotalTodayTasksCount()}',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+              ),
+          ],
+        ),
 
         // Botão de configurações
         IconButton(
@@ -73,7 +122,13 @@ class TaskAppBar extends StatelessWidget implements PreferredSizeWidget {
         controller.selectedListId != null ||
         !controller.showCompletedTasks ||
         controller.selectedPriority != null ||
-        controller.showOnlyImportant;
+        controller.showOnlyImportant ||
+        controller.showTodayView;
+  }
+
+  /// Calcular total de tarefas para hoje (hoje + atrasadas)
+  int _getTotalTodayTasksCount() {
+    return controller.countTodayTasks() + controller.countOverdueTasks();
   }
 
   /// Constrói o menu de opções
