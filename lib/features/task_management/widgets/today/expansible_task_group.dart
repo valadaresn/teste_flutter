@@ -7,6 +7,7 @@ import 'today_task_item.dart';
 enum TaskGroupType {
   today, // Tarefas com prazo para hoje
   overdue, // Tarefas atrasadas
+  completed, // Tarefas concluídas recentemente
 }
 
 /// **ExpansibleTaskGroup** - Componente expansível para grupos de tarefas
@@ -34,7 +35,14 @@ class ExpansibleTaskGroup extends StatefulWidget {
 }
 
 class _ExpansibleTaskGroupState extends State<ExpansibleTaskGroup> {
-  bool _isExpanded = true;
+  late bool _isExpanded;
+
+  @override
+  void initState() {
+    super.initState();
+    // Grupo de concluídas inicia colapsado, outros expandidos
+    _isExpanded = widget.taskType != TaskGroupType.completed;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -101,7 +109,12 @@ class _ExpansibleTaskGroupState extends State<ExpansibleTaskGroup> {
 
                   return Column(
                     children: [
-                      TodayTaskItem(task: task, controller: widget.controller),
+                      TodayTaskItem(
+                        task: task,
+                        controller: widget.controller,
+                        groupType: widget.taskType,
+                        isSelected: widget.controller.selectedTaskId == task.id,
+                      ),
 
                       // Divisor sutil entre itens (exceto o último)
                       if (index < tasks.length - 1)
@@ -128,6 +141,8 @@ class _ExpansibleTaskGroupState extends State<ExpansibleTaskGroup> {
         return widget.controller.getTodayTasks();
       case TaskGroupType.overdue:
         return widget.controller.getOverdueTasks();
+      case TaskGroupType.completed:
+        return widget.controller.getCompletedTasks();
     }
   }
 }

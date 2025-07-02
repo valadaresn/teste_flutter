@@ -7,6 +7,7 @@ import '../widgets/lists/list_panel.dart'; // Novo componente extraído
 import '../widgets/projects/project_panel.dart'; // Novo componente extraído
 import '../widgets/tasks/task_panel.dart'; // Novo componente extraído
 import '../widgets/tasks/task_detail_panel.dart';
+import '../widgets/tasks/clean_task_panel.dart';
 import '../widgets/today/today_panel.dart';
 
 class TaskManagementScreen extends StatelessWidget {
@@ -88,11 +89,14 @@ class TaskManagementScreen extends StatelessWidget {
                 ),
               ),
             ),
-            child: TaskDetailPanel(
-              task: controller.getSelectedTask()!,
-              controller: controller,
-              onClose: () => controller.selectTask(null),
-            ),
+            child:
+                controller.showTodayView
+                    ? CleanTaskPanel(controller: controller)
+                    : TaskDetailPanel(
+                      task: controller.getSelectedTask()!,
+                      controller: controller,
+                      onClose: () => controller.selectTask(null),
+                    ),
           ),
       ],
     );

@@ -54,8 +54,9 @@ class TodayPanel extends StatelessWidget {
   Widget _buildTaskGroups(BuildContext context) {
     final todayCount = controller.countTodayTasks();
     final overdueCount = controller.countOverdueTasks();
+    final completedCount = controller.countCompletedTasks();
 
-    // Se não há tarefas para hoje nem atrasadas
+    // Se não há tarefas para hoje nem atrasadas (concluídas são opcionais)
     if (todayCount == 0 && overdueCount == 0) {
       return _buildEmptyState(context);
     }
@@ -78,6 +79,16 @@ class TodayPanel extends StatelessWidget {
           taskType: TaskGroupType.today,
           iconColor: Theme.of(context).colorScheme.primary,
         ),
+
+        // Grupo de tarefas concluídas (sempre colapsado inicialmente)
+        if (completedCount > 0)
+          ExpansibleTaskGroup(
+            title: 'Concluído',
+            icon: Icons.check_circle_outline,
+            controller: controller,
+            taskType: TaskGroupType.completed,
+            iconColor: Colors.green.shade600,
+          ),
       ],
     );
   }

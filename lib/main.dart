@@ -2,6 +2,7 @@
 
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
 import 'package:teste_flutter/features/habit_screen/habit_screen.dart';
 //import 'package:teste_flutter/screens/hello_world_screen.dart';
@@ -37,6 +38,16 @@ class MyApp extends StatelessWidget {
       ],
       child: MaterialApp(
         title: 'Teste Flutter',
+        localizationsDelegates: const [
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        supportedLocales: const [
+          Locale('pt', 'BR'),
+          Locale('en', 'US'),
+        ],
+        locale: const Locale('pt', 'BR'),
         theme: ThemeData(
           colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
           useMaterial3: true,

@@ -354,8 +354,31 @@ class TaskController extends ChangeNotifier {
         // 4. Por fim, por importância
         if (a.isImportant && !b.isImportant) return -1;
         if (!a.isImportant && b.isImportant) return 1;
-
         return 0;
+      });
+  }
+
+  /// Obter tarefas concluídas recentemente (últimos 7 dias)
+  List<Task> getCompletedTasks() {
+    final now = DateTime.now();
+    final sevenDaysAgo = now.subtract(const Duration(days: 7));
+
+    return _tasks
+        .where(
+          (task) =>
+              task.isCompleted &&
+              task.completedAt != null &&
+              task.completedAt!.isAfter(sevenDaysAgo) &&
+              task.parentTaskId == null,
+        )
+        .toList()
+      ..sort((a, b) {
+        // Ordenar por data de conclusão (mais recentes primeiro)
+        if (a.completedAt != null && b.completedAt != null) {
+          return b.completedAt!.compareTo(a.completedAt!);
+        }
+        // Se não tem data de conclusão, usar data de criação
+        return b.createdAt.compareTo(a.createdAt);
       });
   }
 
@@ -384,6 +407,11 @@ class TaskController extends ChangeNotifier {
   /// Contar tarefas importantes
   int countImportantTasks() {
     return getImportantTasks().length;
+  }
+
+  /// Contar tarefas concluídas recentemente
+  int countCompletedTasks() {
+    return getCompletedTasks().length;
   }
 
   /// Verificar se duas datas são do mesmo dia
@@ -695,6 +723,22 @@ class TaskController extends ChangeNotifier {
     _selectedPriority = null;
     _showOnlyImportant = false;
     _showCompletedTasks = true;
+
+    notifyListeners();
+  }
+
+  /// Abrir tarefa para edição mantendo a visualização "Hoje" ativa
+  void openTaskInToday(String taskId) {
+    final task = getTaskById(taskId);
+    if (task == null) return;
+
+    // Selecionar a tarefa para abrir o painel lateral
+    _selectedTaskId = taskId;
+
+    // MANTER a visualização "Hoje" ativa
+    // NÃO alterar _showTodayView
+    // NÃO alterar _selectedListId
+    // NÃO alterar _selectedProjectId
 
     notifyListeners();
   }
