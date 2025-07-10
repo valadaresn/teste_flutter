@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../controllers/task_controller.dart';
 import '../../screens/settings_screen.dart';
 import '../tasks/simple_task_dialog.dart';
+import '../../../log_screen/controllers/log_controller.dart';
+import '../../../log_screen/screens/log_screen.dart';
+import '../../../log_screen/screens/daily_activities_screen.dart';
 
 /// **TaskAppBar** - AppBar customizada para o gerenciador de tarefas
 ///
@@ -95,6 +99,61 @@ class TaskAppBar extends StatelessWidget implements PreferredSizeWidget {
           ],
         ),
 
+        // Indicador de logs ativos e botão de logs
+        Consumer<LogController>(
+          builder: (context, logController, child) {
+            final activeLogs = logController.getActiveLogsList();
+
+            return Stack(
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.access_time),
+                  onPressed: () => _navigateToLogs(context),
+                  tooltip: 'Logs de Atividade',
+                ),
+
+                // Badge com número de logs ativos
+                if (activeLogs.isNotEmpty)
+                  Positioned(
+                    right: 8,
+                    top: 8,
+                    child: Container(
+                      padding: const EdgeInsets.all(2),
+                      decoration: BoxDecoration(
+                        color: Colors.green.shade600,
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(
+                          color: Theme.of(context).colorScheme.surface,
+                          width: 1,
+                        ),
+                      ),
+                      constraints: const BoxConstraints(
+                        minWidth: 16,
+                        minHeight: 16,
+                      ),
+                      child: Text(
+                        '${activeLogs.length}',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  ),
+              ],
+            );
+          },
+        ),
+
+        // Botão de atividades diárias
+        IconButton(
+          icon: const Icon(Icons.today),
+          onPressed: () => _navigateToDailyActivities(context),
+          tooltip: 'Atividades do Dia',
+        ),
+
         // Botão de configurações
         IconButton(
           icon: const Icon(Icons.settings),
@@ -179,6 +238,16 @@ class TaskAppBar extends StatelessWidget implements PreferredSizeWidget {
                 ],
               ),
             ),
+            const PopupMenuItem(
+              value: 'view_logs',
+              child: Row(
+                children: [
+                  Icon(Icons.list),
+                  SizedBox(width: 8),
+                  Text('Ver Logs'),
+                ],
+              ),
+            ),
           ],
     );
   }
@@ -205,6 +274,9 @@ class TaskAppBar extends StatelessWidget implements PreferredSizeWidget {
       case 'debug':
         controller.debugPrintState();
         _showDebugDialog(context);
+        break;
+      case 'view_logs':
+        _navigateToLogScreen(context);
         break;
     }
   }
@@ -274,6 +346,35 @@ class TaskAppBar extends StatelessWidget implements PreferredSizeWidget {
               ),
             ],
           ),
+    );
+  }
+
+  /// Navega para a tela de logs
+  void _navigateToLogScreen(BuildContext context) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder:
+            (context) => ChangeNotifierProvider.value(
+              value: Provider.of<LogController>(context, listen: false),
+              child: const LogScreen(),
+            ),
+      ),
+    );
+  }
+
+  /// Navega para a tela de logs
+  void _navigateToLogs(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const LogScreen()),
+    );
+  }
+
+  /// Navega para a tela de atividades diárias
+  void _navigateToDailyActivities(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const DailyActivitiesScreen()),
     );
   }
 

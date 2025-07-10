@@ -9,6 +9,8 @@ import '../widgets/tasks/task_panel.dart'; // Novo componente extraído
 import '../widgets/tasks/task_detail_panel.dart';
 import '../widgets/tasks/clean_task_panel.dart';
 import '../widgets/today/today_panel.dart';
+import '../../log_screen/controllers/log_controller.dart';
+import '../../log_screen/screens/log_screen.dart';
 
 class TaskManagementScreen extends StatelessWidget {
   const TaskManagementScreen({Key? key}) : super(key: key);
@@ -47,6 +49,10 @@ class TaskManagementScreen extends StatelessWidget {
             children: [
               // SEÇÃO HOJE - Botão sempre visível na sidebar
               _buildTodaySection(context, controller),
+              Container(height: 1, color: Theme.of(context).dividerColor),
+
+              // SEÇÃO LOGS - Nova seção para logs
+              _buildLogsSection(context, controller),
               Container(height: 1, color: Theme.of(context).dividerColor),
 
               // SEÇÃO DE PROJETOS - Extraída para componente separado
@@ -183,6 +189,61 @@ class TaskManagementScreen extends StatelessWidget {
         selected: controller.showTodayView,
         onTap: () => controller.toggleTodayView(),
       ),
+    );
+  }
+
+  /// Constrói a seção "Logs" na sidebar
+  Widget _buildLogsSection(BuildContext context, TaskController controller) {
+    return Consumer<LogController>(
+      builder: (context, logController, child) {
+        final activeLogs = logController.getActiveLogsList();
+
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          child: ListTile(
+            dense: true,
+            leading: Icon(
+              Icons.access_time,
+              size: 20,
+              color:
+                  activeLogs.isNotEmpty
+                      ? Theme.of(context).colorScheme.primary
+                      : null,
+            ),
+            title: const Text('Logs de Atividade'),
+            trailing:
+                activeLogs.isNotEmpty
+                    ? Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.green.shade600,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Text(
+                        '${activeLogs.length}',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    )
+                    : null,
+            onTap: () => _navigateToLogs(context),
+          ),
+        );
+      },
+    );
+  }
+
+  /// Navega para a tela de logs
+  void _navigateToLogs(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const LogScreen()),
     );
   }
 

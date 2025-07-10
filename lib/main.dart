@@ -11,6 +11,7 @@ import 'package:teste_flutter/features/note_screen/notes_screen.dart';
 import 'package:teste_flutter/features/task_management/screens/task_management_screen.dart';
 import 'package:teste_flutter/features/task_management/controllers/task_controller.dart';
 import 'package:teste_flutter/features/task_management/themes/theme_provider.dart';
+import 'package:teste_flutter/features/log_screen/controllers/log_controller.dart';
 import 'screens/task_screen/task_screen.dart';
 //import 'screens/diary_screen/diary_screen.dart';
 //import 'screens/diary_screen/diary_screen_optimized.dart'; // Nova tela
@@ -29,12 +30,14 @@ void main() async {
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});  @override
+  const MyApp({super.key});
+  @override
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (context) => TaskController()),
         ChangeNotifierProvider(create: (context) => ThemeProvider()),
+        ChangeNotifierProvider(create: (context) => LogController()),
       ],
       child: MaterialApp(
         title: 'Teste Flutter',
@@ -43,10 +46,7 @@ class MyApp extends StatelessWidget {
           GlobalWidgetsLocalizations.delegate,
           GlobalCupertinoLocalizations.delegate,
         ],
-        supportedLocales: const [
-          Locale('pt', 'BR'),
-          Locale('en', 'US'),
-        ],
+        supportedLocales: const [Locale('pt', 'BR'), Locale('en', 'US')],
         locale: const Locale('pt', 'BR'),
         theme: ThemeData(
           colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),

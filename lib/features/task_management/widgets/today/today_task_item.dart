@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../controllers/task_controller.dart';
 import '../../models/task_model.dart';
 import '../../models/list_model.dart';
+import '../../../log_screen/controllers/log_controller.dart';
+import '../../../log_screen/widgets/timer_display.dart';
 import 'expansible_task_group.dart';
 
 /// **TodayTaskItem** - Item de tarefa para a visualização Hoje
@@ -32,6 +35,9 @@ class _TodayTaskItemState extends State<TodayTaskItem>
   bool _tempCheckedState = false; // Estado temporário para feedback visual
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
+
+  // Estados para controle do log
+  bool _isLoggingAction = false; // Previne cliques múltiplos no botão log
 
   @override
   void initState() {
@@ -86,80 +92,190 @@ class _TodayTaskItemState extends State<TodayTaskItem>
     // Encontrar a lista à qual a tarefa pertence
     TaskList? list = widget.controller.getListById(widget.task.listId);
 
-    return AnimatedBuilder(
-      animation: _fadeAnimation,
-      builder: (context, child) {
-        return Opacity(
-          opacity: _fadeAnimation.value,
-          child: Container(
-            decoration:
-                widget.isSelected
-                    ? BoxDecoration(
-                      color: Theme.of(
-                        context,
-                      ).colorScheme.primary.withOpacity(0.08),
-                      borderRadius: BorderRadius.circular(6.0),
-                    )
-                    : null,
-            child: GestureDetector(
-              onTap: () => widget.controller.openTaskInToday(widget.task.id),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  vertical: 6.0,
-                  horizontal: 16.0,
-                ),
-                child: Row(
-                  children: [
-                    // Checkbox circular
-                    SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: Checkbox(
-                        value: _checkboxState,
-                        onChanged:
-                            _canToggleCompletion
-                                ? (value) => _toggleTaskCompletion()
-                                : null,
-                        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                        shape: const CircleBorder(),
-                      ),
+    return Consumer<LogController>(
+      builder: (context, logController, child) {
+        // Estados do log
+        final isBeingLogged = logController.isTaskBeingLogged(widget.task.id);
+        final elapsedTime = logController.getElapsedTimeFormatted(
+          widget.task.id,
+        );
+
+        return AnimatedBuilder(
+          animation: _fadeAnimation,
+          builder: (context, child) {
+            return Opacity(
+              opacity: _fadeAnimation.value,
+              child: Container(
+                decoration:
+                    widget.isSelected
+                        ? BoxDecoration(
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.primary.withOpacity(0.08),
+                          borderRadius: BorderRadius.circular(6.0),
+                        )
+                        : null,
+                child: GestureDetector(
+                  onTap:
+                      () => widget.controller.openTaskInToday(widget.task.id),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      vertical: 6.0,
+                      horizontal: 16.0,
                     ),
-                    const SizedBox(width: 12),
-
-                    // Ícone da lista - apenas emoji simples
-                    if (list != null) ...[
-                      Text(list.emoji, style: const TextStyle(fontSize: 16)),
-                      const SizedBox(width: 8),
-                    ],
-
-                    // Título da tarefa
-                    Expanded(
-                      child: Text(
-                        widget.task.title,
-                        style: TextStyle(
-                          decoration:
-                              widget.groupType == TaskGroupType.completed
-                                  ? TextDecoration.lineThrough
-                                  : null,
-                          color:
-                              widget.groupType == TaskGroupType.completed
-                                  ? Theme.of(
-                                    context,
-                                  ).textTheme.bodySmall?.color?.withOpacity(0.6)
-                                  : Theme.of(
-                                    context,
-                                  ).textTheme.bodyMedium?.color,
-                          fontSize: 14,
+                    child: Row(
+                      children: [
+                        // Checkbox circular
+                        SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: Checkbox(
+                            value: _checkboxState,
+                            onChanged:
+                                _canToggleCompletion
+                                    ? (value) => _toggleTaskCompletion()
+                                    : null,
+                            materialTapTargetSize:
+                                MaterialTapTargetSize.shrinkWrap,
+                            shape: const CircleBorder(),
+                          ),
                         ),
-                        overflow: TextOverflow.ellipsis,
-                        maxLines: 1,
-                      ),
+                        const SizedBox(width: 12),
+
+                        // Ícone da lista - apenas emoji simples
+                        if (list != null) ...[
+                          Text(
+                            list.emoji,
+                            style: const TextStyle(fontSize: 16),
+                          ),
+                          const SizedBox(width: 8),
+                        ],
+
+                        // Título da tarefa
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                widget.task.title,
+                                style: TextStyle(
+                                  decoration:
+                                      widget.groupType ==
+                                              TaskGroupType.completed
+                                          ? TextDecoration.lineThrough
+                                          : null,
+                                  color:
+                                      widget.groupType ==
+                                              TaskGroupType.completed
+                                          ? Theme.of(context)
+                                              .textTheme
+                                              .bodySmall
+                                              ?.color
+                                              ?.withOpacity(0.6)
+                                          : Theme.of(
+                                            context,
+                                          ).textTheme.bodyMedium?.color,
+                                  fontSize: 14,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                                maxLines: 1,
+                              ),
+
+                              // Timer display (apenas se estiver sendo cronometrado)
+                              if (isBeingLogged && elapsedTime != null) ...[
+                                const SizedBox(height: 2),
+                                TimerDisplay(
+                                  formattedTime: elapsedTime,
+                                  isActive: isBeingLogged,
+                                ),
+                              ],
+                            ],
+                          ),
+                        ),
+
+                        // Botões de controle (apenas para tarefas não concluídas)
+                        if (widget.groupType != TaskGroupType.completed) ...[
+                          const SizedBox(width: 8),
+
+                          // Botão Pause/Resume (apenas se log estiver ativo)
+                          if (isBeingLogged) ...[
+                            Material(
+                              color: Colors.transparent,
+                              child: InkWell(
+                                onTap:
+                                    _isLoggingAction
+                                        ? null
+                                        : _pauseResumeTaskLog,
+                                borderRadius: BorderRadius.circular(16),
+                                child: Container(
+                                  padding: const EdgeInsets.all(6),
+                                  child: Icon(
+                                    logController.isPomodoroPaused(
+                                          widget.task.id,
+                                        )
+                                        ? Icons.play_arrow
+                                        : Icons.pause,
+                                    size: 14,
+                                    color:
+                                        Theme.of(context).colorScheme.secondary,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 4),
+                          ],
+
+                          // Botão Play/Stop principal
+                          Material(
+                            color: Colors.transparent,
+                            child: InkWell(
+                              onTap: _isLoggingAction ? null : _toggleTaskLog,
+                              borderRadius: BorderRadius.circular(16),
+                              child: Container(
+                                padding: const EdgeInsets.all(6),
+                                child: AnimatedSwitcher(
+                                  duration: const Duration(milliseconds: 200),
+                                  child:
+                                      _isLoggingAction
+                                          ? SizedBox(
+                                            width: 16,
+                                            height: 16,
+                                            child: CircularProgressIndicator(
+                                              strokeWidth: 2,
+                                              valueColor:
+                                                  AlwaysStoppedAnimation<Color>(
+                                                    Theme.of(
+                                                      context,
+                                                    ).colorScheme.primary,
+                                                  ),
+                                            ),
+                                          )
+                                          : Icon(
+                                            isBeingLogged
+                                                ? Icons.stop
+                                                : Icons.play_arrow,
+                                            size: 16,
+                                            color:
+                                                isBeingLogged
+                                                    ? Theme.of(
+                                                      context,
+                                                    ).colorScheme.error
+                                                    : Theme.of(
+                                                      context,
+                                                    ).colorScheme.primary,
+                                          ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ],
                     ),
-                  ],
+                  ),
                 ),
               ),
-            ),
-          ),
+            );
+          },
         );
       },
     );
@@ -202,5 +318,82 @@ class _TodayTaskItemState extends State<TodayTaskItem>
       _isCompletingAnimation = false;
       _tempCheckedState = false;
     });
+  }
+
+  /// Toggle do log da tarefa (Play/Stop)
+  Future<void> _toggleTaskLog() async {
+    if (_isLoggingAction) return; // Evitar cliques múltiplos
+
+    setState(() {
+      _isLoggingAction = true;
+    });
+
+    try {
+      final logController = context.read<LogController>();
+      final isLogged = logController.isTaskBeingLogged(widget.task.id);
+
+      if (isLogged) {
+        // Parar log
+        await logController.stopTaskLog(widget.task.id);
+      } else {
+        // Iniciar log
+        final taskList = widget.controller.getListById(widget.task.listId);
+        await logController.startTaskLog(widget.task, taskList: taskList);
+      }
+    } catch (e) {
+      // Mostrar erro se necessário
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erro ao gerenciar log: $e'),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoggingAction = false;
+        });
+      }
+    }
+  }
+
+  /// Pausar/retomar log da tarefa
+  Future<void> _pauseResumeTaskLog() async {
+    if (_isLoggingAction) return; // Evitar cliques múltiplos
+
+    setState(() {
+      _isLoggingAction = true;
+    });
+
+    try {
+      final logController = context.read<LogController>();
+      final isPaused = logController.isPomodoroPaused(widget.task.id);
+
+      if (isPaused) {
+        // Retomar log
+        await logController.resumeTaskLog(widget.task.id);
+      } else {
+        // Pausar log
+        await logController.pauseTaskLog(widget.task.id);
+      }
+    } catch (e) {
+      // Mostrar erro se necessário
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erro ao pausar/retomar log: $e'),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoggingAction = false;
+        });
+      }
+    }
   }
 }
