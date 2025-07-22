@@ -144,6 +144,52 @@ class Log {
     );
   }
 
+  // ========== GETTERS CALCULADOS PARA DURAÇÃO ==========
+
+  /// Calcula a duração da atividade considerando atividades overnight
+  Duration? get duration {
+    if (endTime == null) return null;
+
+    var calculatedEndTime = endTime!;
+
+    // Se fim < início, assumir que passou da meia-noite (dia seguinte)
+    if (calculatedEndTime.isBefore(startTime)) {
+      calculatedEndTime = calculatedEndTime.add(const Duration(days: 1));
+    }
+
+    return calculatedEndTime.difference(startTime);
+  }
+
+  /// Retorna a duração formatada para exibição (ex: "2h 30min" ou "45min")
+  String get durationFormatted {
+    final dur = duration;
+    if (dur == null) return '--';
+
+    final hours = dur.inHours;
+    final minutes = dur.inMinutes.remainder(60);
+
+    if (hours > 0) {
+      return '${hours}h ${minutes}min';
+    } else {
+      return '${minutes}min';
+    }
+  }
+
+  /// Retorna a duração em minutos (útil para cálculos e compatibilidade)
+  int? get durationInMinutes => duration?.inMinutes;
+
+  /// Verifica se a atividade está em andamento (sem endTime)
+  bool get isActive => endTime == null;
+
+  /// Verifica se a atividade foi concluída (com endTime)
+  bool get isCompleted => endTime != null;
+
+  /// Verifica se a atividade passou da meia-noite
+  bool get isOvernight {
+    if (endTime == null) return false;
+    return endTime!.isBefore(startTime);
+  }
+
   @override
   String toString() {
     return 'Log(id: $id, entityId: $entityId, entityType: $entityType, entityTitle: $entityTitle, startTime: $startTime, endTime: $endTime, durationMinutes: $durationMinutes)';
@@ -152,9 +198,15 @@ class Log {
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
-    return other is Log && other.id == id;
+    return other is Log &&
+        other.id == id &&
+        other.entityTitle == entityTitle &&
+        other.startTime == startTime &&
+        other.endTime == endTime &&
+        other.durationMinutes == durationMinutes;
   }
 
   @override
-  int get hashCode => id.hashCode;
+  int get hashCode =>
+      Object.hash(id, entityTitle, startTime, endTime, durationMinutes);
 }

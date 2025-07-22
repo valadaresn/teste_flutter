@@ -25,8 +25,13 @@ import '../../../log_screen/screens/daily_activities_screen.dart';
 /// - Integração completa com TaskController
 class TaskAppBar extends StatelessWidget implements PreferredSizeWidget {
   final TaskController controller;
+  final VoidCallback? onToggleSidebar; // Novo callback para toggle da sidebar
 
-  const TaskAppBar({Key? key, required this.controller}) : super(key: key);
+  const TaskAppBar({
+    Key? key,
+    required this.controller,
+    this.onToggleSidebar, // Novo parâmetro opcional
+  }) : super(key: key);
 
   @override
   Size get preferredSize => const Size.fromHeight(kToolbarHeight);
@@ -38,6 +43,15 @@ class TaskAppBar extends StatelessWidget implements PreferredSizeWidget {
       backgroundColor: Theme.of(context).colorScheme.surface,
       foregroundColor: Theme.of(context).colorScheme.onSurface,
       elevation: 0,
+      // Adicionar botão hamburger para toggle da sidebar
+      leading:
+          onToggleSidebar != null
+              ? IconButton(
+                icon: const Icon(Icons.menu),
+                onPressed: onToggleSidebar,
+                tooltip: 'Expandir/Recolher painel lateral',
+              )
+              : null,
       actions: [
         // Indicador de loading
         if (controller.isLoading)

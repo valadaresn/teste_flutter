@@ -12,6 +12,7 @@ import 'package:teste_flutter/features/task_management/screens/task_management_s
 import 'package:teste_flutter/features/task_management/controllers/task_controller.dart';
 import 'package:teste_flutter/features/task_management/themes/theme_provider.dart';
 import 'package:teste_flutter/features/log_screen/controllers/log_controller.dart';
+import 'package:teste_flutter/widgets/navigation/vertical_navigation_bar.dart'; // Novo import
 import 'screens/task_screen/task_screen.dart';
 //import 'screens/diary_screen/diary_screen.dart';
 //import 'screens/diary_screen/diary_screen_optimized.dart'; // Nova tela
@@ -80,41 +81,91 @@ class _HomeScreenState extends State<HomeScreen> {
   ];
 
   @override
+  void initState() {
+    super.initState();
+    // Configurar integração entre controllers após o build
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      debugPrint('🔵 Main.dart - addPostFrameCallback executado');
+      final taskController = Provider.of<TaskController>(
+        context,
+        listen: false,
+      );
+      final logController = Provider.of<LogController>(context, listen: false);
+
+      debugPrint('🔵 Main.dart - taskController: $taskController');
+      debugPrint('🔵 Main.dart - logController: $logController');
+
+      // Conectar LogController ao TaskController para salvar tempo acumulado
+      logController.setTaskController(taskController);
+      debugPrint('🔵 Main.dart - setTaskController chamado');
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: IndexedStack(index: _selectedIndex, children: _screens),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _selectedIndex,
-        onDestinationSelected: (index) {
-          setState(() {
-            _selectedIndex = index;
-          });
-        },
-        destinations: const [
-          NavigationDestination(icon: Icon(Icons.task_alt), label: 'Tarefas'),
+    // Detectar se é tela grande (desktop/tablet)
+    final isLargeScreen = MediaQuery.of(context).size.width > 768;
 
-          // //NavigationDestination(icon: Icon(Icons.book), label: 'Diário Local'),
-          // NavigationDestination(
-          //   icon: Icon(Icons.bolt),
-          //   label: 'Diário Otimizado',
-          // ),
-
-          //NavigationDestination(icon: Icon(Icons.note), label: 'Notas'),
-          NavigationDestination(icon: Icon(Icons.note), label: 'NotasSele'),
-          NavigationDestination(
-            icon: Icon(Icons.fitness_center),
-            label: 'Habitos',
-          ),
-          NavigationDestination(icon: Icon(Icons.task_alt), label: 'Tarefas+'),
-
-          // ignore_for_file: lines_longer_than_80_chars
-          // format-ignore
-          //   NavigationDestination(
-          //     icon: Icon(Icons.emoji_emotions),
-          //     label: 'Hello World',
-          //   ), // format-ignore
-        ],
-      ),
-    );
+    if (isLargeScreen) {
+      // Layout para tela grande com navegação vertical
+      return Scaffold(
+        body: Row(
+          children: [
+            // Barra de navegação vertical
+            VerticalNavigationBar(
+              selectedIndex: _selectedIndex,
+              onDestinationSelected: (index) {
+                setState(() {
+                  _selectedIndex = index;
+                });
+              },
+            ),
+            // Conteúdo principal
+            Expanded(
+              child: IndexedStack(index: _selectedIndex, children: _screens),
+            ),
+          ],
+        ),
+      );
+    } else {
+      // Layout para tela pequena com navegação inferior
+      return Scaffold(
+        body: IndexedStack(index: _selectedIndex, children: _screens),
+        bottomNavigationBar: Consumer<ThemeProvider>(
+          builder: (context, themeProvider, child) {
+            return NavigationBar(
+              selectedIndex: _selectedIndex,
+              onDestinationSelected: (index) {
+                setState(() {
+                  _selectedIndex = index;
+                });
+              },
+              backgroundColor: themeProvider.getNavigationBarColor(
+                context,
+                listColor: Colors.blue, // Cor padrão para lista
+              ),
+              destinations: const [
+                NavigationDestination(
+                  icon: Icon(Icons.task_alt),
+                  label: 'Tarefas',
+                ),
+                NavigationDestination(
+                  icon: Icon(Icons.note),
+                  label: 'NotasSele',
+                ),
+                NavigationDestination(
+                  icon: Icon(Icons.fitness_center),
+                  label: 'Habitos',
+                ),
+                NavigationDestination(
+                  icon: Icon(Icons.task_alt),
+                  label: 'Tarefas+',
+                ),
+              ],
+            );
+          },
+        ),
+      );
+    }
   }
 }

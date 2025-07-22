@@ -6,6 +6,7 @@ import '../models/filter_state.dart';
 import '../repositories/log_repository.dart';
 import '../../task_management/models/task_model.dart';
 import '../../task_management/models/list_model.dart';
+import '../../task_management/controllers/task_controller.dart';
 import '../../../services/pomodoro_service.dart';
 import '../../../services/notification_service.dart';
 
@@ -40,6 +41,9 @@ class LogController extends ChangeNotifier {
   // Referência ao PomodoroService (será injetado)
   PomodoroService? _pomodoroService;
 
+  // Referência ao TaskController para atualizar tempo acumulado
+  TaskController? _taskController;
+
   // Getters públicos
   bool get isLoading => _isLoading;
   String? get error => _error;
@@ -55,6 +59,17 @@ class LogController extends ChangeNotifier {
   LogController() {
     _initialize();
     _initializePomodoroService();
+  }
+
+  /// Define TaskController para integração de tempo acumulado
+  void setTaskController(TaskController taskController) {
+    debugPrint(
+      '🔵 LogController.setTaskController - Recebendo TaskController: $taskController',
+    );
+    _taskController = taskController;
+    debugPrint(
+      '🔵 LogController.setTaskController - _taskController definido: ${_taskController != null}',
+    );
   }
 
   /// Inicializa o PomodoroService com callbacks
@@ -209,7 +224,15 @@ class LogController extends ChangeNotifier {
 
       // Verifica se já existe log ativo para essa tarefa
       if (_activeLogIds.containsKey(task.id)) {
-        throw Exception('Já existe um log ativo para esta tarefa');
+        // Se existe log ativo mas timer pausado, retoma
+        if (!_timers.containsKey(task.id)) {
+          await resumeTaskLog(task.id);
+          _setLoading(false);
+          return;
+        } else {
+          // Log já está rodando
+          throw Exception('Já existe um log ativo para esta tarefa');
+        }
       }
 
       // Cria novo log
@@ -241,8 +264,9 @@ class LogController extends ChangeNotifier {
 
       // Integra com PomodoroService se disponível
       if (_pomodoroService != null) {
-        // Inicia pomodoro de 25 minutos por padrão
-        _pomodoroService!.startPomodoro(task.id, task.title, 25 * 60);
+        // Usa o tempo de pomodoro configurado na tarefa (convertendo minutos para segundos)
+        final pomodoroSeconds = task.pomodoroTimeMinutes * 60;
+        _pomodoroService!.startPomodoro(task.id, task.title, pomodoroSeconds);
       }
 
       // Notifica sucesso
@@ -262,22 +286,76 @@ class LogController extends ChangeNotifier {
   /// Parar log de uma tarefa
   Future<void> stopTaskLog(String taskId) async {
     try {
+      debugPrint(
+        '🔴 LogController.stopTaskLog - Iniciando para taskId: $taskId',
+      );
       _setLoading(true);
 
       // Verifica se existe log ativo
       final logId = _activeLogIds[taskId];
+      debugPrint('🔴 LogController.stopTaskLog - logId: $logId');
       if (logId == null) {
+        debugPrint('🔴 ERRO: Nenhum log ativo encontrado para taskId: $taskId');
         throw Exception('Nenhum log ativo encontrado para esta tarefa');
       }
 
+      // Captura o tempo decorrido antes de parar o timer
+      final elapsedSeconds = _elapsedTimes[taskId] ?? 0;
+      debugPrint(
+        '🔴 LogController.stopTaskLog - elapsedSeconds: $elapsedSeconds',
+      );
+
       // Finaliza log no repository
+      debugPrint(
+        '🔴 LogController.stopTaskLog - Finalizando log no repository...',
+      );
       await _repository.endLog(logId, DateTime.now());
+      debugPrint('🔴 LogController.stopTaskLog - Log finalizado no repository');
 
       // Remove do estado local
       _activeLogIds.remove(taskId);
 
       // Para timer
       _stopTimerForLog(taskId);
+
+      // Atualiza tempo acumulado na tarefa
+      debugPrint(
+        '🔴 LogController.stopTaskLog - Verificando TaskController...',
+      );
+      debugPrint('🔴 _taskController é null? ${_taskController == null}');
+      debugPrint('🔴 elapsedSeconds > 0? ${elapsedSeconds > 0}');
+
+      if (_taskController != null && elapsedSeconds > 0) {
+        debugPrint(
+          '🔴 LogController.stopTaskLog - Chamando updateTaskAccumulatedTime...',
+        );
+        debugPrint(
+          '🔴 Parâmetros: taskId=$taskId, elapsedSeconds=$elapsedSeconds',
+        );
+
+        try {
+          await _taskController!.updateTaskAccumulatedTime(
+            taskId,
+            elapsedSeconds,
+          );
+          debugPrint(
+            '🔴 LogController.stopTaskLog - updateTaskAccumulatedTime executado com sucesso',
+          );
+        } catch (updateError) {
+          debugPrint('🔴 ERRO no updateTaskAccumulatedTime: $updateError');
+          rethrow;
+        }
+      } else {
+        debugPrint(
+          '🔴 LogController.stopTaskLog - NÃO vai chamar updateTaskAccumulatedTime',
+        );
+        if (_taskController == null) {
+          debugPrint('🔴 Motivo: _taskController é null');
+        }
+        if (elapsedSeconds <= 0) {
+          debugPrint('🔴 Motivo: elapsedSeconds <= 0 ($elapsedSeconds)');
+        }
+      }
 
       // Para PomodoroService se disponível
       if (_pomodoroService != null) {
@@ -290,9 +368,11 @@ class LogController extends ChangeNotifier {
         'Cronômetro parado para a tarefa',
       );
 
+      debugPrint('🔴 LogController.stopTaskLog - Finalizando com sucesso');
       _setLoading(false);
       notifyListeners();
     } catch (e) {
+      debugPrint('🔴 ERRO GERAL no stopTaskLog: $e');
       _setError('Erro ao parar log: $e');
       _setLoading(false);
     }
@@ -301,7 +381,7 @@ class LogController extends ChangeNotifier {
   /// Pausar log de uma tarefa
   Future<void> pauseTaskLog(String taskId) async {
     try {
-      // Para timer local
+      // Para timer local mas mantém log como ativo (apenas pausado)
       _pauseLocalTimer(taskId);
 
       // Para PomodoroService se disponível
@@ -309,8 +389,8 @@ class LogController extends ChangeNotifier {
         _pomodoroService!.pausePomodoro(taskId);
       }
 
-      // TODO: Implementar pausa no Firestore se necessário
-      // Por enquanto, apenas para os timers locais
+      // NOTA: NÃO remove de _activeLogIds porque é apenas uma pausa
+      // O log continua ativo, apenas o timer está pausado
 
       notifyListeners();
     } catch (e) {
@@ -348,6 +428,16 @@ class LogController extends ChangeNotifier {
     return _activeLogIds.containsKey(taskId);
   }
 
+  /// Verifica se uma tarefa está com timer ativo (não pausado)
+  bool isTaskTimerRunning(String taskId) {
+    return _activeLogIds.containsKey(taskId) && _timers.containsKey(taskId);
+  }
+
+  /// Verifica se uma tarefa está pausada
+  bool isTaskPaused(String taskId) {
+    return _activeLogIds.containsKey(taskId) && !_timers.containsKey(taskId);
+  }
+
   /// Obtém tempo decorrido para uma tarefa
   int? getElapsedTime(String taskId) {
     return _elapsedTimes[taskId];
@@ -375,6 +465,35 @@ class LogController extends ChangeNotifier {
     } catch (e) {
       return null;
     }
+  }
+
+  /// Obtém log por ID (necessário para GenericSelectorList)
+  Log? getLogById(String id) {
+    try {
+      // Primeiro procura nos logs ativos
+      final activeLog = _activeLogs.where((log) => log.id == id).firstOrNull;
+      if (activeLog != null) return activeLog;
+
+      // Se não encontrou nos ativos, procura em todos os logs
+      return _logs.where((log) => log.id == id).firstOrNull;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  /// Obtém logs por range de data de forma síncrona (necessário para GenericSelectorList)
+  List<Log> getLogsByDateRange(DateTime startDate, DateTime endDate) {
+    return _logs.where((log) {
+      return log.startTime.isAfter(startDate) &&
+          log.startTime.isBefore(endDate);
+    }).toList();
+  }
+
+  /// Obtém logs para um dia específico de forma síncrona
+  List<Log> getLogsByDate(DateTime date) {
+    final startOfDay = DateTime(date.year, date.month, date.day);
+    final endOfDay = startOfDay.add(const Duration(days: 1));
+    return getLogsByDateRange(startOfDay, endOfDay);
   }
 
   // ============================================================================
@@ -727,5 +846,35 @@ class LogController extends ChangeNotifier {
     }
 
     return filteredLogs;
+  }
+
+  // ============================================================================
+  // TIMER E TEMPO ACUMULADO
+  // ============================================================================
+
+  /// Obtém tempo total acumulado para uma tarefa (sessões anteriores + sessão atual)
+  Future<int> getTotalAccumulatedTime(String taskId) async {
+    try {
+      // Busca a tarefa para obter o tempo acumulado persistido
+      // TODO: Implementar integração com TaskRepository quando disponível
+      // Por enquanto, retorna apenas o tempo da sessão atual
+      return _elapsedTimes[taskId] ?? 0;
+    } catch (e) {
+      debugPrint('Erro ao calcular tempo total acumulado: $e');
+      return _elapsedTimes[taskId] ?? 0;
+    }
+  }
+
+  /// Obtém tempo total acumulado de forma síncrona (para exibição)
+  int getTotalAccumulatedTimeSync(String taskId, int storedAccumulatedTime) {
+    int totalTime = storedAccumulatedTime;
+
+    // Adiciona tempo da sessão atual se houver
+    if (_activeLogIds.containsKey(taskId)) {
+      final currentSessionTime = _elapsedTimes[taskId] ?? 0;
+      totalTime += currentSessionTime;
+    }
+
+    return totalTime;
   }
 }

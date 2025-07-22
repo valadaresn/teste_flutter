@@ -2,10 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../controllers/log_controller.dart';
 import '../log_model.dart';
-import '../widgets/daily_activity_item.dart';
 import '../widgets/date_selector.dart';
 import '../widgets/daily_summary.dart';
 import '../widgets/timeline_view.dart';
+import '../widgets/edit_activity_dialog.dart';
+import '../widgets/daily_activities_list.dart';
 
 /// **DailyActivitiesScreen** - Tela de atividades diárias
 ///
@@ -41,153 +42,92 @@ class _DailyActivitiesScreenState extends State<DailyActivitiesScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
+    return Consumer<LogController>(
+      builder: (context, logController, _) {
+        final theme = Theme.of(context);
+        final colorScheme = theme.colorScheme;
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Atividades do Dia'),
-        backgroundColor: colorScheme.surface,
-        foregroundColor: colorScheme.onSurface,
-        elevation: 0,
-        actions: [
-          // Alternar visualização
-          IconButton(
-            onPressed: () {
-              setState(() {
-                _showTimelineView = !_showTimelineView;
-              });
-            },
-            icon: Icon(_showTimelineView ? Icons.view_list : Icons.timeline),
-            tooltip:
-                _showTimelineView
-                    ? 'Visualização em Lista'
-                    : 'Visualização Timeline',
+        // Obtém logs para o dia selecionado
+        final allLogs = logController.getLogsByDate(_selectedDate);
+        final filteredLogs = _filterLogs(allLogs);
+
+        return Scaffold(
+          appBar: AppBar(
+            title: const Text('Atividades do Dia'),
+            backgroundColor: colorScheme.surface,
+            foregroundColor: colorScheme.onSurface,
+            elevation: 0,
+            actions: [
+              // Alternar visualização
+              IconButton(
+                onPressed: () {
+                  setState(() {
+                    _showTimelineView = !_showTimelineView;
+                  });
+                },
+                icon: Icon(
+                  _showTimelineView ? Icons.view_list : Icons.timeline,
+                ),
+                tooltip:
+                    _showTimelineView
+                        ? 'Visualização em Lista'
+                        : 'Visualização Timeline',
+              ),
+
+              // Alternar resumo
+              IconButton(
+                onPressed: () {
+                  setState(() {
+                    _showSummary = !_showSummary;
+                  });
+                },
+                icon: Icon(
+                  _showSummary ? Icons.visibility_off : Icons.visibility,
+                ),
+                tooltip: _showSummary ? 'Ocultar Resumo' : 'Mostrar Resumo',
+              ),
+
+              // Menu de filtros
+              PopupMenuButton<LogFilterStatus>(
+                onSelected: (status) {
+                  setState(() {
+                    _statusFilter = status;
+                  });
+                },
+                itemBuilder:
+                    (context) => [
+                      const PopupMenuItem(
+                        value: LogFilterStatus.all,
+                        child: Text('Todas as atividades'),
+                      ),
+                      const PopupMenuItem(
+                        value: LogFilterStatus.active,
+                        child: Text('Em andamento'),
+                      ),
+                      const PopupMenuItem(
+                        value: LogFilterStatus.completed,
+                        child: Text('Concluídas'),
+                      ),
+                    ],
+                icon: Icon(
+                  Icons.filter_list,
+                  color:
+                      _statusFilter != LogFilterStatus.all
+                          ? colorScheme.primary
+                          : colorScheme.onSurface,
+                ),
+              ),
+            ],
           ),
-
-          // Alternar resumo
-          IconButton(
-            onPressed: () {
-              setState(() {
-                _showSummary = !_showSummary;
-              });
-            },
-            icon: Icon(_showSummary ? Icons.visibility_off : Icons.visibility),
-            tooltip: _showSummary ? 'Ocultar Resumo' : 'Mostrar Resumo',
+          body: _buildBody(logController, filteredLogs),
+          floatingActionButton: FloatingActionButton(
+            onPressed: () => _showAddActivityDialog(),
+            tooltip: 'Adicionar atividade',
+            child: const Icon(Icons.add),
           ),
-
-          // Menu de filtros
-          PopupMenuButton<LogFilterStatus>(
-            onSelected: (status) {
-              setState(() {
-                _statusFilter = status;
-              });
-            },
-            itemBuilder:
-                (context) => [
-                  const PopupMenuItem(
-                    value: LogFilterStatus.all,
-                    child: Text('Todas as atividades'),
-                  ),
-                  const PopupMenuItem(
-                    value: LogFilterStatus.active,
-                    child: Text('Em andamento'),
-                  ),
-                  const PopupMenuItem(
-                    value: LogFilterStatus.completed,
-                    child: Text('Concluídas'),
-                  ),
-                ],
-            icon: Icon(
-              Icons.filter_list,
-              color:
-                  _statusFilter != LogFilterStatus.all
-                      ? colorScheme.primary
-                      : colorScheme.onSurface,
-            ),
-          ),
-        ],
-      ),
-      body: Column(
-        children: [
-          // Seletor de data
-          DateSelector(
-            selectedDate: _selectedDate,
-            onDateChanged: (date) {
-              setState(() {
-                _selectedDate = date;
-              });
-            },
-          ),
-
-          // Conteúdo principal
-          Expanded(
-            child: Consumer<LogController>(
-              builder: (context, logController, child) {
-                return StreamBuilder<List<Log>>(
-                  stream: _getDailyLogsStream(logController),
-                  builder: (context, snapshot) {
-                    if (snapshot.connectionState == ConnectionState.waiting) {
-                      return const Center(child: CircularProgressIndicator());
-                    }
-
-                    if (snapshot.hasError) {
-                      return Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.error_outline,
-                              size: 64,
-                              color: colorScheme.error,
-                            ),
-                            const SizedBox(height: 16),
-                            Text(
-                              'Erro ao carregar atividades',
-                              style: theme.textTheme.headlineSmall,
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              snapshot.error.toString(),
-                              style: theme.textTheme.bodyMedium?.copyWith(
-                                color: colorScheme.error,
-                              ),
-                              textAlign: TextAlign.center,
-                            ),
-                          ],
-                        ),
-                      );
-                    }
-
-                    final allLogs = snapshot.data ?? [];
-                    final filteredLogs = _filterLogs(allLogs);
-
-                    return _buildContent(filteredLogs, logController);
-                  },
-                );
-              },
-            ),
-          ),
-        ],
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _showAddActivityDialog(),
-        tooltip: 'Adicionar atividade',
-        child: const Icon(Icons.add),
-      ),
+        );
+      },
     );
-  }
-
-  /// Obtém o stream de logs para o dia selecionado
-  Stream<List<Log>> _getDailyLogsStream(LogController logController) {
-    final startOfDay = DateTime(
-      _selectedDate.year,
-      _selectedDate.month,
-      _selectedDate.day,
-    );
-    final endOfDay = startOfDay.add(const Duration(days: 1));
-
-    return logController.getLogsByDateRangeStream(startOfDay, endOfDay);
   }
 
   /// Filtra logs baseado no filtro de status selecionado
@@ -230,20 +170,34 @@ class _DailyActivitiesScreenState extends State<DailyActivitiesScreen> {
           child:
               _showTimelineView
                   ? TimelineView(logs: logs, showEmptySlots: false)
-                  : ListView.builder(
-                    padding: const EdgeInsets.all(16),
-                    itemCount: logs.length,
-                    itemBuilder: (context, index) {
-                      final log = logs[index];
-                      return DailyActivityItem(
-                        log: log,
-                        onTap: () => _showLogDetails(log),
-                        onEdit: () => _editLog(log),
-                        onDelete: () => _deleteLog(log, logController),
-                      );
-                    },
+                  : DailyActivitiesList(
+                    controller: logController,
+                    logs: logs,
+                    onLogTap: _showLogDetails,
+                    onEdit: _editLog,
+                    onDelete: (log) => _deleteLog(log, logController),
                   ),
         ),
+      ],
+    );
+  }
+
+  /// Constrói o body principal da tela (padrão das instruções)
+  Widget _buildBody(LogController logController, List<Log> filteredLogs) {
+    return Column(
+      children: [
+        // Seletor de data
+        DateSelector(
+          selectedDate: _selectedDate,
+          onDateChanged: (date) {
+            setState(() {
+              _selectedDate = date;
+            });
+          },
+        ),
+
+        // Conteúdo principal
+        Expanded(child: _buildContent(filteredLogs, logController)),
       ],
     );
   }
@@ -302,8 +256,7 @@ class _DailyActivitiesScreenState extends State<DailyActivitiesScreen> {
                 Text('Início: ${_formatTime(log.startTime)}'),
                 if (log.endTime != null)
                   Text('Fim: ${_formatTime(log.endTime!)}'),
-                if (log.durationMinutes != null)
-                  Text('Duração: ${log.durationMinutes} min'),
+                if (log.isCompleted) Text('Duração: ${log.durationFormatted}'),
                 if (log.tags.isNotEmpty) Text('Tags: ${log.tags.join(', ')}'),
               ],
             ),
@@ -319,10 +272,26 @@ class _DailyActivitiesScreenState extends State<DailyActivitiesScreen> {
 
   /// Edita um log
   void _editLog(Log log) {
-    // TODO: Implementar edição de log
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('Edição em desenvolvimento')));
+    showDialog(
+      context: context,
+      builder:
+          (context) => EditActivityDialog(
+            log: log,
+            onSave: (updatedLog) async {
+              final logController = Provider.of<LogController>(
+                context,
+                listen: false,
+              );
+              await logController.updateLog(updatedLog);
+              Navigator.pop(context);
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Atividade atualizada com sucesso'),
+                ),
+              );
+            },
+          ),
+    );
   }
 
   /// Deleta um log

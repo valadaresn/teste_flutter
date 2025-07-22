@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../controllers/task_controller.dart';
 import '../../themes/theme_provider.dart';
-import '../../themes/app_theme.dart';
 import 'task_panel_header.dart';
 import 'task_list.dart';
 
@@ -25,12 +24,14 @@ class TaskPanel extends StatelessWidget {
   final TaskController controller;
   final VoidCallback onShowSearch;
   final VoidCallback onShowFilter;
+  final VoidCallback? onToggleSidebar;
 
   const TaskPanel({
     Key? key,
     required this.controller,
     required this.onShowSearch,
     required this.onShowFilter,
+    this.onToggleSidebar,
   }) : super(key: key);
   @override
   Widget build(BuildContext context) {
@@ -41,17 +42,6 @@ class TaskPanel extends StatelessWidget {
 
     return Consumer<ThemeProvider>(
       builder: (context, themeProvider, child) {
-        // Determinar cor de fundo baseada no estilo de card
-        Color backgroundColor;
-        if (themeProvider.cardStyle == CardStyle.clean) {
-          // Modo Clean: sempre usa cor de fundo constante do tema
-          backgroundColor = Theme.of(context).colorScheme.background;
-        } else {
-          // Modo Dynamic: comportamento atual (muda com a lista)
-          backgroundColor =
-              selectedList?.color ?? Theme.of(context).colorScheme.background;
-        }
-
         return Column(
           children: [
             // Cabeçalho da área de tarefas
@@ -60,12 +50,16 @@ class TaskPanel extends StatelessWidget {
               selectedList: selectedList,
               onShowSearch: onShowSearch,
               onShowFilter: onShowFilter,
+              onToggleSidebar: onToggleSidebar,
             ),
 
-            // Área da lista com fundo baseado no estilo selecionado
+            // Área da lista - USAR o sistema de temas getBackgroundColor
             Expanded(
               child: Container(
-                color: backgroundColor,
+                color: themeProvider.getBackgroundColor(
+                  context,
+                  listColor: selectedList?.color,
+                ),
                 child: TaskList(controller: controller),
               ),
             ),

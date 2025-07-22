@@ -19,6 +19,8 @@ class Task {
   final int sortOrder;
   final bool isImportant; // Favorito/estrela
   final String? notes; // Notas adicionais
+  final int accumulatedTimeSeconds; // Tempo acumulado de todas as sessões
+  final int pomodoroTimeMinutes; // Tempo de pomodoro em minutos
 
   const Task({
     required this.id,
@@ -36,6 +38,8 @@ class Task {
     this.sortOrder = 0,
     this.isImportant = false,
     this.notes,
+    this.accumulatedTimeSeconds = 0,
+    this.pomodoroTimeMinutes = 40, // Valor padrão
   });
 
   // Factory para criar uma nova tarefa
@@ -51,6 +55,8 @@ class Task {
     int sortOrder = 0,
     bool isImportant = false,
     String? notes,
+    int accumulatedTimeSeconds = 0,
+    int pomodoroTimeMinutes = 40,
   }) {
     final now = DateTime.now();
     return Task(
@@ -67,6 +73,8 @@ class Task {
       sortOrder: sortOrder,
       isImportant: isImportant,
       notes: notes,
+      accumulatedTimeSeconds: accumulatedTimeSeconds,
+      pomodoroTimeMinutes: pomodoroTimeMinutes,
     );
   }
 
@@ -87,6 +95,8 @@ class Task {
       sortOrder: formData['sortOrder'] ?? 0,
       isImportant: formData['isImportant'] ?? false,
       notes: formData['notes'],
+      accumulatedTimeSeconds: formData['accumulatedTimeSeconds'] ?? 0,
+      pomodoroTimeMinutes: formData['pomodoroTimeMinutes'] ?? 40,
     );
   }
 
@@ -108,6 +118,8 @@ class Task {
       sortOrder: map['sortOrder'] ?? 0,
       isImportant: map['isImportant'] ?? false,
       notes: map['notes'],
+      accumulatedTimeSeconds: map['accumulatedTimeSeconds'] ?? 0,
+      pomodoroTimeMinutes: map['pomodoroTimeMinutes'] ?? 40,
     );
   }
 
@@ -129,6 +141,8 @@ class Task {
       'sortOrder': sortOrder,
       'isImportant': isImportant,
       'notes': notes,
+      'accumulatedTimeSeconds': accumulatedTimeSeconds,
+      'pomodoroTimeMinutes': pomodoroTimeMinutes,
     };
   }
 
@@ -149,6 +163,8 @@ class Task {
     int? sortOrder,
     bool? isImportant,
     String? notes,
+    int? accumulatedTimeSeconds,
+    int? pomodoroTimeMinutes,
   }) {
     return Task(
       id: id ?? this.id,
@@ -166,6 +182,9 @@ class Task {
       sortOrder: sortOrder ?? this.sortOrder,
       isImportant: isImportant ?? this.isImportant,
       notes: notes ?? this.notes,
+      accumulatedTimeSeconds:
+          accumulatedTimeSeconds ?? this.accumulatedTimeSeconds,
+      pomodoroTimeMinutes: pomodoroTimeMinutes ?? this.pomodoroTimeMinutes,
     );
   }
 
@@ -271,6 +290,8 @@ class Task {
         other.sortOrder == sortOrder &&
         other.isImportant == isImportant &&
         other.notes == notes &&
+        other.accumulatedTimeSeconds == accumulatedTimeSeconds &&
+        other.pomodoroTimeMinutes == pomodoroTimeMinutes &&
         _listEquals(other.tags, tags);
   }
 
@@ -291,6 +312,8 @@ class Task {
       sortOrder,
       isImportant,
       notes,
+      accumulatedTimeSeconds,
+      pomodoroTimeMinutes,
       Object.hashAll(tags),
     );
   }

@@ -4,7 +4,7 @@ import 'dart:async';
 import '../../controllers/task_controller.dart';
 import '../../models/task_model.dart';
 import '../../themes/theme_provider.dart';
-import '../subtasks/clean_subtask_item.dart';
+import 'clean_subtask_item.dart';
 
 /// **CleanTaskPanel** - Painel clean de edição de tarefas
 ///

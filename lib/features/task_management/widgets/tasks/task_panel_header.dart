@@ -20,6 +20,7 @@ class TaskPanelHeader extends StatelessWidget {
   final Models.TaskList? selectedList;
   final VoidCallback onShowSearch;
   final VoidCallback onShowFilter;
+  final VoidCallback? onToggleSidebar;
 
   const TaskPanelHeader({
     Key? key,
@@ -27,6 +28,7 @@ class TaskPanelHeader extends StatelessWidget {
     required this.selectedList,
     required this.onShowSearch,
     required this.onShowFilter,
+    this.onToggleSidebar,
   }) : super(key: key);
 
   @override
@@ -41,6 +43,15 @@ class TaskPanelHeader extends StatelessWidget {
       ),
       child: Row(
         children: [
+          // Botão hambúrguer para recolher/expandir sidebar (opcional)
+          if (onToggleSidebar != null)
+            IconButton(
+              icon: const Icon(Icons.menu),
+              onPressed: onToggleSidebar,
+              tooltip: 'Recolher/Expandir painel lateral',
+            ),
+          if (onToggleSidebar != null) const SizedBox(width: 8),
+
           // Informações da lista/contexto
           ..._buildContextInfo(context),
 

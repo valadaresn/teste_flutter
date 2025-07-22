@@ -283,31 +283,22 @@ class DailyActivityItem extends StatelessWidget {
     }
   }
 
-  /// Obtém o texto de duração
+  /// Obtém o texto de duração usando os getters da model
   String _getDurationText() {
-    if (log.endTime == null) {
+    if (log.isActive) {
       // Atividade em andamento - calcular tempo decorrido
       final elapsed = DateTime.now().difference(log.startTime);
-      return _formatDuration(elapsed.inMinutes);
-    } else {
-      // Atividade concluída - usar duração armazenada
-      final duration = log.durationMinutes ?? 0;
-      return _formatDuration(duration);
-    }
-  }
+      final hours = elapsed.inHours;
+      final minutes = elapsed.inMinutes.remainder(60);
 
-  /// Formata duração em minutos para string legível
-  String _formatDuration(int minutes) {
-    if (minutes < 60) {
-      return '${minutes}min';
-    } else {
-      final hours = minutes ~/ 60;
-      final remainingMinutes = minutes % 60;
-      if (remainingMinutes == 0) {
-        return '${hours}h';
+      if (hours > 0) {
+        return '${hours}h ${minutes}min';
       } else {
-        return '${hours}h ${remainingMinutes}min';
+        return '${minutes}min';
       }
+    } else {
+      // Atividade concluída - usar getter formatado da model
+      return log.durationFormatted;
     }
   }
 

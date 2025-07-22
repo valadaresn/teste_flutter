@@ -9,11 +9,32 @@ class ThemeProvider extends ChangeNotifier {
   ListPanelStyle _listPanelStyle = ListPanelStyle.compact; // Nova propriedade
   CardStyle _cardStyle =
       CardStyle.dynamic; // Nova propriedade para estilo de cards
+  SidebarTheme _sidebarTheme =
+      SidebarTheme.defaultTheme; // Nova propriedade para tema do sidebar
+  BackgroundColorStyle _backgroundColorStyle =
+      BackgroundColorStyle.listColor; // Nova propriedade para cor de fundo
+  TodayCardStyle _todayCardStyle =
+      TodayCardStyle.withEmoji; // Nova propriedade para estilo dos cards Hoje
+  NavigationBarColorStyle _navigationBarColorStyle =
+      NavigationBarColorStyle
+          .systemTheme; // Nova propriedade para cor da barra de navegação
+  SidebarColorStyle _sidebarColorStyle =
+      SidebarColorStyle.samsungLight; // Nova propriedade para cor da sidebar
 
   AppTheme get currentTheme => _currentTheme;
   ThemeConfig get themeConfig => _themeConfig;
   ListPanelStyle get listPanelStyle => _listPanelStyle; // Novo getter
   CardStyle get cardStyle => _cardStyle; // Novo getter para estilo de cards
+  SidebarTheme get sidebarTheme =>
+      _sidebarTheme; // Novo getter para tema do sidebar
+  BackgroundColorStyle get backgroundColorStyle =>
+      _backgroundColorStyle; // Novo getter para cor de fundo
+  TodayCardStyle get todayCardStyle =>
+      _todayCardStyle; // Novo getter para estilo dos cards Hoje
+  NavigationBarColorStyle get navigationBarColorStyle =>
+      _navigationBarColorStyle; // Novo getter para cor da barra de navegação
+  SidebarColorStyle get sidebarColorStyle =>
+      _sidebarColorStyle; // Novo getter para cor da sidebar
 
   ThemeProvider() {
     _loadTheme();
@@ -28,6 +49,21 @@ class ThemeProvider extends ChangeNotifier {
       final cardStyleIndex = prefs.getInt(
         'card_style',
       ); // Carregar estilo de cards
+      final sidebarThemeIndex = prefs.getInt(
+        'sidebar_theme',
+      ); // Carregar tema do sidebar
+      final backgroundColorStyleIndex = prefs.getInt(
+        'background_color_style',
+      ); // Carregar preferência de cor de fundo
+      final todayCardStyleIndex = prefs.getInt(
+        'today_card_style',
+      ); // Carregar preferência de estilo dos cards Hoje
+      final navigationBarColorStyleIndex = prefs.getInt(
+        'navigation_bar_color_style',
+      ); // Carregar preferência de cor da barra de navegação
+      final sidebarColorStyleIndex = prefs.getInt(
+        'sidebar_color_style',
+      ); // Carregar preferência de cor da sidebar
 
       final theme = AppTheme.values[themeIndex];
       await setTheme(theme, save: false);
@@ -42,12 +78,54 @@ class ThemeProvider extends ChangeNotifier {
       if (cardStyleIndex != null && cardStyleIndex < CardStyle.values.length) {
         _cardStyle = CardStyle.values[cardStyleIndex];
       }
+
+      // Se há tema do sidebar salvo, aplicá-lo
+      if (sidebarThemeIndex != null &&
+          sidebarThemeIndex < SidebarTheme.values.length) {
+        _sidebarTheme = SidebarTheme.values[sidebarThemeIndex];
+      }
+
+      // Se há preferência de cor de fundo salva, aplicá-la
+      if (backgroundColorStyleIndex != null &&
+          backgroundColorStyleIndex < BackgroundColorStyle.values.length) {
+        _backgroundColorStyle =
+            BackgroundColorStyle.values[backgroundColorStyleIndex];
+      }
+
+      // Se há preferência de estilo dos cards Hoje salva, aplicá-la
+      if (todayCardStyleIndex != null &&
+          todayCardStyleIndex < TodayCardStyle.values.length) {
+        _todayCardStyle = TodayCardStyle.values[todayCardStyleIndex];
+      }
+
+      // Se há preferência de cor da barra de navegação salva, aplicá-la
+      if (navigationBarColorStyleIndex != null &&
+          navigationBarColorStyleIndex <
+              NavigationBarColorStyle.values.length) {
+        _navigationBarColorStyle =
+            NavigationBarColorStyle.values[navigationBarColorStyleIndex];
+      }
+
+      // Se há preferência de cor da sidebar salva, aplicá-la
+      if (sidebarColorStyleIndex != null &&
+          sidebarColorStyleIndex < SidebarColorStyle.values.length) {
+        _sidebarColorStyle = SidebarColorStyle.values[sidebarColorStyleIndex];
+      }
+
+      notifyListeners(); // Notificar mudanças após carregar
     } catch (e) {
       // Se der erro, usar tema padrão
       _currentTheme = AppTheme.classic;
       _themeConfig = ThemeConfig.classic();
       _listPanelStyle = ListPanelStyle.compact; // Garantir padrão
       _cardStyle = CardStyle.dynamic; // Garantir padrão
+      _sidebarTheme = SidebarTheme.defaultTheme; // Garantir padrão
+      _backgroundColorStyle = BackgroundColorStyle.listColor; // Garantir padrão
+      _todayCardStyle = TodayCardStyle.withEmoji; // Garantir padrão
+      _navigationBarColorStyle =
+          NavigationBarColorStyle.systemTheme; // Garantir padrão
+      _sidebarColorStyle = SidebarColorStyle.samsungLight; // Garantir padrão
+      notifyListeners(); // Notificar mudanças mesmo em caso de erro
     }
   }
 
@@ -102,6 +180,111 @@ class ThemeProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  // Método para mudar tema do sidebar
+  Future<void> setSidebarTheme(SidebarTheme theme, {bool save = true}) async {
+    _sidebarTheme = theme;
+
+    // AUTOMATICAMENTE mudar cor de fundo quando Samsung Notes for selecionado
+    if (theme == SidebarTheme.samsungNotes) {
+      _backgroundColorStyle = BackgroundColorStyle.samsungLight;
+    } else if (theme == SidebarTheme.defaultTheme) {
+      _backgroundColorStyle =
+          BackgroundColorStyle.listColor; // Voltar ao padrão
+    }
+
+    if (save) {
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setInt('sidebar_theme', theme.index);
+        // Salvar também a cor de fundo que foi alterada automaticamente
+        await prefs.setInt(
+          'background_color_style',
+          _backgroundColorStyle.index,
+        );
+      } catch (e) {
+        // Ignorar erro de salvamento
+      }
+    }
+
+    notifyListeners();
+  }
+
+  // Método para mudar cor de fundo
+  Future<void> setBackgroundColorStyle(
+    BackgroundColorStyle style, {
+    bool save = true,
+  }) async {
+    _backgroundColorStyle = style;
+
+    if (save) {
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setInt('background_color_style', style.index);
+      } catch (e) {
+        // Ignorar erro de salvamento
+      }
+    }
+
+    notifyListeners();
+  }
+
+  // Método para mudar estilo dos cards Hoje
+  Future<void> setTodayCardStyle(
+    TodayCardStyle style, {
+    bool save = true,
+  }) async {
+    _todayCardStyle = style;
+
+    if (save) {
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setInt('today_card_style', style.index);
+      } catch (e) {
+        // Ignorar erro de salvamento
+      }
+    }
+
+    notifyListeners();
+  }
+
+  // Método para mudar cor da barra de navegação
+  Future<void> setNavigationBarColorStyle(
+    NavigationBarColorStyle style, {
+    bool save = true,
+  }) async {
+    _navigationBarColorStyle = style;
+
+    if (save) {
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setInt('navigation_bar_color_style', style.index);
+      } catch (e) {
+        // Ignorar erro de salvamento
+      }
+    }
+
+    notifyListeners();
+  }
+
+  // Método para mudar cor da sidebar
+  Future<void> setSidebarColorStyle(
+    SidebarColorStyle style, {
+    bool save = true,
+  }) async {
+    _sidebarColorStyle = style;
+
+    if (save) {
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setInt('sidebar_color_style', style.index);
+      } catch (e) {
+        // Ignorar erro de salvamento
+      }
+    }
+
+    notifyListeners();
+  }
+
   // Métodos helper para facilitar o uso
   Color getCardColor(bool isSelected) {
     if (isSelected) {
@@ -146,5 +329,54 @@ class ThemeProvider extends ChangeNotifier {
 
   double getBorderRadius() {
     return _themeConfig.borderRadius;
+  }
+
+  // Método para obter a cor de fundo com base na configuração
+  Color getBackgroundColor(BuildContext context, {Color? listColor}) {
+    switch (_backgroundColorStyle) {
+      case BackgroundColorStyle.listColor:
+        return listColor?.withOpacity(0.1) ??
+            Theme.of(context).scaffoldBackgroundColor;
+      case BackgroundColorStyle.samsungLight:
+        return SamsungNotesColors.backgroundColor;
+      case BackgroundColorStyle.white:
+        return Colors.white;
+      case BackgroundColorStyle.systemTheme:
+        return Theme.of(context).scaffoldBackgroundColor;
+    }
+  }
+
+  // Método helper para obter cor da barra de navegação
+  Color getNavigationBarColor(BuildContext context, {Color? listColor}) {
+    switch (_navigationBarColorStyle) {
+      case NavigationBarColorStyle.systemTheme:
+        return Theme.of(context).colorScheme.surface;
+      case NavigationBarColorStyle.samsungLight:
+        return const Color(0xFFF5F5F5);
+      case NavigationBarColorStyle.white:
+        return Colors.white;
+      case NavigationBarColorStyle.listColor:
+        return listColor?.withOpacity(0.15) ??
+            Theme.of(context).colorScheme.surface;
+      case NavigationBarColorStyle.dark:
+        return const Color(0xFF2B2B2B);
+    }
+  }
+
+  // Método helper para obter a cor da sidebar
+  Color getSidebarColor(BuildContext context, {Color? listColor}) {
+    switch (_sidebarColorStyle) {
+      case SidebarColorStyle.systemTheme:
+        return Theme.of(context).colorScheme.surface;
+      case SidebarColorStyle.samsungLight:
+        return const Color(0xFFF5F5F5);
+      case SidebarColorStyle.white:
+        return Colors.white;
+      case SidebarColorStyle.listColor:
+        return listColor?.withOpacity(0.15) ??
+            Theme.of(context).colorScheme.surface;
+      case SidebarColorStyle.dark:
+        return const Color(0xFF2B2B2B);
+    }
   }
 }

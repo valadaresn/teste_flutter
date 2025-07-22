@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../controllers/task_controller.dart';
 import '../../models/task_model.dart';
+import '../../themes/theme_provider.dart';
 import '../subtasks/subtask_list.dart';
 
 class TaskDetailPanel extends StatefulWidget {
@@ -25,7 +27,7 @@ class _TaskDetailPanelState extends State<TaskDetailPanel>
   late TextEditingController _titleController;
   late TextEditingController _descriptionController;
   late TextEditingController _notesController;
-  
+
   bool _isEditing = false;
   TaskPriority _selectedPriority = TaskPriority.medium;
   DateTime? _selectedDueDate;
@@ -41,7 +43,9 @@ class _TaskDetailPanelState extends State<TaskDetailPanel>
 
   void _initializeControllers() {
     _titleController = TextEditingController(text: widget.task.title);
-    _descriptionController = TextEditingController(text: widget.task.description);
+    _descriptionController = TextEditingController(
+      text: widget.task.description,
+    );
     _notesController = TextEditingController(text: widget.task.notes ?? '');
     _selectedPriority = widget.task.priority;
     _selectedDueDate = widget.task.dueDate;
@@ -60,41 +64,50 @@ class _TaskDetailPanelState extends State<TaskDetailPanel>
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: 400,
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        border: Border(
-          left: BorderSide(
-            color: Theme.of(context).dividerColor,
-            width: 1,
-          ),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 8,
-            offset: const Offset(-2, 0),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          _buildHeader(),
-          _buildTabBar(),
-          Expanded(
-            child: TabBarView(
-              controller: _tabController,
-              children: [
-                _buildDetailsTab(),
-                _buildSubtasksTab(),
-                _buildNotesTab(),
-              ],
+    return Consumer<ThemeProvider>(
+      builder: (context, themeProvider, child) {
+        return Container(
+          width: 400,
+          decoration: BoxDecoration(
+            color: themeProvider.getBackgroundColor(
+              context,
+              listColor:
+                  widget.controller.selectedListId != null
+                      ? widget.controller
+                          .getListById(widget.controller.selectedListId!)
+                          ?.color
+                      : null,
             ),
+            border: Border(
+              left: BorderSide(color: Theme.of(context).dividerColor, width: 1),
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.1),
+                blurRadius: 8,
+                offset: const Offset(-2, 0),
+              ),
+            ],
           ),
-          if (_isEditing) _buildActionButtons(),
-        ],
-      ),
+          child: Column(
+            children: [
+              _buildHeader(),
+              _buildTabBar(),
+              Expanded(
+                child: TabBarView(
+                  controller: _tabController,
+                  children: [
+                    _buildDetailsTab(),
+                    _buildSubtasksTab(),
+                    _buildNotesTab(),
+                  ],
+                ),
+              ),
+              if (_isEditing) _buildActionButtons(),
+            ],
+          ),
+        );
+      },
     );
   }
 
@@ -103,10 +116,7 @@ class _TaskDetailPanelState extends State<TaskDetailPanel>
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         border: Border(
-          bottom: BorderSide(
-            color: Theme.of(context).dividerColor,
-            width: 1,
-          ),
+          bottom: BorderSide(color: Theme.of(context).dividerColor, width: 1),
         ),
       ),
       child: Row(
@@ -116,50 +126,54 @@ class _TaskDetailPanelState extends State<TaskDetailPanel>
             scale: 1.2,
             child: Checkbox(
               value: widget.task.isCompleted,
-              onChanged: (_) => widget.controller.toggleTaskCompletion(widget.task.id),
+              onChanged:
+                  (_) => widget.controller.toggleTaskCompletion(widget.task.id),
             ),
           ),
-          
+
           const SizedBox(width: 12),
-          
+
           // Título editável
           Expanded(
-            child: _isEditing
-                ? TextField(
-                    controller: _titleController,
-                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.bold,
+            child:
+                _isEditing
+                    ? TextField(
+                      controller: _titleController,
+                      style: Theme.of(context).textTheme.headlineSmall
+                          ?.copyWith(fontWeight: FontWeight.bold),
+                      decoration: const InputDecoration(
+                        border: InputBorder.none,
+                        hintText: 'Título da tarefa',
+                      ),
+                    )
+                    : Text(
+                      widget.task.title,
+                      style: Theme.of(
+                        context,
+                      ).textTheme.headlineSmall?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        decoration:
+                            widget.task.isCompleted
+                                ? TextDecoration.lineThrough
+                                : null,
+                      ),
                     ),
-                    decoration: const InputDecoration(
-                      border: InputBorder.none,
-                      hintText: 'Título da tarefa',
-                    ),
-                  )
-                : Text(
-                    widget.task.title,
-                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      decoration: widget.task.isCompleted 
-                          ? TextDecoration.lineThrough 
-                          : null,
-                    ),
-                  ),
           ),
-          
+
           // Botões de ação
           IconButton(
             icon: Icon(_isEditing ? Icons.check : Icons.edit),
             onPressed: _isEditing ? _saveChanges : _toggleEdit,
             tooltip: _isEditing ? 'Salvar' : 'Editar',
           ),
-          
+
           if (_isEditing)
             IconButton(
               icon: const Icon(Icons.close),
               onPressed: _cancelEdit,
               tooltip: 'Cancelar',
             ),
-          
+
           if (widget.onClose != null)
             IconButton(
               icon: const Icon(Icons.close),
@@ -175,10 +189,7 @@ class _TaskDetailPanelState extends State<TaskDetailPanel>
     return Container(
       decoration: BoxDecoration(
         border: Border(
-          bottom: BorderSide(
-            color: Theme.of(context).dividerColor,
-            width: 1,
-          ),
+          bottom: BorderSide(color: Theme.of(context).dividerColor, width: 1),
         ),
       ),
       child: TabBar(
@@ -201,134 +212,144 @@ class _TaskDetailPanelState extends State<TaskDetailPanel>
           // Descrição
           _buildSection(
             title: 'Descrição',
-            child: _isEditing
-                ? TextField(
-                    controller: _descriptionController,
-                    maxLines: 3,
-                    decoration: const InputDecoration(
-                      border: OutlineInputBorder(),
-                      hintText: 'Adicione uma descrição...',
-                    ),
-                  )
-                : widget.task.description.isNotEmpty
+            child:
+                _isEditing
+                    ? TextField(
+                      controller: _descriptionController,
+                      maxLines: 3,
+                      decoration: const InputDecoration(
+                        border: OutlineInputBorder(),
+                        hintText: 'Adicione uma descrição...',
+                      ),
+                    )
+                    : widget.task.description.isNotEmpty
                     ? Text(widget.task.description)
                     : Text(
-                        'Nenhuma descrição',
-                        style: TextStyle(
-                          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-                          fontStyle: FontStyle.italic,
-                        ),
+                      'Nenhuma descrição',
+                      style: TextStyle(
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.onSurface.withOpacity(0.6),
+                        fontStyle: FontStyle.italic,
                       ),
+                    ),
           ),
-          
+
           const SizedBox(height: 16),
-          
+
           // Prioridade
           _buildSection(
             title: 'Prioridade',
-            child: _isEditing
-                ? DropdownButton<TaskPriority>(
-                    value: _selectedPriority,
-                    isExpanded: true,
-                    onChanged: (priority) {
-                      setState(() {
-                        _selectedPriority = priority!;
-                      });
-                    },
-                    items: TaskPriority.values.map((priority) {
-                      return DropdownMenuItem(
-                        value: priority,
-                        child: Row(
-                          children: [
-                            Container(
-                              width: 12,
-                              height: 12,
-                              decoration: BoxDecoration(
-                                color: _getPriorityColor(priority),
-                                shape: BoxShape.circle,
+            child:
+                _isEditing
+                    ? DropdownButton<TaskPriority>(
+                      value: _selectedPriority,
+                      isExpanded: true,
+                      onChanged: (priority) {
+                        setState(() {
+                          _selectedPriority = priority!;
+                        });
+                      },
+                      items:
+                          TaskPriority.values.map((priority) {
+                            return DropdownMenuItem(
+                              value: priority,
+                              child: Row(
+                                children: [
+                                  Container(
+                                    width: 12,
+                                    height: 12,
+                                    decoration: BoxDecoration(
+                                      color: _getPriorityColor(priority),
+                                      shape: BoxShape.circle,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Text(_getPriorityLabel(priority)),
+                                ],
                               ),
-                            ),
-                            const SizedBox(width: 8),
-                            Text(_getPriorityLabel(priority)),
-                          ],
+                            );
+                          }).toList(),
+                    )
+                    : Row(
+                      children: [
+                        Container(
+                          width: 12,
+                          height: 12,
+                          decoration: BoxDecoration(
+                            color: widget.task.priorityColor,
+                            shape: BoxShape.circle,
+                          ),
                         ),
-                      );
-                    }).toList(),
-                  )
-                : Row(
-                    children: [
-                      Container(
-                        width: 12,
-                        height: 12,
-                        decoration: BoxDecoration(
-                          color: widget.task.priorityColor,
-                          shape: BoxShape.circle,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Text(widget.task.priorityLabel),
-                    ],
-                  ),
+                        const SizedBox(width: 8),
+                        Text(widget.task.priorityLabel),
+                      ],
+                    ),
           ),
-          
+
           const SizedBox(height: 16),
-          
+
           // Data de prazo
           _buildSection(
             title: 'Prazo',
-            child: _isEditing
-                ? Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          _selectedDueDate != null
-                              ? _formatDate(_selectedDueDate!)
-                              : 'Nenhum prazo definido',
-                        ),
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.calendar_today),
-                        onPressed: _selectDueDate,
-                      ),
-                      if (_selectedDueDate != null)
-                        IconButton(
-                          icon: const Icon(Icons.clear),
-                          onPressed: () {
-                            setState(() {
-                              _selectedDueDate = null;
-                            });
-                          },
-                        ),
-                    ],
-                  )
-                : widget.task.dueDate != null
+            child:
+                _isEditing
                     ? Row(
-                        children: [
-                          Icon(
-                            widget.task.isOverdue ? Icons.warning : Icons.calendar_today,
-                            size: 16,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            _selectedDueDate != null
+                                ? _formatDate(_selectedDueDate!)
+                                : 'Nenhum prazo definido',
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.calendar_today),
+                          onPressed: _selectDueDate,
+                        ),
+                        if (_selectedDueDate != null)
+                          IconButton(
+                            icon: const Icon(Icons.clear),
+                            onPressed: () {
+                              setState(() {
+                                _selectedDueDate = null;
+                              });
+                            },
+                          ),
+                      ],
+                    )
+                    : widget.task.dueDate != null
+                    ? Row(
+                      children: [
+                        Icon(
+                          widget.task.isOverdue
+                              ? Icons.warning
+                              : Icons.calendar_today,
+                          size: 16,
+                          color: widget.task.isOverdue ? Colors.red : null,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          _formatDate(widget.task.dueDate!),
+                          style: TextStyle(
                             color: widget.task.isOverdue ? Colors.red : null,
                           ),
-                          const SizedBox(width: 8),
-                          Text(
-                            _formatDate(widget.task.dueDate!),
-                            style: TextStyle(
-                              color: widget.task.isOverdue ? Colors.red : null,
-                            ),
-                          ),
-                        ],
-                      )
-                    : Text(
-                        'Nenhum prazo definido',
-                        style: TextStyle(
-                          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-                          fontStyle: FontStyle.italic,
                         ),
+                      ],
+                    )
+                    : Text(
+                      'Nenhum prazo definido',
+                      style: TextStyle(
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.onSurface.withOpacity(0.6),
+                        fontStyle: FontStyle.italic,
                       ),
+                    ),
           ),
-          
+
           const SizedBox(height: 16),
-          
+
           // Importante
           _buildSection(
             title: 'Importante',
@@ -336,30 +357,34 @@ class _TaskDetailPanelState extends State<TaskDetailPanel>
               children: [
                 Switch(
                   value: _isEditing ? _isImportant : widget.task.isImportant,
-                  onChanged: _isEditing
-                      ? (value) {
-                          setState(() {
-                            _isImportant = value;
-                          });
-                        }
-                      : (value) => widget.controller.toggleTaskImportant(widget.task.id),
+                  onChanged:
+                      _isEditing
+                          ? (value) {
+                            setState(() {
+                              _isImportant = value;
+                            });
+                          }
+                          : (value) => widget.controller.toggleTaskImportant(
+                            widget.task.id,
+                          ),
                 ),
                 const SizedBox(width: 8),
-                Text(_isEditing ? (_isImportant ? 'Sim' : 'Não') : (widget.task.isImportant ? 'Sim' : 'Não')),
+                Text(
+                  _isEditing
+                      ? (_isImportant ? 'Sim' : 'Não')
+                      : (widget.task.isImportant ? 'Sim' : 'Não'),
+                ),
               ],
             ),
           ),
-          
+
           const SizedBox(height: 16),
-          
+
           // Tags
-          _buildSection(
-            title: 'Tags',
-            child: _buildTagsWidget(),
-          ),
-          
+          _buildSection(title: 'Tags', child: _buildTagsWidget()),
+
           const SizedBox(height: 16),
-          
+
           // Informações do sistema
           _buildSection(
             title: 'Informações',
@@ -369,7 +394,9 @@ class _TaskDetailPanelState extends State<TaskDetailPanel>
                 Text('Criada em: ${_formatDate(widget.task.createdAt)}'),
                 Text('Atualizada em: ${_formatDate(widget.task.updatedAt)}'),
                 if (widget.task.completedAt != null)
-                  Text('Concluída em: ${_formatDate(widget.task.completedAt!)}'),
+                  Text(
+                    'Concluída em: ${_formatDate(widget.task.completedAt!)}',
+                  ),
               ],
             ),
           ),
@@ -379,10 +406,7 @@ class _TaskDetailPanelState extends State<TaskDetailPanel>
   }
 
   Widget _buildSubtasksTab() {
-    return SubtaskList(
-      parentTask: widget.task,
-      controller: widget.controller,
-    );
+    return SubtaskList(parentTask: widget.task, controller: widget.controller);
   }
 
   Widget _buildNotesTab() {
@@ -393,9 +417,9 @@ class _TaskDetailPanelState extends State<TaskDetailPanel>
         children: [
           Text(
             'Notas',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.bold,
-            ),
+            style: Theme.of(
+              context,
+            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 12),
           Expanded(
@@ -435,16 +459,18 @@ class _TaskDetailPanelState extends State<TaskDetailPanel>
 
   Widget _buildTagsWidget() {
     final displayTags = _isEditing ? _tags : widget.task.tags;
-    
+
     return Wrap(
       spacing: 8,
       runSpacing: 4,
       children: [
-        ...displayTags.map((tag) => Chip(
-          label: Text(tag),
-          onDeleted: _isEditing ? () => _removeTag(tag) : null,
-          deleteIconColor: Theme.of(context).colorScheme.error,
-        )),
+        ...displayTags.map(
+          (tag) => Chip(
+            label: Text(tag),
+            onDeleted: _isEditing ? () => _removeTag(tag) : null,
+            deleteIconColor: Theme.of(context).colorScheme.error,
+          ),
+        ),
         if (_isEditing)
           ActionChip(
             avatar: const Icon(Icons.add, size: 16),
@@ -460,10 +486,7 @@ class _TaskDetailPanelState extends State<TaskDetailPanel>
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         border: Border(
-          top: BorderSide(
-            color: Theme.of(context).dividerColor,
-            width: 1,
-          ),
+          top: BorderSide(color: Theme.of(context).dividerColor, width: 1),
         ),
       ),
       child: Row(
@@ -511,7 +534,7 @@ class _TaskDetailPanelState extends State<TaskDetailPanel>
     };
 
     await widget.controller.updateTask(widget.task.id, formData);
-    
+
     setState(() {
       _isEditing = false;
     });
@@ -524,7 +547,7 @@ class _TaskDetailPanelState extends State<TaskDetailPanel>
       firstDate: DateTime.now().subtract(const Duration(days: 365)),
       lastDate: DateTime.now().add(const Duration(days: 365 * 2)),
     );
-    
+
     if (date != null) {
       setState(() {
         _selectedDueDate = date;
@@ -541,9 +564,7 @@ class _TaskDetailPanelState extends State<TaskDetailPanel>
           title: const Text('Nova Tag'),
           content: TextField(
             onChanged: (value) => newTag = value,
-            decoration: const InputDecoration(
-              hintText: 'Nome da tag',
-            ),
+            decoration: const InputDecoration(hintText: 'Nome da tag'),
           ),
           actions: [
             TextButton(
@@ -552,7 +573,8 @@ class _TaskDetailPanelState extends State<TaskDetailPanel>
             ),
             ElevatedButton(
               onPressed: () {
-                if (newTag.trim().isNotEmpty && !_tags.contains(newTag.trim())) {
+                if (newTag.trim().isNotEmpty &&
+                    !_tags.contains(newTag.trim())) {
                   setState(() {
                     _tags.add(newTag.trim());
                   });

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../controllers/task_controller.dart';
+import '../../themes/theme_provider.dart';
 import 'expansible_task_group.dart';
 
 /// **TodayPanel** - Painel principal da guia Hoje
@@ -8,45 +10,70 @@ import 'expansible_task_group.dart';
 /// organizadas em grupos expansíveis (Hoje, Atrasado)
 class TodayPanel extends StatelessWidget {
   final TaskController controller;
+  final VoidCallback? onToggleSidebar;
 
-  const TodayPanel({Key? key, required this.controller}) : super(key: key);
+  const TodayPanel({Key? key, required this.controller, this.onToggleSidebar})
+    : super(key: key);
+
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
     final isCompactScreen = screenWidth < 400;
-    return Container(
-      color: Colors.white, // Fundo branco para teste
-      padding: EdgeInsets.all(isCompactScreen ? 4.0 : 8.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Header da seção Hoje
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
-            child: Row(
-              children: [
-                Icon(
-                  Icons.wb_sunny_outlined,
-                  size: 20,
-                  color: Theme.of(context).colorScheme.primary,
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  'Hoje',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
-                    color: Theme.of(context).colorScheme.primary,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 8),
 
-          // Verificar se há tarefas para exibir
-          _buildTaskGroups(context),
-        ],
-      ),
+    return Consumer<ThemeProvider>(
+      builder: (context, themeProvider, child) {
+        return Container(
+          color: themeProvider.getBackgroundColor(
+            context,
+            listColor:
+                controller.selectedListId != null
+                    ? controller.getListById(controller.selectedListId!)?.color
+                    : null,
+          ),
+          padding: EdgeInsets.all(isCompactScreen ? 4.0 : 8.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header da seção Hoje
+              Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 8.0,
+                  vertical: 4.0,
+                ),
+                child: Row(
+                  children: [
+                    // Botão hambúrguer para recolher/expandir sidebar (opcional)
+                    if (onToggleSidebar != null)
+                      IconButton(
+                        icon: const Icon(Icons.menu),
+                        onPressed: onToggleSidebar,
+                        tooltip: 'Recolher/Expandir painel lateral',
+                      ),
+                    if (onToggleSidebar != null) const SizedBox(width: 8),
+                    Icon(
+                      Icons.wb_sunny_outlined,
+                      size: 20,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Hoje',
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 8),
+
+              // Verificar se há tarefas para exibir
+              _buildTaskGroups(context),
+            ],
+          ),
+        );
+      },
     );
   }
 

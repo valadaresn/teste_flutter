@@ -267,10 +267,10 @@ class DailySummary extends StatelessWidget {
       };
     }
 
-    // Calcular tempo total
+    // Calcular tempo total usando getters da model
     final totalMinutes = logs.fold(0, (sum, log) {
-      if (log.endTime != null) {
-        return sum + (log.durationMinutes ?? 0);
+      if (log.isCompleted) {
+        return sum + (log.durationInMinutes ?? 0);
       } else {
         // Atividade em andamento
         final elapsed = DateTime.now().difference(log.startTime);
@@ -281,10 +281,10 @@ class DailySummary extends StatelessWidget {
     // Atividades únicas
     final uniqueTasks = logs.map((log) => log.entityId).toSet().length;
 
-    // Atividade mais longa
+    // Atividade mais longa usando getters da model
     final longestActivity = logs.reduce((a, b) {
-      final aDuration = a.durationMinutes ?? 0;
-      final bDuration = b.durationMinutes ?? 0;
+      final aDuration = a.durationInMinutes ?? 0;
+      final bDuration = b.durationInMinutes ?? 0;
       return aDuration > bDuration ? a : b;
     });
 
@@ -305,7 +305,7 @@ class DailySummary extends StatelessWidget {
       'totalActivities': logs.length,
       'uniqueTasks': uniqueTasks,
       'longestActivityText': _formatDuration(
-        longestActivity.durationMinutes ?? 0,
+        longestActivity.durationInMinutes ?? 0,
       ),
       'averageTimeText': _formatDuration(averageMinutes.round()),
       'categoryDistribution': categoryDistribution,

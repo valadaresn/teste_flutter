@@ -34,6 +34,8 @@ class TaskController extends ChangeNotifier {
   TaskPriority? _selectedPriority;
   bool _showOnlyImportant = false;
   bool _showTodayView = false; // Estado para visualização "Hoje"
+  bool _showActivitiesView =
+      false; // Estado para visualização "Atividades do Dia"
 
   // Getters públicos
   bool get isLoading => _isLoading;
@@ -49,6 +51,7 @@ class TaskController extends ChangeNotifier {
   TaskPriority? get selectedPriority => _selectedPriority;
   bool get showOnlyImportant => _showOnlyImportant;
   bool get showTodayView => _showTodayView;
+  bool get showActivitiesView => _showActivitiesView;
   // Constructor com StreamSubscription - ITEM #2 das instruções
   TaskController() {
     _subscribeToStreams();
@@ -594,6 +597,7 @@ class TaskController extends ChangeNotifier {
         tags: formData['tags'],
         isImportant: formData['isImportant'],
         notes: formData['notes'],
+        pomodoroTimeMinutes: formData['pomodoroTimeMinutes'],
       );
 
       await _repository.updateTask(updatedTask);
@@ -605,10 +609,63 @@ class TaskController extends ChangeNotifier {
     }
   }
 
+  /// Atualiza o tempo acumulado de uma tarefa
+  Future<void> updateTaskAccumulatedTime(
+    String taskId,
+    int additionalSeconds,
+  ) async {
+    try {
+      debugPrint('🟢 TaskController.updateTaskAccumulatedTime - Iniciando');
+      debugPrint(
+        '🟢 Parâmetros: taskId=$taskId, additionalSeconds=$additionalSeconds',
+      );
+
+      final currentTask = getTaskById(taskId);
+      debugPrint('🟢 currentTask encontrada: ${currentTask != null}');
+      if (currentTask == null) {
+        debugPrint('🟢 ERRO: Tarefa não encontrada para taskId: $taskId');
+        throw Exception('Tarefa não encontrada');
+      }
+
+      debugPrint(
+        '🟢 currentTask.accumulatedTimeSeconds atual: ${currentTask.accumulatedTimeSeconds}',
+      );
+      final newAccumulatedTime =
+          currentTask.accumulatedTimeSeconds + additionalSeconds;
+      debugPrint('🟢 newAccumulatedTime calculado: $newAccumulatedTime');
+
+      final updatedTask = currentTask.copyWith(
+        accumulatedTimeSeconds: newAccumulatedTime,
+      );
+      debugPrint(
+        '🟢 updatedTask criada com accumulatedTimeSeconds: ${updatedTask.accumulatedTimeSeconds}',
+      );
+
+      debugPrint('🟢 Chamando _repository.updateTask...');
+      await _repository.updateTask(updatedTask);
+      debugPrint('🟢 _repository.updateTask executado com sucesso');
+
+      // Não mostra loading nem notifica erro para esta operação silenciosa
+    } catch (e) {
+      debugPrint('🟢 ERRO em updateTaskAccumulatedTime: $e');
+      // Falha silenciosa - não impacta a UX
+    }
+  }
+
   Future<void> deleteTask(String taskId) async {
     try {
       _setLoading(true);
+
+      // Verificar se a tarefa que será excluída é a selecionada atualmente
+      final isSelectedTask = _selectedTaskId == taskId;
+
       await _repository.deleteTask(taskId);
+
+      // Se a tarefa excluída era a selecionada, limpar a seleção
+      if (isSelectedTask) {
+        _selectedTaskId = null;
+      }
+
       _clearError();
     } catch (e) {
       _setError('Erro ao deletar tarefa: $e');
@@ -678,6 +735,10 @@ class TaskController extends ChangeNotifier {
       if (_showTodayView) {
         _showTodayView = false;
       }
+      // Sair da visualização "Atividades" quando um projeto for selecionado
+      if (_showActivitiesView) {
+        _showActivitiesView = false;
+      }
       notifyListeners();
     }
   }
@@ -690,6 +751,10 @@ class TaskController extends ChangeNotifier {
       // Sair da visualização "Hoje" quando uma lista específica for selecionada
       if (listId != null && _showTodayView) {
         _showTodayView = false;
+      }
+      // Sair da visualização "Atividades" quando uma lista específica for selecionada
+      if (listId != null && _showActivitiesView) {
+        _showActivitiesView = false;
       }
       notifyListeners();
     }
@@ -710,6 +775,10 @@ class TaskController extends ChangeNotifier {
     // Sair da visualização "Hoje"
     if (_showTodayView) {
       _showTodayView = false;
+    }
+    // Sair da visualização "Atividades"
+    if (_showActivitiesView) {
+      _showActivitiesView = false;
     }
 
     // Selecionar a lista da tarefa
@@ -778,6 +847,22 @@ class TaskController extends ChangeNotifier {
       _selectedListId = null;
       _selectedProjectId = null;
       _selectedTaskId = null;
+      _showActivitiesView = false; // Desativar atividades
+    }
+
+    notifyListeners();
+  }
+
+  /// Alternar visualização "Atividades do Dia"
+  void toggleActivitiesView() {
+    _showActivitiesView = !_showActivitiesView;
+
+    // Se ativar a visualização de atividades, limpar outros filtros
+    if (_showActivitiesView) {
+      _selectedListId = null;
+      _selectedProjectId = null;
+      _selectedTaskId = null;
+      _showTodayView = false; // Desativar hoje
     }
 
     notifyListeners();
@@ -817,6 +902,11 @@ class TaskController extends ChangeNotifier {
 
     if (_showTodayView) {
       _showTodayView = false;
+      hasChanges = true;
+    }
+
+    if (_showActivitiesView) {
+      _showActivitiesView = false;
       hasChanges = true;
     }
 
