@@ -35,6 +35,7 @@ class _TodayTaskItemState extends State<TodayTaskItem>
     with SingleTickerProviderStateMixin {
   bool _isCompletingAnimation = false;
   bool _tempCheckedState = false; // Estado temporário para feedback visual
+  bool _isHovered = false; // 🎨 Estado para hover
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
 
@@ -115,213 +116,252 @@ class _TodayTaskItemState extends State<TodayTaskItem>
                           TodayCardStyle.withColorBorder &&
                       list != null;
 
-                  return GestureDetector(
-                    onTap:
-                        () => widget.controller.openTaskInToday(widget.task.id),
-                    child: Container(
-                      decoration:
-                          widget.isSelected
-                              ? BoxDecoration(
-                                color: Theme.of(
-                                  context,
-                                ).colorScheme.primary.withOpacity(0.08),
-                                borderRadius: BorderRadius.circular(6.0),
-                                // Adicionar borda colorida se necessário
-                                border:
-                                    shouldShowColorBorder
-                                        ? Border(
-                                          left: BorderSide(
-                                            color: list.color,
-                                            width: 4,
-                                          ),
-                                        )
-                                        : null,
-                              )
-                              : shouldShowColorBorder
-                              ? BoxDecoration(
-                                borderRadius: BorderRadius.circular(6.0),
-                                border: Border(
-                                  left: BorderSide(color: list.color, width: 4),
-                                ),
-                              )
-                              : null,
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(
-                          vertical: 6.0,
-                          horizontal: 16.0,
-                        ),
-                        child: Row(
-                          children: [
-                            // Checkbox circular
-                            SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: Checkbox(
-                                value: _checkboxState,
-                                onChanged:
-                                    _canToggleCompletion
-                                        ? (value) => _toggleTaskCompletion()
-                                        : null,
-                                materialTapTargetSize:
-                                    MaterialTapTargetSize.shrinkWrap,
-                                shape: const CircleBorder(),
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-
-                            // Ícone/borda da lista - baseado na preferência do usuário
-                            if (list != null)
-                              Consumer<ThemeProvider>(
-                                builder: (context, themeProvider, child) {
-                                  switch (themeProvider.todayCardStyle) {
-                                    case TodayCardStyle.withEmoji:
-                                      // Estilo atual - exibe emoji
-                                      return Row(
-                                        children: [
-                                          Text(
-                                            list.emoji,
-                                            style: const TextStyle(
-                                              fontSize: 16,
+                  // Widget com hover que funciona - usando MouseRegion + GestureDetector
+                  return MouseRegion(
+                    cursor: SystemMouseCursors.click,
+                    onEnter:
+                        (_) =>
+                            setState(() => _isHovered = true), // 🎨 Hover enter
+                    onExit:
+                        (_) =>
+                            setState(() => _isHovered = false), // 🎨 Hover exit
+                    child: GestureDetector(
+                      onTap:
+                          () =>
+                              _handleCardTap(), // 🚀 Nova função para feedback imediato
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 150),
+                        decoration:
+                            widget.isSelected
+                                ? BoxDecoration(
+                                  color: Theme.of(context).colorScheme.onSurface
+                                      .withOpacity(0.06), // 🎨 Seleção visível
+                                  borderRadius: BorderRadius.circular(6.0),
+                                  // Adicionar borda colorida se necessário
+                                  border:
+                                      shouldShowColorBorder
+                                          ? Border(
+                                            left: BorderSide(
+                                              color: list.color,
+                                              width: 4,
                                             ),
-                                          ),
-                                          const SizedBox(width: 8),
-                                        ],
-                                      );
-                                    case TodayCardStyle.withColorBorder:
-                                      // Novo estilo - apenas espaçamento
-                                      // (a borda colorida será aplicada no container principal)
-                                      return const SizedBox.shrink();
-                                  }
-                                },
-                              ),
-
-                            // Título da tarefa
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    widget.task.title,
-                                    style: TextStyle(
-                                      decoration:
-                                          widget.groupType ==
-                                                  TaskGroupType.completed
-                                              ? TextDecoration.lineThrough
-                                              : null,
-                                      color:
-                                          widget.groupType ==
-                                                  TaskGroupType.completed
-                                              ? Theme.of(context)
-                                                  .textTheme
-                                                  .bodySmall
-                                                  ?.color
-                                                  ?.withOpacity(0.6)
-                                              : Theme.of(
-                                                context,
-                                              ).textTheme.bodyMedium?.color,
-                                      fontSize: 14,
+                                          )
+                                          : null,
+                                )
+                                : _isHovered
+                                ? BoxDecoration(
+                                  color: Theme.of(context).colorScheme.onSurface
+                                      .withOpacity(0.03), // 🎨 Hover mais claro
+                                  borderRadius: BorderRadius.circular(6.0),
+                                  border:
+                                      shouldShowColorBorder
+                                          ? Border(
+                                            left: BorderSide(
+                                              color: list.color,
+                                              width: 4,
+                                            ),
+                                          )
+                                          : null,
+                                )
+                                : shouldShowColorBorder
+                                ? BoxDecoration(
+                                  borderRadius: BorderRadius.circular(6.0),
+                                  border: Border(
+                                    left: BorderSide(
+                                      color: list.color,
+                                      width: 4,
                                     ),
-                                    overflow: TextOverflow.ellipsis,
-                                    maxLines: 1,
                                   ),
-
-                                  // Timer display (apenas se estiver sendo cronometrado)
-                                  if (isBeingLogged && elapsedTime != null) ...[
-                                    const SizedBox(height: 2),
-                                    TimerDisplay(
-                                      formattedTime: elapsedTime,
-                                      isActive: isBeingLogged,
-                                    ),
-                                  ],
-                                ],
+                                )
+                                : null,
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                            vertical: 6.0,
+                            horizontal: 16.0,
+                          ),
+                          child: Row(
+                            children: [
+                              // Checkbox circular
+                              SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: Checkbox(
+                                  value: _checkboxState,
+                                  onChanged:
+                                      _canToggleCompletion
+                                          ? (value) => _toggleTaskCompletion()
+                                          : null,
+                                  materialTapTargetSize:
+                                      MaterialTapTargetSize.shrinkWrap,
+                                  shape: const CircleBorder(),
+                                ),
                               ),
-                            ),
+                              const SizedBox(width: 12),
 
-                            // Botões de controle (apenas para tarefas não concluídas)
-                            if (widget.groupType !=
-                                TaskGroupType.completed) ...[
-                              const SizedBox(width: 8),
+                              // Ícone/borda da lista - baseado na preferência do usuário
+                              if (list != null)
+                                Consumer<ThemeProvider>(
+                                  builder: (context, themeProvider, child) {
+                                    switch (themeProvider.todayCardStyle) {
+                                      case TodayCardStyle.withEmoji:
+                                        // Estilo atual - exibe emoji
+                                        return Row(
+                                          children: [
+                                            Text(
+                                              list.emoji,
+                                              style: const TextStyle(
+                                                fontSize: 16,
+                                              ),
+                                            ),
+                                            const SizedBox(width: 8),
+                                          ],
+                                        );
+                                      case TodayCardStyle.withColorBorder:
+                                        // Novo estilo - apenas espaçamento
+                                        // (a borda colorida será aplicada no container principal)
+                                        return const SizedBox.shrink();
+                                    }
+                                  },
+                                ),
 
-                              // Botão Pause/Resume (apenas se log estiver ativo)
-                              if (isBeingLogged) ...[
+                              // Título da tarefa
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      widget.task.title,
+                                      style: TextStyle(
+                                        decoration:
+                                            widget.groupType ==
+                                                    TaskGroupType.completed
+                                                ? TextDecoration.lineThrough
+                                                : null,
+                                        color:
+                                            widget.groupType ==
+                                                    TaskGroupType.completed
+                                                ? Theme.of(context)
+                                                    .textTheme
+                                                    .bodySmall
+                                                    ?.color
+                                                    ?.withOpacity(0.6)
+                                                : Theme.of(
+                                                  context,
+                                                ).textTheme.bodyMedium?.color,
+                                        fontSize: 14,
+                                      ),
+                                      overflow: TextOverflow.ellipsis,
+                                      maxLines: 1,
+                                    ),
+
+                                    // Timer display (apenas se estiver sendo cronometrado)
+                                    if (isBeingLogged &&
+                                        elapsedTime != null) ...[
+                                      const SizedBox(height: 2),
+                                      TimerDisplay(
+                                        formattedTime: elapsedTime,
+                                        isActive: isBeingLogged,
+                                      ),
+                                    ],
+                                  ],
+                                ),
+                              ),
+
+                              // Botões de controle (apenas para tarefas não concluídas)
+                              if (widget.groupType !=
+                                  TaskGroupType.completed) ...[
+                                const SizedBox(width: 8),
+
+                                // Botão Pause/Resume (apenas se log estiver ativo)
+                                if (isBeingLogged) ...[
+                                  Material(
+                                    color: Colors.transparent,
+                                    child: InkWell(
+                                      onTap:
+                                          _isLoggingAction
+                                              ? null
+                                              : _pauseResumeTaskLog,
+                                      borderRadius: BorderRadius.circular(16),
+                                      child: Container(
+                                        padding: const EdgeInsets.all(6),
+                                        child: Icon(
+                                          logController.isPomodoroPaused(
+                                                widget.task.id,
+                                              )
+                                              ? Icons.play_arrow
+                                              : Icons.pause,
+                                          size: 14,
+                                          color: Theme.of(
+                                            context,
+                                          ).colorScheme.onSurface.withOpacity(
+                                            0.7,
+                                          ), // 🎨 Cor mais suave consistente
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 4),
+                                ],
+
+                                // Botão Play/Stop principal
                                 Material(
                                   color: Colors.transparent,
                                   child: InkWell(
                                     onTap:
                                         _isLoggingAction
                                             ? null
-                                            : _pauseResumeTaskLog,
+                                            : _toggleTaskLog,
                                     borderRadius: BorderRadius.circular(16),
                                     child: Container(
                                       padding: const EdgeInsets.all(6),
-                                      child: Icon(
-                                        logController.isPomodoroPaused(
-                                              widget.task.id,
-                                            )
-                                            ? Icons.play_arrow
-                                            : Icons.pause,
-                                        size: 14,
-                                        color:
-                                            Theme.of(
-                                              context,
-                                            ).colorScheme.secondary,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(width: 4),
-                              ],
-
-                              // Botão Play/Stop principal
-                              Material(
-                                color: Colors.transparent,
-                                child: InkWell(
-                                  onTap:
-                                      _isLoggingAction ? null : _toggleTaskLog,
-                                  borderRadius: BorderRadius.circular(16),
-                                  child: Container(
-                                    padding: const EdgeInsets.all(6),
-                                    child: AnimatedSwitcher(
-                                      duration: const Duration(
-                                        milliseconds: 200,
-                                      ),
-                                      child:
-                                          _isLoggingAction
-                                              ? SizedBox(
-                                                width: 16,
-                                                height: 16,
-                                                child: CircularProgressIndicator(
-                                                  strokeWidth: 2,
-                                                  valueColor:
-                                                      AlwaysStoppedAnimation<
-                                                        Color
-                                                      >(
-                                                        Theme.of(
-                                                          context,
-                                                        ).colorScheme.primary,
-                                                      ),
+                                      child: AnimatedSwitcher(
+                                        duration: const Duration(
+                                          milliseconds: 200,
+                                        ),
+                                        child:
+                                            _isLoggingAction
+                                                ? SizedBox(
+                                                  width: 16,
+                                                  height: 16,
+                                                  child: CircularProgressIndicator(
+                                                    strokeWidth: 2,
+                                                    valueColor:
+                                                        AlwaysStoppedAnimation<
+                                                          Color
+                                                        >(
+                                                          Theme.of(
+                                                            context,
+                                                          ).colorScheme.primary,
+                                                        ),
+                                                  ),
+                                                )
+                                                : Icon(
+                                                  isBeingLogged
+                                                      ? Icons.stop
+                                                      : Icons.play_arrow,
+                                                  size: 16,
+                                                  color:
+                                                      isBeingLogged
+                                                          ? Theme.of(context)
+                                                              .colorScheme
+                                                              .error
+                                                              .withOpacity(
+                                                                0.8,
+                                                              ) // 🎨 Stop mais suave
+                                                          : Theme.of(context)
+                                                              .colorScheme
+                                                              .onSurface
+                                                              .withOpacity(
+                                                                0.7,
+                                                              ), // 🎨 Play mais suave
                                                 ),
-                                              )
-                                              : Icon(
-                                                isBeingLogged
-                                                    ? Icons.stop
-                                                    : Icons.play_arrow,
-                                                size: 16,
-                                                color:
-                                                    isBeingLogged
-                                                        ? Theme.of(
-                                                          context,
-                                                        ).colorScheme.error
-                                                        : Theme.of(
-                                                          context,
-                                                        ).colorScheme.primary,
-                                              ),
+                                      ),
                                     ),
                                   ),
                                 ),
-                              ),
+                              ],
                             ],
-                          ],
+                          ),
                         ),
                       ),
                     ),
@@ -333,6 +373,17 @@ class _TodayTaskItemState extends State<TodayTaskItem>
         );
       },
     );
+  }
+
+  /// 🚀 FEEDBACK VISUAL IMEDIATO - Seleciona o card primeiro, depois processa
+  void _handleCardTap() {
+    // PRIMEIRO: Seleção visual imediata (setState síncrono)
+    widget.controller.setSelectedTaskImmediate(widget.task.id);
+
+    // DEPOIS: Processamento das informações (microtask assíncrono)
+    Future.microtask(() {
+      widget.controller.openTaskInToday(widget.task.id);
+    });
   }
 
   /// Toggle do estado de conclusão da tarefa com animação

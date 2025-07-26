@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'dart:async';
-import '../../controllers/task_controller.dart';
-import '../../models/task_model.dart';
-import '../../themes/theme_provider.dart';
-import '../subtasks/clean_subtask_item.dart';
+import '../../../controllers/task_controller.dart';
+import '../../../models/task_model.dart';
+import '../../../themes/theme_provider.dart';
+import '../task_detail_panel/clean_subtask_item.dart';
 
 /// **CleanTaskPanel** - Painel clean de edição de tarefas
 ///
@@ -254,6 +254,42 @@ class _CleanTaskPanelState extends State<CleanTaskPanel> {
   Future<void> _deleteSubtask(String subtaskId) async {
     await widget.controller.deleteTask(subtaskId);
     _loadSubtasks();
+  }
+
+  /// Excluir a tarefa atual
+  Future<void> _deleteTask() async {
+    final task = _selectedTask;
+    if (task != null) {
+      // Confirmar antes de excluir
+      final bool? confirmed = await showDialog<bool>(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: const Text('Excluir tarefa'),
+            content: Text('Tem certeza que deseja excluir "${task.title}"?'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(false),
+                child: const Text('Cancelar'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(true),
+                style: TextButton.styleFrom(foregroundColor: Colors.red),
+                child: const Text('Excluir'),
+              ),
+            ],
+          );
+        },
+      );
+
+      if (confirmed == true) {
+        // Fechar o painel primeiro
+        widget.controller.selectTask(null);
+
+        // Excluir a tarefa
+        await widget.controller.deleteTask(task.id);
+      }
+    }
   }
 
   /// Abrir DatePicker nativo do Flutter com localização
@@ -606,6 +642,19 @@ class _CleanTaskPanelState extends State<CleanTaskPanel> {
       ),
       child: Row(
         children: [
+          // Excluir tarefa (lado esquerdo)
+          IconButton(
+            onPressed: _deleteTask,
+            icon: Icon(
+              Icons.delete_outline,
+              size: 20,
+              color: Colors.red.shade600,
+            ),
+            splashRadius: 20,
+          ),
+
+          const SizedBox(width: 8),
+
           // Ícone e nome da lista
           Row(
             children: [

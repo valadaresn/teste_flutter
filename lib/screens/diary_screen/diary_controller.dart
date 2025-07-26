@@ -293,6 +293,51 @@ class DiaryController extends ChangeNotifier {
     }
   }
 
+  /// Busca entradas de diário específicas para uma tarefa
+  Future<List<DiaryEntry>> getEntriesForTask(String taskId) async {
+    try {
+      _log("Buscando entradas para tarefa: $taskId");
+
+      // Solução temporária: carregar todas as entradas e filtrar localmente
+      // Isso evita problemas de índice no Firestore durante desenvolvimento
+      final snapshot = await _firestore.collection(_collectionPath).get();
+
+      var allEntries = snapshot.docs.map(_documentToEntry).toList();
+
+      // Filtrar localmente por taskId
+      var entries =
+          allEntries.where((entry) => entry.taskId == taskId).toList();
+
+      // Ordenar localmente por data (mais recente primeiro)
+      entries.sort((a, b) => b.dateTime.compareTo(a.dateTime));
+
+      _log(
+        "${entries.length} entradas encontradas para a tarefa (de ${allEntries.length} total)",
+      );
+      return entries;
+    } catch (e) {
+      _log("Erro ao buscar entradas da tarefa: $e");
+      return [];
+    }
+  }
+
+  /// Adiciona uma entrada de diário diretamente (para uso em task panels)
+  Future<bool> addDiaryEntry(DiaryEntry entry) async {
+    try {
+      _log("Adicionando entrada de diário...");
+      await _firestore
+          .collection(_collectionPath)
+          .doc(entry.id)
+          .set(entry.toMap());
+
+      _log("Entrada de diário adicionada com sucesso");
+      return true;
+    } catch (e) {
+      _log("Erro ao adicionar entrada de diário: $e");
+      return false;
+    }
+  }
+
   /// Alterna status de favorito
   Future<bool> toggleFavorite(String id, bool value) async {
     try {

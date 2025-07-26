@@ -13,9 +13,6 @@ class TaskList extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        // Campo de entrada rápida no topo
-        QuickAddTaskInput(controller: controller),
-
         // Lista de tarefas
         Expanded(
           child: GenericSelectorList<TaskController, Task>(
@@ -46,6 +43,9 @@ class TaskList extends StatelessWidget {
             spacing: 2.0,
           ),
         ),
+
+        // Campo de entrada rápida no bottom
+        QuickAddTaskInput(controller: controller),
       ],
     );
   }

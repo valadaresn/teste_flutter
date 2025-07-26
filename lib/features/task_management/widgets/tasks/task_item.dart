@@ -7,7 +7,7 @@ import '../../models/task_model.dart';
 import '../../themes/theme_provider.dart';
 import '../../themes/app_theme.dart';
 
-class TaskItem extends StatelessWidget {
+class TaskItem extends StatefulWidget {
   final Task task;
   final TaskController controller;
   final VoidCallback onToggleComplete;
@@ -26,12 +26,24 @@ class TaskItem extends StatelessWidget {
     required this.onEdit,
     required this.onDelete,
   }) : super(key: key);
+
+  @override
+  State<TaskItem> createState() => _TaskItemState();
+}
+
+class _TaskItemState extends State<TaskItem> {
+  bool _isVisuallySelected = false;
+  bool _isHovered = false;
   @override
   Widget build(BuildContext context) {
-    final isSelected = controller.selectedTaskId == task.id;
+    // 🚀 MUDANÇA DE COR INSTANTÂNEA - usar estado local primeiro
+    final bool isSelected =
+        _isVisuallySelected ||
+        (widget.controller.selectedTaskId == widget.task.id);
+
     final selectedList =
-        controller.selectedListId != null
-            ? controller.getListById(controller.selectedListId!)
+        widget.controller.selectedListId != null
+            ? widget.controller.getListById(widget.controller.selectedListId!)
             : null;
 
     // Cor baseada na lista selecionada ou cor padrão
@@ -50,171 +62,198 @@ class TaskItem extends StatelessWidget {
       borderColor = themeProvider.getCardBorderColor(isSelected, listColor);
     }
 
-    return Container(
-      margin: const EdgeInsets.symmetric(vertical: 0.2),
-      decoration: BoxDecoration(
-        color:
-            themeProvider.getCardGradient(isSelected) == null
-                ? themeProvider.getCardColor(isSelected)
-                : null,
-        gradient: themeProvider.getCardGradient(isSelected),
-        borderRadius: BorderRadius.circular(themeProvider.getBorderRadius()),
-        border: Border.all(
-          color: borderColor,
-          width: themeProvider.getCardBorderWidth(isSelected),
-        ),
-        boxShadow: themeProvider.getCardShadow(isSelected),
-      ),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(themeProvider.getBorderRadius()),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              // Checkbox circular
-              GestureDetector(
-                onTap: onToggleComplete,
-                child: Container(
-                  width: 20,
-                  height: 20,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color:
-                          task.isCompleted ? listColor : Colors.grey.shade400,
-                      width: 2,
-                    ),
-                    color: task.isCompleted ? listColor : Colors.transparent,
-                  ),
-                  child:
-                      task.isCompleted
-                          ? const Icon(
-                            Icons.check,
-                            color: Colors.white,
-                            size: 14,
-                          )
-                          : null,
-                ),
-              ),
-
-              const SizedBox(width: 12),
-
-              // Conteúdo da tarefa
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Título da tarefa (linha principal)
-                    Text(
-                      task.title,
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w400,
+    return MouseRegion(
+      onEnter: (_) => setState(() => _isHovered = true),
+      onExit: (_) => setState(() => _isHovered = false),
+      cursor: SystemMouseCursors.click,
+      child: GestureDetector(
+        onTap: _handleInstantTap, // 🚀 MÉTODO PARA TAP INSTANTÂNEO
+        child: Container(
+          margin: const EdgeInsets.symmetric(vertical: 0.2),
+          decoration: BoxDecoration(
+            // 🚀 COR INSTANTÂNEA baseada no estado local primeiro
+            color:
+                isSelected
+                    ? Theme.of(context).colorScheme.onSurface.withOpacity(0.08)
+                    : _isHovered
+                    ? Theme.of(context).colorScheme.onSurface.withOpacity(0.04)
+                    : themeProvider.getCardGradient(false) == null
+                    ? themeProvider.getCardColor(false)
+                    : null,
+            gradient: themeProvider.getCardGradient(isSelected),
+            borderRadius: BorderRadius.circular(
+              themeProvider.getBorderRadius(),
+            ),
+            border: Border.all(
+              color: borderColor,
+              width: themeProvider.getCardBorderWidth(isSelected),
+            ),
+            boxShadow: themeProvider.getCardShadow(isSelected),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                // Checkbox circular
+                GestureDetector(
+                  onTap: widget.onToggleComplete,
+                  child: Container(
+                    width: 20,
+                    height: 20,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(
                         color:
-                            task.isCompleted
-                                ? Colors.grey.shade500
-                                : Colors.black87,
-                        decoration:
-                            task.isCompleted
-                                ? TextDecoration.lineThrough
-                                : null,
+                            widget.task.isCompleted
+                                ? listColor
+                                : Colors.grey.shade400,
+                        width: 2,
                       ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                      color:
+                          widget.task.isCompleted
+                              ? listColor
+                              : Colors.transparent,
                     ),
-
-                    // Informações secundárias (linha menor e discreta)
-                    if (_hasSecondaryInfo()) ...[
-                      const SizedBox(height: 2),
-                      _buildSecondaryInfo(context),
-                    ],
-                  ],
-                ),
-              ),
-
-              // Ícone de estrela (importante)
-              if (task.isImportant)
-                Padding(
-                  padding: const EdgeInsets.only(left: 8),
-                  child: GestureDetector(
-                    onTap: onToggleImportant,
-                    child: Icon(
-                      Icons.star,
-                      color: Colors.amber.shade600,
-                      size: 18,
-                    ),
+                    child:
+                        widget.task.isCompleted
+                            ? const Icon(
+                              Icons.check,
+                              color: Colors.white,
+                              size: 14,
+                            )
+                            : null,
                   ),
                 ),
-              // Menu de ações (pequeno e discreto)
-              PopupMenuButton<String>(
-                onSelected: _handleMenuAction,
-                icon: Icon(
-                  Icons.more_horiz,
-                  size: 16,
-                  color: Colors.grey.shade400,
-                ),
-                padding: EdgeInsets.zero,
-                itemBuilder:
-                    (context) => [
-                      const PopupMenuItem(
-                        value: 'edit',
-                        child: Row(
-                          children: [
-                            Icon(Icons.edit, size: 16),
-                            SizedBox(width: 8),
-                            Text('Editar'),
-                          ],
+
+                const SizedBox(width: 12),
+
+                // Conteúdo da tarefa
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Título da tarefa (linha principal)
+                      Text(
+                        widget.task.title,
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w400,
+                          color:
+                              widget.task.isCompleted
+                                  ? Colors.grey.shade500
+                                  : Colors.black87,
+                          decoration:
+                              widget.task.isCompleted
+                                  ? TextDecoration.lineThrough
+                                  : null,
                         ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                      const PopupMenuItem(
-                        value: 'duplicate',
-                        child: Row(
-                          children: [
-                            Icon(Icons.copy, size: 16),
-                            SizedBox(width: 8),
-                            Text('Duplicar'),
-                          ],
-                        ),
-                      ),
-                      const PopupMenuDivider(),
-                      const PopupMenuItem(
-                        value: 'delete',
-                        child: Row(
-                          children: [
-                            Icon(Icons.delete, size: 16, color: Colors.red),
-                            SizedBox(width: 8),
-                            Text(
-                              'Excluir',
-                              style: TextStyle(color: Colors.red),
-                            ),
-                          ],
-                        ),
-                      ),
+
+                      // Informações secundárias (linha menor e discreta)
+                      if (_hasSecondaryInfo()) ...[
+                        const SizedBox(height: 2),
+                        _buildSecondaryInfo(context),
+                      ],
                     ],
-              ),
-            ],
+                  ),
+                ),
+
+                // Ícone de estrela (importante)
+                if (widget.task.isImportant)
+                  Padding(
+                    padding: const EdgeInsets.only(left: 8),
+                    child: GestureDetector(
+                      onTap: widget.onToggleImportant,
+                      child: Icon(
+                        Icons.star,
+                        color: Colors.amber.shade600,
+                        size: 18,
+                      ),
+                    ),
+                  ),
+
+                // Menu de ações (pequeno e discreto)
+                PopupMenuButton<String>(
+                  onSelected: _handleMenuAction,
+                  icon: Icon(
+                    Icons.more_horiz,
+                    size: 16,
+                    color: Colors.grey.shade400,
+                  ),
+                  padding: EdgeInsets.zero,
+                  itemBuilder:
+                      (context) => [
+                        const PopupMenuItem(
+                          value: 'edit',
+                          child: Row(
+                            children: [
+                              Icon(Icons.edit, size: 16),
+                              SizedBox(width: 8),
+                              Text('Editar'),
+                            ],
+                          ),
+                        ),
+                        const PopupMenuItem(
+                          value: 'duplicate',
+                          child: Row(
+                            children: [
+                              Icon(Icons.copy, size: 16),
+                              SizedBox(width: 8),
+                              Text('Duplicar'),
+                            ],
+                          ),
+                        ),
+                        const PopupMenuDivider(),
+                        const PopupMenuItem(
+                          value: 'delete',
+                          child: Row(
+                            children: [
+                              Icon(Icons.delete, size: 16, color: Colors.red),
+                              SizedBox(width: 8),
+                              Text(
+                                'Excluir',
+                                style: TextStyle(color: Colors.red),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                ),
+              ],
+            ),
           ),
         ),
       ),
     );
   }
 
+  void _handleInstantTap() {
+    // Primeira prioridade: mudança visual INSTANTÂNEA
+    setState(() {
+      _isVisuallySelected = true;
+    });
+
+    // Só depois executa o callback
+    widget.onTap();
+  }
+
   bool _hasSecondaryInfo() {
-    return task.description.isNotEmpty ||
-        task.dueDate != null ||
-        controller.getSubtasks(task.id).isNotEmpty;
+    return widget.task.description.isNotEmpty ||
+        widget.task.dueDate != null ||
+        widget.controller.getSubtasks(widget.task.id).isNotEmpty;
   }
 
   Widget _buildSecondaryInfo(BuildContext context) {
-    final subtasks = controller.getSubtasks(task.id);
+    final subtasks = widget.controller.getSubtasks(widget.task.id);
     final completedSubtasks = subtasks.where((s) => s.isCompleted).length;
 
     List<Widget> infoWidgets = [];
 
     // Descrição ou anotação
-    if (task.description.isNotEmpty) {
+    if (widget.task.description.isNotEmpty) {
       infoWidgets.add(
         Row(
           mainAxisSize: MainAxisSize.min,
@@ -235,7 +274,7 @@ class TaskItem extends StatelessWidget {
     }
 
     // Data de vencimento
-    if (task.dueDate != null) {
+    if (widget.task.dueDate != null) {
       infoWidgets.add(
         Row(
           mainAxisSize: MainAxisSize.min,
@@ -243,14 +282,15 @@ class TaskItem extends StatelessWidget {
             Icon(
               Icons.calendar_today,
               size: 12,
-              color: task.isOverdue ? Colors.red : Colors.grey.shade500,
+              color: widget.task.isOverdue ? Colors.red : Colors.grey.shade500,
             ),
             const SizedBox(width: 4),
             Text(
-              _formatDueDate2(task.dueDate!),
+              _formatDueDate2(widget.task.dueDate!),
               style: TextStyle(
                 fontSize: 12,
-                color: task.isOverdue ? Colors.red : Colors.grey.shade600,
+                color:
+                    widget.task.isOverdue ? Colors.red : Colors.grey.shade600,
               ),
             ),
           ],
@@ -316,14 +356,14 @@ class TaskItem extends StatelessWidget {
   void _handleMenuAction(String action) {
     switch (action) {
       case 'edit':
-        onEdit();
+        widget.onEdit();
         break;
       case 'duplicate':
         // TODO: Implementar duplicação
-        print('📋 Duplicar tarefa: ${task.title}');
+        print('📋 Duplicar tarefa: ${widget.task.title}');
         break;
       case 'delete':
-        onDelete();
+        widget.onDelete();
         break;
     }
   }

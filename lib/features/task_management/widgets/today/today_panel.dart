@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 import '../../controllers/task_controller.dart';
 import '../../themes/theme_provider.dart';
 import 'expansible_task_group.dart';
+import '../tasks/quick_add_task_input.dart';
+import '../tasks/mobile_quick_add_task_input.dart';
 
 /// **TodayPanel** - Painel principal da guia Hoje
 ///
@@ -19,17 +21,21 @@ class TodayPanel extends StatelessWidget {
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
     final isCompactScreen = screenWidth < 400;
+    final isMobile = screenWidth < 600; // Detectar se é mobile
 
-    return Consumer<ThemeProvider>(
-      builder: (context, themeProvider, child) {
-        return Container(
-          color: themeProvider.getBackgroundColor(
+    // 🚀 OTIMIZAÇÃO: Usar Selector para rebuilds mais granulares
+    return Selector<ThemeProvider, Color>(
+      selector:
+          (context, themeProvider) => themeProvider.getBackgroundColor(
             context,
             listColor:
                 controller.selectedListId != null
                     ? controller.getListById(controller.selectedListId!)?.color
                     : null,
           ),
+      builder: (context, backgroundColor, child) {
+        return Container(
+          color: backgroundColor,
           padding: EdgeInsets.all(isCompactScreen ? 4.0 : 8.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -63,18 +69,63 @@ class TodayPanel extends StatelessWidget {
                         color: Theme.of(context).colorScheme.primary,
                       ),
                     ),
+                    const Spacer(),
+                    // FAB para adicionar tarefa - APENAS NO MOBILE
+                    if (isMobile)
+                      Material(
+                        color: Theme.of(context).primaryColor,
+                        borderRadius: BorderRadius.circular(16),
+                        child: InkWell(
+                          onTap: () => _showMobileAddTask(context),
+                          borderRadius: BorderRadius.circular(16),
+                          child: Container(
+                            padding: const EdgeInsets.all(12),
+                            child: const Icon(
+                              Icons.add,
+                              color: Colors.white,
+                              size: 20,
+                            ),
+                          ),
+                        ),
+                      ),
                   ],
                 ),
               ),
               const SizedBox(height: 8),
 
               // Verificar se há tarefas para exibir
-              _buildTaskGroups(context),
+              Expanded(child: _buildTaskGroups(context)),
+
+              // Campo de entrada rápida de tarefas - APENAS NO DESKTOP
+              if (!isMobile) QuickAddTaskInput(controller: controller),
             ],
           ),
         );
       },
     );
+  }
+
+  /// Mostrar modal de adicionar tarefa no mobile
+  void _showMobileAddTask(BuildContext context) {
+    debugPrint('🚀 Tentando abrir modal mobile add task');
+    try {
+      showModalBottomSheet(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: Colors.transparent,
+        builder: (BuildContext context) {
+          debugPrint('🚀 Builder do modal sendo executado');
+          return Padding(
+            padding: EdgeInsets.only(
+              bottom: MediaQuery.of(context).viewInsets.bottom,
+            ),
+            child: MobileQuickAddTaskInput(controller: controller),
+          );
+        },
+      );
+    } catch (e) {
+      debugPrint('🚨 Erro ao abrir modal: $e');
+    }
   }
 
   /// Construir grupos de tarefas ou estado vazio

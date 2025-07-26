@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../controllers/task_controller.dart';
-import '../../models/task_model.dart';
-import '../../../log_screen/controllers/log_controller.dart';
-import 'subtask_edit_dialog.dart';
+import '../../../controllers/task_controller.dart';
+import '../../../models/task_model.dart';
+import '../../../../log_screen/controllers/log_controller.dart';
+import '../../subtasks/subtask_edit_dialog.dart';
 
 /// **CleanSubtaskItem** - Item de subtarefa para o CleanTaskPanel
 ///

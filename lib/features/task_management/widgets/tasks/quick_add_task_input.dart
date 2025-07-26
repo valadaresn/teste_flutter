@@ -3,6 +3,9 @@ import 'package:provider/provider.dart';
 import '../../controllers/task_controller.dart';
 import '../../models/task_model.dart';
 import '../../themes/theme_provider.dart';
+import 'quick_date_selector.dart';
+import 'quick_pomodoro_selector.dart';
+import 'quick_list_selector.dart';
 
 class QuickAddTaskInput extends StatefulWidget {
   final TaskController controller;
@@ -18,9 +21,17 @@ class _QuickAddTaskInputState extends State<QuickAddTaskInput> {
   final FocusNode _focusNode = FocusNode();
   bool _isLoading = false;
 
+  // Variáveis para os seletores discretos
+  String? _selectedListId;
+  DateTime? _selectedDate;
+  int _pomodoroTime = 25; // padrão
+
   @override
   void initState() {
     super.initState();
+    // Inicializar lista selecionada
+    _selectedListId = widget.controller.selectedListId;
+
     // Escutar mudanças no texto para atualizar o estado do botão
     _textController.addListener(() {
       setState(() {});
@@ -41,7 +52,7 @@ class _QuickAddTaskInputState extends State<QuickAddTaskInput> {
       return;
     }
 
-    final selectedListId = widget.controller.selectedListId;
+    final selectedListId = _selectedListId ?? widget.controller.selectedListId;
     if (selectedListId == null) {
       _showError('Selecione uma lista primeiro');
       return;
@@ -59,12 +70,42 @@ class _QuickAddTaskInputState extends State<QuickAddTaskInput> {
         listId: selectedListId,
         priority: TaskPriority.medium, // Prioridade padrão
         isImportant: false, // Não importante por padrão
-        dueDate: null, // Sem data por padrão
+        dueDate: _selectedDate, // Data selecionada
         tags: [], // Sem tags por padrão
-      );      await widget.controller.createTask(newTask);
+        pomodoroTimeMinutes: _pomodoroTime, // Tempo do pomodoro selecionado
+      );
 
-      // Limpar o campo após sucesso
+      await widget.controller.createTask(newTask);
+
+      // Aguardar um frame para a tarefa estar disponível e então selecioná-la
+      if (mounted) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          // Encontrar a tarefa recém-criada (a última da lista selecionada)
+          final tasks = widget.controller.getTasksByList(selectedListId);
+          if (tasks.isNotEmpty) {
+            // Selecionar a última tarefa criada (mais recente)
+            final latestTask = tasks.last;
+            widget.controller.selectTask(latestTask.id);
+          }
+        });
+      }
+
+      // Limpar o campo e resetar seletores após sucesso
       _textController.clear();
+      setState(() {
+        // Não resetar _selectedDate - manter como padrão para próxima tarefa
+        _pomodoroTime = 25;
+        // Manter lista selecionada para próxima tarefa
+      });
+
+      // Retornar o foco para o campo de texto para próxima tarefa
+      if (mounted) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted && _focusNode.canRequestFocus) {
+            _focusNode.requestFocus();
+          }
+        });
+      }
     } catch (e) {
       _showError('Erro ao criar tarefa: $e');
     } finally {
@@ -87,19 +128,24 @@ class _QuickAddTaskInputState extends State<QuickAddTaskInput> {
       );
     }
   }
+
   @override
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context);
-      return Container(
+    return Container(
       margin: const EdgeInsets.fromLTRB(16, 16, 16, 8),
       decoration: BoxDecoration(
-        color: themeProvider.getCardGradient(false) == null 
-            ? themeProvider.getCardColor(false)
-            : null,
+        color:
+            themeProvider.getCardGradient(false) == null
+                ? themeProvider.getCardColor(false)
+                : null,
         gradient: themeProvider.getCardGradient(false),
         borderRadius: BorderRadius.circular(themeProvider.getBorderRadius()),
         border: Border.all(
-          color: themeProvider.getCardBorderColor(false, Theme.of(context).primaryColor),
+          color: themeProvider.getCardBorderColor(
+            false,
+            Theme.of(context).primaryColor,
+          ),
           width: themeProvider.getCardBorderWidth(false),
         ),
         boxShadow: themeProvider.getCardShadow(false),
@@ -139,6 +185,41 @@ class _QuickAddTaskInputState extends State<QuickAddTaskInput> {
               enabled: !_isLoading,
             ),
           ),
+
+          // Botões de seleção discretos
+          QuickListSelector(
+            selectedListId: _selectedListId,
+            controller: widget.controller,
+            onListChanged: (listId) {
+              setState(() {
+                _selectedListId = listId;
+              });
+            },
+          ),
+
+          const SizedBox(width: 4),
+
+          QuickDateSelector(
+            selectedDate: _selectedDate,
+            onDateChanged: (date) {
+              setState(() {
+                _selectedDate = date;
+              });
+            },
+          ),
+
+          const SizedBox(width: 4),
+
+          QuickPomodoroSelector(
+            pomodoroTime: _pomodoroTime,
+            onTimeChanged: (time) {
+              setState(() {
+                _pomodoroTime = time;
+              });
+            },
+          ),
+
+          const SizedBox(width: 8),
 
           // Botão de envio ou loading
           Padding(

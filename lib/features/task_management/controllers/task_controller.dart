@@ -796,12 +796,20 @@ class TaskController extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// 🚀 FEEDBACK VISUAL IMEDIATO - Apenas seleciona o card sem processamento
+  void setSelectedTaskImmediate(String taskId) {
+    // APENAS a seleção visual - notifica imediatamente
+    _selectedTaskId = taskId;
+    notifyListeners(); // Feedback visual instantâneo
+  }
+
   /// Abrir tarefa para edição mantendo a visualização "Hoje" ativa
   void openTaskInToday(String taskId) {
     final task = getTaskById(taskId);
     if (task == null) return;
 
-    // Selecionar a tarefa para abrir o painel lateral
+    // A seleção já foi feita pelo setSelectedTaskImmediate
+    // Aqui apenas garantimos que está selecionado e processamos informações do painel
     _selectedTaskId = taskId;
 
     // MANTER a visualização "Hoje" ativa
@@ -809,6 +817,7 @@ class TaskController extends ChangeNotifier {
     // NÃO alterar _selectedListId
     // NÃO alterar _selectedProjectId
 
+    // 🚀 OTIMIZAÇÃO: Notificar apenas se necessário para o painel
     notifyListeners();
   }
 
@@ -1024,5 +1033,44 @@ class TaskController extends ChangeNotifier {
     if (_lists.isEmpty) return '';
     // Retornar a primeira lista como padrão
     return _lists.first.id;
+  }
+
+  /// Agrupar listas por projeto para exibição hierárquica
+  Map<Project, List<TaskList>> getProjectsWithLists() {
+    final Map<Project, List<TaskList>> projectsWithLists = {};
+
+    // Primeiro, ordenar projetos: "Tarefas" primeiro, depois alfabeticamente
+    final sortedProjects = List<Project>.from(_projects);
+    sortedProjects.sort((a, b) {
+      // "Tarefas" sempre primeiro
+      if (a.name == 'Tarefas' && b.name != 'Tarefas') return -1;
+      if (b.name == 'Tarefas' && a.name != 'Tarefas') return 1;
+      // Outros projetos em ordem alfabética
+      return a.name.compareTo(b.name);
+    });
+
+    // Inicializar todos os projetos (mesmo sem listas)
+    for (final project in sortedProjects) {
+      projectsWithLists[project] = [];
+    }
+
+    // Agrupar listas por projeto
+    for (final list in _lists) {
+      final project = sortedProjects.firstWhere(
+        (p) => p.id == list.projectId,
+        orElse: () => sortedProjects.first, // Projeto padrão se não encontrar
+      );
+
+      if (projectsWithLists.containsKey(project)) {
+        projectsWithLists[project]!.add(list);
+      }
+    }
+
+    // Ordenar as listas dentro de cada projeto
+    projectsWithLists.forEach((project, lists) {
+      lists.sort((a, b) => a.name.compareTo(b.name));
+    });
+
+    return projectsWithLists;
   }
 }

@@ -9,7 +9,7 @@ import '../widgets/lists/list_panel.dart'; // Novo componente extraído
 import '../widgets/projects/project_panel.dart'; // Novo componente extraído
 import '../widgets/tasks/task_panel.dart'; // Novo componente extraído
 import '../widgets/tasks/task_detail_panel.dart';
-import '../widgets/subtasks/clean_task_panel.dart';
+import '../widgets/tasks/task_detail_panel/task_detail_panel.dart' as EditPanel;
 import '../widgets/today/today_panel.dart';
 import '../widgets/layouts/samsung_style/index.dart'; // Novo import para Samsung sidebar
 import '../../log_screen/controllers/log_controller.dart';
@@ -137,7 +137,7 @@ class _TaskManagementScreenState extends State<TaskManagementScreen>
             controller: controller,
             child: _buildResponsiveLayout(context, controller, layoutType),
           ),
-          floatingActionButton: _buildFloatingActionButton(context, controller),
+          // FAB removido completamente
         );
       },
     );
@@ -221,7 +221,7 @@ class _TaskManagementScreenState extends State<TaskManagementScreen>
                 ),
                 child:
                     controller.showTodayView
-                        ? CleanTaskPanel(controller: controller)
+                        ? EditPanel.TaskDetailPanel(controller: controller)
                         : TaskDetailPanel(
                           task: controller.getSelectedTask()!,
                           controller: controller,
@@ -296,7 +296,7 @@ class _TaskManagementScreenState extends State<TaskManagementScreen>
                 ),
                 child:
                     controller.showTodayView
-                        ? CleanTaskPanel(controller: controller)
+                        ? EditPanel.TaskDetailPanel(controller: controller)
                         : TaskDetailPanel(
                           task: controller.getSelectedTask()!,
                           controller: controller,
@@ -371,7 +371,9 @@ class _TaskManagementScreenState extends State<TaskManagementScreen>
                             ),
                             child:
                                 controller.showTodayView
-                                    ? CleanTaskPanel(controller: controller)
+                                    ? EditPanel.TaskDetailPanel(
+                                      controller: controller,
+                                    )
                                     : TaskDetailPanel(
                                       task: controller.getSelectedTask()!,
                                       controller: controller,
@@ -460,20 +462,6 @@ class _TaskManagementScreenState extends State<TaskManagementScreen>
           _buildSettingsSection(context),
         ],
       ),
-    );
-  }
-
-  Widget _buildFloatingActionButton(
-    BuildContext context,
-    TaskController controller,
-  ) {
-    return FloatingActionButton(
-      onPressed: () {
-        // TODO: Implementar diálogo de criação de tarefa
-        print('➕ Criar nova tarefa');
-      },
-      tooltip: 'Nova Tarefa',
-      child: const Icon(Icons.add),
     );
   }
 
