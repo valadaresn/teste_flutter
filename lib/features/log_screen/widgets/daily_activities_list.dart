@@ -23,28 +23,24 @@ class DailyActivitiesList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (logs.isEmpty) {
-      return const Expanded(
-        child: Center(child: Text('Nenhuma atividade encontrada.')),
-      );
+      return const Center(child: Text('Nenhuma atividade encontrada.'));
     }
 
-    return Expanded(
-      child: GenericSelectorList<LogController, Log>(
-        listSelector:
-            (ctrl) => logs, // Usar a lista filtrada passada como parâmetro
-        itemById: (ctrl, id) => ctrl.getLogById(id),
-        idExtractor: (log) => log.id,
-        itemBuilder: (context, log) {
-          return DailyActivityItem(
-            log: log,
-            onTap: () => onLogTap(log),
-            onEdit: () => onEdit(log),
-            onDelete: () => onDelete(log),
-          );
-        },
-        padding: const EdgeInsets.all(16),
-        spacing: 8.0,
-      ),
+    return GenericSelectorList<LogController, Log>(
+      listSelector:
+          (ctrl) => logs, // Usar a lista filtrada passada como parâmetro
+      itemById: (ctrl, id) => ctrl.getLogById(id),
+      idExtractor: (log) => log.id,
+      itemBuilder: (context, log) {
+        return DailyActivityItem(
+          log: log,
+          onTap: () => onLogTap(log),
+          onEdit: () => onEdit(log),
+          onDelete: () => onDelete(log),
+        );
+      },
+      padding: const EdgeInsets.all(16),
+      spacing: 8.0,
     );
   }
 }

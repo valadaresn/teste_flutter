@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../controllers/task_controller.dart';
-import '../../screens/settings_screen.dart';
+import '../settings/settings_screen.dart';
 import '../tasks/simple_task_dialog.dart';
 import '../../../log_screen/controllers/log_controller.dart';
 import '../../../log_screen/screens/log_screen.dart';

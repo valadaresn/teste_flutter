@@ -1,0 +1,1802 @@
+# INSTRUÇÕES INCREMENTAIS PARA REORGANIZAÇÃO TASK_MANAGEMENT
+
+## 🎯 OBJETIVO PRINCIPAL
+Reorganizar gradualmente a estrutura `task_management` extraindo componentes um por vez, sempre mantendo o código funcionando e sem bugs.
+
+## 🚨 REGRAS RÍGIDAS (ZERO TOLERÂNCIA A BUGS)
+1. **ANTES DE CADA MUDANÇA**: `flutter analyze --no-pub` (DEVE ter zero erros)
+2. **EXTRAIR APENAS 1 COMPONENTE**: Um método/classe por vez
+3. **APÓS CADA MUDANÇA**: `flutter analyze --no-pub` (DEVE ter zero erros)
+4. **SE DER ERRO**: PARAR, corrigir, só depois continuar
+5. **NUNCA QUEBRAR**: Funcionalidade deve permanecer idêntica
+
+## 📋 ESTRATÉGIA INCREMENTAL
+- ✅ **UMA TAREFA POR VEZ**: Extrair 1 método, testar, depois próximo
+- ✅ **SEMPRE FUNCIONAL**: Código nunca para de funcionar
+- ✅ **SEM BRIDGES**: Sem temp_types ou sistemas complexos
+- ✅ **EXTRAÇÕES SIMPLES**: Copiar método → criar arquivo → atualizar import
+
+## 🔄 ORDEM DE EXECUÇÃO INTELIGENTE (BASEADA EM DEPENDÊNCIAS)
+
+### PRINCÍPIO: COPIAR PRIMEIRO AS BASES, EXTRAIR POR ÚLTIMO
+1. **LOTE 1-4**: Copiar arquivos existentes (SEM imports para task_screen ainda)
+2. **LOTE 5**: Extrair sidebar do task_management_screen.dart
+3. **VALIDAÇÃO**: flutter analyze após cada lote (zero tolerância a erros)
+
+### HIERARQUIA DE DEPENDÊNCIAS (5 NÍVEIS):
+```
+NÍVEL 1 (Base): Models, Basic Themes
+NÍVEL 2 (Providers): Controllers, Theme Providers  
+NÍVEL 3 (Basic Widgets): Common, Samsung Style
+NÍVEL 4 (Complex Widgets): Projects, Lists, Task, Detail, Input
+NÍVEL 5 (Extraction): Sidebar Components (EXTRAIR do arquivo principal)
+```
+
+---
+
+## PLANO DE EXECUÇÃO COMPLETO (5 LOTES)
+
+### 🎯 **LOTE 1**: MODELOS E TEMAS BÁSICOS
+**OBJETIVO**: Copiar dependências fundamentais (sem import complexos)
+**TEMPO ESTIMADO**: 10-15 minutos
+**ARQUIVOS**: 5 arquivos básicos
+
+#### 📁 LOTE 1 (Models + Themes Básicos):
+```
+├── models/ (3 arquivos)
+│   ├── task_model.dart
+│   ├── list_model.dart
+│   └── project_model.dart
+├── themes/ (2 arquivos)
+│   ├── app_theme.dart
+│   └── theme_config.dart
+└── flutter analyze ✅
+```
+
+#### Arquivos a Copiar:
+1. `lib/features/task_screen/models/task_model.dart` ← `task_management/models/task_model.dart`
+2. `lib/features/task_screen/models/list_model.dart` ← `task_management/models/list_model.dart` 
+3. `lib/features/task_screen/models/project_model.dart` ← `task_management/models/project_model.dart`
+4. `lib/features/task_screen/themes/app_theme.dart` ← `task_management/themes/app_theme.dart`
+5. `lib/features/task_screen/themes/theme_config.dart` ← `task_management/themes/theme_config.dart`
+
+#### Comandos de Execução:
+```powershell
+# Criar e copiar models
+cp "lib/features/task_management/models/task_model.dart" "lib/features/task_screen/models/task_model.dart"
+cp "lib/features/task_management/models/list_model.dart" "lib/features/task_screen/models/list_model.dart"  
+cp "lib/features/task_management/models/project_model.dart" "lib/features/task_screen/models/project_model.dart"
+
+# Criar e copiar themes básicos
+cp "lib/features/task_management/themes/app_theme.dart" "lib/features/task_screen/themes/app_theme.dart"
+cp "lib/features/task_management/themes/theme_config.dart" "lib/features/task_screen/themes/theme_config.dart"
+
+# Validar (DEVE ter zero erros)
+flutter analyze --no-pub
+```
+
+#### ✅ **VALIDAÇÃO LOTE 1**: 
+- `flutter analyze --no-pub` deve retornar **zero erros**
+- Se houver erros: **PARAR, corrigir, só depois continuar**
+
+---
+
+### 🎯 **LOTE 2**: PROVIDERS E CONTROLLERS
+**OBJETIVO**: Copiar gerenciamento de estado e lógica de negócio
+**TEMPO ESTIMADO**: 10-15 minutos  
+**ARQUIVOS**: 3 arquivos de estado
+
+#### 📁 LOTE 2 (Providers + Controllers):
+```
+├── themes/ (1 arquivo)
+│   └── theme_provider.dart
+├── controllers/ (1 arquivo)
+│   └── task_controller.dart
+├── screens/ (1 arquivo)
+│   └── task_management_screen.dart
+└── flutter analyze ✅
+```
+
+#### Arquivos a Copiar:
+1. `lib/features/task_screen/themes/theme_provider.dart` ← `task_management/themes/theme_provider.dart`
+2. `lib/features/task_screen/controllers/task_controller.dart` ← `task_management/controllers/task_controller.dart`
+3. `lib/features/task_screen/screens/task_management_screen.dart` ← `task_management/screens/task_management_screen.dart`
+
+#### Comandos de Execução:
+```powershell
+# Copiar providers e controllers
+cp "lib/features/task_management/themes/theme_provider.dart" "lib/features/task_screen/themes/theme_provider.dart"
+cp "lib/features/task_management/controllers/task_controller.dart" "lib/features/task_screen/controllers/task_controller.dart"
+cp "lib/features/task_management/screens/task_management_screen.dart" "lib/features/task_screen/screens/task_management_screen.dart"
+
+# Validar (DEVE ter zero erros)
+flutter analyze --no-pub
+```
+
+#### ✅ **VALIDAÇÃO LOTE 2**:
+- `flutter analyze --no-pub` deve retornar **zero erros**
+- Se houver erros: **PARAR, corrigir, só depois continuar**
+
+---
+
+### 🎯 **LOTE 3**: WIDGETS BÁSICOS
+**OBJETIVO**: Copiar componentes simples sem dependências complexas
+**TEMPO ESTIMADO**: 15-20 minutos
+**ARQUIVOS**: 8 arquivos de widgets básicos
+
+#### 📁 LOTE 3 (Widgets Básicos):
+```
+├── widgets/common/ (3 arquivos)
+│   ├── app_state_handler.dart
+│   ├── task_app_bar.dart
+│   └── sidebar_theme_toggle.dart
+├── widgets/settings/samsung_style/ (5 arquivos)
+│   ├── index.dart
+│   ├── samsung_sidebar.dart
+│   ├── samsung_sidebar_theme.dart
+│   ├── samsung_list_item.dart
+│   └── samsung_section_header.dart
+└── flutter analyze ✅
+```
+
+#### Arquivos a Copiar:
+
+**Common Components:**
+1. `lib/features/task_screen/widgets/common/app_state_handler.dart` ← `task_management/widgets/common/app_state_handler.dart`
+2. `lib/features/task_screen/widgets/common/task_app_bar.dart` ← `task_management/widgets/common/task_app_bar.dart`
+3. `lib/features/task_screen/widgets/common/sidebar_theme_toggle.dart` ← `task_management/widgets/common/sidebar_theme_toggle.dart`
+
+**Samsung Style Components:**
+4. `lib/features/task_screen/widgets/settings/samsung_style/index.dart` ← `task_management/widgets/layouts/samsung_style/index.dart`
+5. `lib/features/task_screen/widgets/settings/samsung_style/samsung_sidebar.dart` ← `task_management/widgets/layouts/samsung_style/samsung_sidebar.dart`
+6. `lib/features/task_screen/widgets/settings/samsung_style/samsung_sidebar_theme.dart` ← `task_management/widgets/layouts/samsung_style/samsung_sidebar_theme.dart`
+7. `lib/features/task_screen/widgets/settings/samsung_style/samsung_list_item.dart` ← `task_management/widgets/layouts/samsung_style/samsung_list_item.dart`
+8. `lib/features/task_screen/widgets/settings/samsung_style/samsung_section_header.dart` ← `task_management/widgets/layouts/samsung_style/samsung_section_header.dart`
+
+#### Comandos de Execução:
+```powershell
+# Copiar common components
+cp "lib/features/task_management/widgets/common/app_state_handler.dart" "lib/features/task_screen/widgets/common/app_state_handler.dart"
+cp "lib/features/task_management/widgets/common/task_app_bar.dart" "lib/features/task_screen/widgets/common/task_app_bar.dart"
+cp "lib/features/task_management/widgets/common/sidebar_theme_toggle.dart" "lib/features/task_screen/widgets/common/sidebar_theme_toggle.dart"
+
+# Copiar samsung style components  
+cp "lib/features/task_management/widgets/layouts/samsung_style/index.dart" "lib/features/task_screen/widgets/settings/samsung_style/index.dart"
+cp "lib/features/task_management/widgets/layouts/samsung_style/samsung_sidebar.dart" "lib/features/task_screen/widgets/settings/samsung_style/samsung_sidebar.dart"
+cp "lib/features/task_management/widgets/layouts/samsung_style/samsung_sidebar_theme.dart" "lib/features/task_screen/widgets/settings/samsung_style/samsung_sidebar_theme.dart"
+cp "lib/features/task_management/widgets/layouts/samsung_style/samsung_list_item.dart" "lib/features/task_screen/widgets/settings/samsung_style/samsung_list_item.dart"
+cp "lib/features/task_management/widgets/layouts/samsung_style/samsung_section_header.dart" "lib/features/task_screen/widgets/settings/samsung_style/samsung_section_header.dart"
+
+# Validar (DEVE ter zero erros)
+flutter analyze --no-pub
+```
+
+#### ✅ **VALIDAÇÃO LOTE 3**:
+- `flutter analyze --no-pub` deve retornar **zero erros**
+- Se houver erros: **PARAR, corrigir, só depois continuar**
+
+---
+
+### 🎯 **LOTE 4**: WIDGETS COMPLEXOS  
+**OBJETIVO**: Copiar todos os widgets com dependências internas
+**TEMPO ESTIMADO**: 30-40 minutos
+**ARQUIVOS**: 28 arquivos de widgets complexos
+
+#### 📁 LOTE 4 (Widgets Complexos):
+```
+├── widgets/projects/ (5 arquivos)
+│   ├── project_panel.dart
+│   ├── project_item.dart
+│   ├── project_form_dialog.dart
+│   ├── project_delete_dialog.dart
+│   └── project_creation_dialog.dart
+├── widgets/lists/ (5 arquivos)
+│   ├── list_panel.dart
+│   ├── list_item.dart
+│   ├── list_form_dialog.dart
+│   ├── list_delete_dialog.dart
+│   └── list_context_menu.dart
+├── widgets/task/ (10 arquivos)
+│   ├── task_panel.dart
+│   ├── task_item/ (7 arquivos)
+│   │   ├── task_item.dart (refatorar today_task_item.dart)
+│   │   ├── task_checkbox.dart (refatorar today_task_checkbox.dart)
+│   │   ├── task_list_icon.dart (refatorar today_task_list_icon.dart)
+│   │   ├── task_content.dart (refatorar today_task_content.dart)
+│   │   ├── task_controls.dart (refatorar today_task_controls.dart)
+│   │   ├── task_border_helper.dart (refatorar today_task_border_helper.dart)
+│   │   └── constants.dart (refatorar today_task_item_constants.dart)
+│   ├── task_group/ (1 arquivo)
+│   │   └── expansible_group.dart (refatorar expansible_task_group.dart)
+│   └── views/ (1 arquivo)
+│       └── today_view.dart (refatorar today_panel.dart)
+├── widgets/detail/ (8 arquivos)
+│   ├── task_detail_panel.dart
+│   ├── task_header.dart
+│   ├── task_notes_section.dart
+│   ├── task_diary_entry_form.dart
+│   ├── task_diary_entry_item.dart
+│   ├── task_diary_section.dart
+│   ├── task_footer.dart
+│   └── task_subtasks_section.dart
+├── widgets/input/ (2 arquivos)
+│   ├── quick_add_task_input.dart
+│   └── mobile_quick_add_task_input.dart
+└── flutter analyze ✅
+```
+
+#### Arquivos a Copiar:
+
+**Projects (5 arquivos):**
+```powershell
+cp "lib/features/task_management/widgets/projects/project_panel.dart" "lib/features/task_screen/widgets/projects/project_panel.dart"
+cp "lib/features/task_management/widgets/projects/project_item.dart" "lib/features/task_screen/widgets/projects/project_item.dart"
+cp "lib/features/task_management/widgets/projects/project_form_dialog.dart" "lib/features/task_screen/widgets/projects/project_form_dialog.dart"
+cp "lib/features/task_management/widgets/projects/project_delete_dialog.dart" "lib/features/task_screen/widgets/projects/project_delete_dialog.dart"
+cp "lib/features/task_management/widgets/projects/project_creation_dialog.dart" "lib/features/task_screen/widgets/projects/project_creation_dialog.dart"
+```
+
+**Lists (5 arquivos):**
+```powershell
+cp "lib/features/task_management/widgets/lists/list_panel.dart" "lib/features/task_screen/widgets/lists/list_panel.dart"
+cp "lib/features/task_management/widgets/lists/list_item.dart" "lib/features/task_screen/widgets/lists/list_item.dart"
+cp "lib/features/task_management/widgets/lists/list_form_dialog.dart" "lib/features/task_screen/widgets/lists/list_form_dialog.dart"
+cp "lib/features/task_management/widgets/lists/list_delete_dialog.dart" "lib/features/task_screen/widgets/lists/list_delete_dialog.dart"
+cp "lib/features/task_management/widgets/lists/list_context_menu.dart" "lib/features/task_screen/widgets/lists/list_context_menu.dart"
+```
+
+**Task Components (8 arquivos - REFATORAR today_* para task_*):**
+```powershell
+# Task Panel (base)
+cp "lib/features/task_management/widgets/task/task_panel.dart" "lib/features/task_screen/widgets/task/task_panel.dart"
+
+# Task Item Components (refatorar de today_*)
+cp "lib/features/task_management/widgets/today/today_task_item.dart" "lib/features/task_screen/widgets/task/task_item/task_item.dart"
+cp "lib/features/task_management/widgets/today/today_task_checkbox.dart" "lib/features/task_screen/widgets/task/task_item/task_checkbox.dart"
+cp "lib/features/task_management/widgets/today/today_task_list_icon.dart" "lib/features/task_screen/widgets/task/task_item/task_list_icon.dart"
+cp "lib/features/task_management/widgets/today/today_task_content.dart" "lib/features/task_screen/widgets/task/task_item/task_content.dart"
+cp "lib/features/task_management/widgets/today/today_task_controls.dart" "lib/features/task_screen/widgets/task/task_item/task_controls.dart"
+cp "lib/features/task_management/widgets/today/today_task_border_helper.dart" "lib/features/task_screen/widgets/task/task_item/task_border_helper.dart"
+cp "lib/features/task_management/widgets/today/today_task_item_constants.dart" "lib/features/task_screen/widgets/task/task_item/constants.dart"
+
+# Task Groups (refatorar expansible_*)
+cp "lib/features/task_management/widgets/today/expansible_task_group.dart" "lib/features/task_screen/widgets/task/task_group/expansible_group.dart"
+
+# Task Views (refatorar today_panel)
+cp "lib/features/task_management/widgets/today/today_panel.dart" "lib/features/task_screen/widgets/task/views/today_view.dart"
+```
+
+**Detail Components (8 arquivos):**
+```powershell
+cp "lib/features/task_management/widgets/task/task_detail_panel/task_detail_panel.dart" "lib/features/task_screen/widgets/detail/task_detail_panel.dart"
+cp "lib/features/task_management/widgets/task/task_detail_panel/widgets/task_header.dart" "lib/features/task_screen/widgets/detail/task_header.dart"
+cp "lib/features/task_management/widgets/task/task_detail_panel/widgets/task_notes_section.dart" "lib/features/task_screen/widgets/detail/task_notes_section.dart"
+cp "lib/features/task_management/widgets/task/task_detail_panel/widgets/task_diary_entry_form.dart" "lib/features/task_screen/widgets/detail/task_diary_entry_form.dart"
+cp "lib/features/task_management/widgets/task/task_detail_panel/widgets/task_diary_entry_item.dart" "lib/features/task_screen/widgets/detail/task_diary_entry_item.dart"
+cp "lib/features/task_management/widgets/task/task_detail_panel/widgets/task_diary_section.dart" "lib/features/task_screen/widgets/detail/task_diary_section.dart"
+cp "lib/features/task_management/widgets/task/task_detail_panel/widgets/task_footer.dart" "lib/features/task_screen/widgets/detail/task_footer.dart"
+cp "lib/features/task_management/widgets/task/task_detail_panel/widgets/task_subtasks_section.dart" "lib/features/task_screen/widgets/detail/task_subtasks_section.dart"
+```
+
+**Input Components (2 arquivos):**
+```powershell
+cp "lib/features/task_management/widgets/task/quick_add_task_input.dart" "lib/features/task_screen/widgets/input/quick_add_task_input.dart"
+cp "lib/features/task_management/widgets/task/mobile_quick_add_task_input.dart" "lib/features/task_screen/widgets/input/mobile_quick_add_task_input.dart"
+```
+
+#### ⚠️ **IMPORTANTE**: Refatoração de Nomes
+Durante a cópia dos task components, renomear as referências internas:
+- `today_task_item` → `task_item` 
+- `today_task_*` → `task_*`
+- `expansible_task_group` → `expansible_group`
+- `today_panel` → `today_view`
+
+#### ✅ **VALIDAÇÃO LOTE 4**:
+- `flutter analyze --no-pub` deve retornar **zero erros**
+- Se houver erros: **PARAR, corrigir, só depois continuar**
+
+---
+
+### 🎯 **LOTE 5**: EXTRAÇÃO DO SIDEBAR (CRÍTICO)
+**OBJETIVO**: Extrair métodos do task_management_screen.dart para componentes modulares
+**TEMPO ESTIMADO**: 20-30 minutos
+**ARQUIVOS**: 3 novos arquivos extraídos
+
+#### 📁 LOTE 5 (EXTRAÇÃO PRINCIPAL):
+```
+├── widgets/sidebar/ (3 arquivos)
+│   ├── task_sidebar.dart (EXTRAÍDO)
+│   ├── sidebar_header.dart (EXTRAÍDO)
+│   └── settings_sidebar_section.dart (EXTRAÍDO)
+├── screens/
+│   └── task_management_screen.dart (COPIADO + MODIFICADO)
+└── flutter analyze ✅
+```
+
+#### ⚠️ **ATENÇÃO**: Esta é a parte mais crítica - EXTRAIR, não copiar
+
+#### Extração 1: task_sidebar.dart
+**ORIGEM**: `task_management_screen.dart` → `_buildSidebar()` (linhas 416-470)
+**DESTINO**: `lib/features/task_screen/widgets/sidebar/task_sidebar.dart`
+
+```dart
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../../controllers/task_controller.dart';
+import '../../themes/theme_provider.dart';
+import '../projects/project_panel.dart';
+import '../lists/list_panel.dart';
+import '../settings/samsung_style/samsung_sidebar.dart';
+import 'sidebar_header.dart';
+import 'settings_sidebar_section.dart';
+
+class TaskSidebar extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Consumer<TaskController>(
+      builder: (context, controller, child) {
+        // Código extraído do _buildSidebar() aqui
+      },
+    );
+  }
+}
+```
+
+#### Extração 2: sidebar_header.dart
+**ORIGEM**: 
+- `_buildTodaySection()` (linhas 479-538)
+- `_buildActivitiesSection()` (linhas 539-574)  
+- `_buildLogsSection()` (linhas 575-629)
+
+**DESTINO**: `lib/features/task_screen/widgets/sidebar/sidebar_header.dart`
+
+```dart
+import 'package:flutter/material.dart';
+import '../../controllers/task_controller.dart';
+
+class SidebarHeader extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    // Combinar os 3 métodos extraídos aqui
+  }
+}
+```
+
+#### Extração 3: settings_sidebar_section.dart
+**ORIGEM**: `_buildSettingsSection()` (linhas 630-641)
+**DESTINO**: `lib/features/task_screen/widgets/sidebar/settings_sidebar_section.dart`
+
+```dart
+import 'package:flutter/material.dart';
+
+class SettingsSidebarSection extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    // Código extraído do _buildSettingsSection() aqui
+  }
+}
+```
+
+#### Atualização do task_management_screen.dart
+**SUBSTITUIR** os métodos extraídos por chamadas aos novos componentes:
+
+```dart
+// ANTES (linhas 416-470)
+Widget _buildSidebar(BuildContext context, TaskController controller) {
+  // 54 linhas de código...
+}
+
+// DEPOIS
+Widget _buildSidebar(BuildContext context, TaskController controller) {
+  return TaskSidebar();
+}
+```
+
+#### ✅ **VALIDAÇÃO LOTE 5**:
+- `flutter analyze --no-pub` deve retornar **zero erros**
+- Testar funcionalidade: todas as funcionalidades do sidebar devem funcionar identicamente
+- Se houver problemas: **PARAR, corrigir, só depois continuar**
+
+---
+
+## ✅ VALIDAÇÃO FINAL E PRÓXIMOS PASSOS
+
+### 🎯 **APÓS LOTE 5**: VALIDAÇÃO COMPLETA
+1. **flutter analyze --no-pub** (DEVE ter zero erros)
+2. **Teste manual**: Todas as funcionalidades do sidebar devem funcionar
+3. **Hot reload**: Aplicação deve continuar funcionando normalmente
+4. **Sem regressões**: Nenhuma funcionalidade pode ter sido quebrada
+
+### 🔄 **ETAPAS FUTURAS** (após sidebar completo):
+1. **Settings Screen Modularização** (1284 linhas → múltiplos arquivos)
+2. **Task Layout System** (Dynamic, Clean, Outlined, Flat cards)
+3. **Theme Presets** (Samsung, Minimal, Classic)
+4. **Task Views** (All Tasks, List View components)
+5. **Task Groups** (Simple Group, outras variações)
+
+### 🚨 **LEMBRETES CRÍTICOS**:
+- **NUNCA** fazer múltiplas extrações simultaneamente
+- **SEMPRE** validar com `flutter analyze` após cada lote
+- **PARAR IMEDIATAMENTE** se houver qualquer erro
+- **MANTER** funcionalidade idêntica durante toda reorganização
+- **SEM BRIDGES** ou sistemas temporários complexos
+
+---
+
+## ESTRUTURA FINAL DESEJADA
+
+```
+lib/features/task_screen/
+├── screens/
+│   └── task_management_screen.dart
+├── controllers/
+│   └── task_controller.dart
+├── models/
+│   ├── task_model.dart
+│   ├── list_model.dart
+│   └── project_model.dart
+├── themes/
+│   ├── app_theme.dart
+│   ├── theme_provider.dart
+│   └── theme_config.dart
+└── widgets/
+    ├── sidebar/
+    │   ├── task_sidebar.dart
+    │   ├── sidebar_header.dart
+    │   └── settings_sidebar_section.dart
+    ├── projects/
+    │   ├── project_panel.dart
+    │   ├── project_item.dart
+    │   ├── project_form_dialog.dart
+    │   ├── project_delete_dialog.dart
+    │   └── project_creation_dialog.dart
+    ├── lists/
+    │   ├── list_panel.dart
+    │   ├── list_item.dart
+    │   ├── list_form_dialog.dart
+    │   ├── list_delete_dialog.dart
+    │   └── list_context_menu.dart
+    ├── task/
+    │   ├── task_panel.dart
+    │   ├── task_item/
+    │   │   ├── task_item.dart
+    │   │   ├── task_checkbox.dart
+    │   │   ├── task_list_icon.dart
+    │   │   ├── task_content.dart
+    │   │   ├── task_controls.dart
+    │   │   ├── task_border_helper.dart
+    │   │   └── constants.dart
+    │   ├── task_group/
+    │   │   ├── task_group.dart
+    │   │   ├── expansible_group.dart
+    │   │   └── simple_group.dart
+    │   └── views/
+    │       ├── today_view.dart
+    │       ├── all_tasks_view.dart
+    │       └── list_view.dart
+    ├── detail/
+    │   ├── task_detail_panel.dart
+    │   ├── task_header.dart
+    │   ├── task_notes_section.dart
+    │   ├── task_diary_entry_form.dart
+    │   ├── task_diary_entry_item.dart
+    │   ├── task_diary_section.dart
+    │   ├── task_footer.dart
+    │   └── task_subtasks_section.dart
+    ├── common/
+    │   ├── app_state_handler.dart
+    │   ├── task_app_bar.dart
+    │   └── sidebar_theme_toggle.dart
+    ├── settings/
+    │   ├── settings_screen.dart
+    │   ├── sections/
+    │   │   ├── theme_settings_section.dart
+    │   │   ├── layout_settings_section.dart
+    │   │   ├── card_settings_section.dart
+    │   │   ├── background_settings_section.dart
+    │   │   ├── sidebar_settings_section.dart
+    │   │   └── about_settings_section.dart
+    │   ├── widgets/
+    │   │   ├── theme_selector.dart
+    │   │   ├── layout_preview.dart
+    │   │   ├── color_picker.dart
+    │   │   └── settings_group.dart
+    │   ├── layouts/
+    │   │   ├── card_layouts.dart
+    │   │   ├── background_layouts.dart
+    │   │   ├── sidebar_layouts.dart
+    │   │   └── panel_layouts.dart
+    │   ├── presets/
+    │   │   ├── samsung_theme_preset.dart
+    │   │   ├── minimal_theme_preset.dart
+    │   │   └── classic_theme_preset.dart
+    │   └── samsung_style/
+    │       ├── index.dart
+    │       ├── samsung_sidebar.dart
+    │       ├── samsung_sidebar_theme.dart
+    │       ├── samsung_list_item.dart
+    │       └── samsung_section_header.dart
+    └── input/
+        ├── quick_add_task_input.dart
+        └── mobile_quick_add_task_input.dart
+```
+
+---
+
+## MAPEAMENTO EXATO DO CÓDIGO DO SIDEBAR EXISTENTE
+
+### **LOCALIZAÇÃO DOS MÉTODOS NO ARQUIVO ATUAL:**
+
+**ARQUIVO FONTE:** `f:\repos\teste_flutter\lib\features\task_management\screens\task_management_screen.dart`
+
+#### **1. Método Principal do Sidebar:**
+- **MÉTODO:** `_buildSidebar()` 
+- **LINHAS:** 416-470 (54 linhas)
+- **FUNCIONALIDADE:** Container principal com tema Samsung Notes e sidebar padrão
+- **DESTINO:** `lib/features/task_screen/widgets/sidebar/task_sidebar.dart`
+
+#### **2. Seção "Hoje":**
+- **MÉTODO:** `_buildTodaySection()`
+- **LINHAS:** 479-538 (59 linhas)
+- **FUNCIONALIDADE:** Botão "Hoje" com contador de tarefas e toggle de visualização
+- **DESTINO:** `lib/features/task_screen/widgets/sidebar/sidebar_header.dart` (parte 1)
+
+#### **3. Seção "Atividades do Dia":**
+- **MÉTODO:** `_buildActivitiesSection()`
+- **LINHAS:** 539-574 (35 linhas)
+- **FUNCIONALIDADE:** Toggle para visualização de atividades do dia
+- **DESTINO:** `lib/features/task_screen/widgets/sidebar/sidebar_header.dart` (parte 2)
+
+#### **4. Seção "Logs":**
+- **MÉTODO:** `_buildLogsSection()`
+- **LINHAS:** 575-629 (54 linhas)
+- **FUNCIONALIDADE:** Contador de logs ativos e navegação para LogScreen
+- **DESTINO:** `lib/features/task_screen/widgets/sidebar/sidebar_header.dart` (parte 3)
+
+#### **5. Seção "Configurações":**
+- **MÉTODO:** `_buildSettingsSection()`
+- **LINHAS:** 630-641 (11 linhas)
+- **FUNCIONALIDADE:** Navegação para SettingsScreen
+- **DESTINO:** `lib/features/task_screen/widgets/sidebar/settings_sidebar_section.dart`
+
+#### **6. Métodos de Navegação:**
+- **MÉTODO:** `_navigateToLogs()` - Linhas 621-628
+- **MÉTODO:** `_navigateToSettings()` - Linhas 643-648
+- **DESTINO:** Incluir nos respectivos componentes extraídos
+
+### **COMPONENTES REUTILIZADOS (JÁ EXISTEM):**
+- **ProjectPanel:** Chamado diretamente na linha 449
+- **ListPanel:** Chamado diretamente na linha 454
+- **SamsungSidebar:** Chamado na linha 423 (quando tema Samsung está ativo)
+
+---
+
+## MAPEAMENTO DE ARQUIVOS EXISTENTES
+
+### ARQUIVOS QUE EXISTEM E DEVEM SER COPIADOS:
+
+#### 1. Screens:
+- **ORIGEM**: `lib/features/task_management/screens/task_management_screen.dart`
+- **DESTINO**: `lib/features/task_screen/screens/task_management_screen.dart`
+
+#### 2. Controllers:
+- **ORIGEM**: `lib/features/task_management/controllers/task_controller.dart`
+- **DESTINO**: `lib/features/task_screen/controllers/task_controller.dart`
+
+#### 3. Models:
+- **ORIGEM**: `lib/features/task_management/models/task_model.dart`
+- **DESTINO**: `lib/features/task_screen/models/task_model.dart`
+- **ORIGEM**: `lib/features/task_management/models/list_model.dart`
+- **DESTINO**: `lib/features/task_screen/models/list_model.dart`
+- **ORIGEM**: `lib/features/task_management/models/project_model.dart`
+- **DESTINO**: `lib/features/task_screen/models/project_model.dart`
+
+#### 4. Themes:
+- **ORIGEM**: `lib/features/task_management/themes/app_theme.dart`
+- **DESTINO**: `lib/features/task_screen/themes/app_theme.dart`
+- **ORIGEM**: `lib/features/task_management/themes/theme_provider.dart`
+- **DESTINO**: `lib/features/task_screen/themes/theme_provider.dart`
+- **ORIGEM**: `lib/features/task_management/themes/theme_config.dart`
+- **DESTINO**: `lib/features/task_screen/themes/theme_config.dart`
+
+#### 5. Projects (cópia direta):
+- **ORIGEM**: `lib/features/task_management/widgets/projects/project_panel.dart`
+- **DESTINO**: `lib/features/task_screen/widgets/projects/project_panel.dart`
+- **ORIGEM**: `lib/features/task_management/widgets/projects/project_item.dart`
+- **DESTINO**: `lib/features/task_screen/widgets/projects/project_item.dart`
+- **ORIGEM**: `lib/features/task_management/widgets/projects/project_form_dialog.dart`
+- **DESTINO**: `lib/features/task_screen/widgets/projects/project_form_dialog.dart`
+- **ORIGEM**: `lib/features/task_management/widgets/projects/project_delete_dialog.dart`
+- **DESTINO**: `lib/features/task_screen/widgets/projects/project_delete_dialog.dart`
+- **ORIGEM**: `lib/features/task_management/widgets/projects/project_creation_dialog.dart`
+- **DESTINO**: `lib/features/task_screen/widgets/projects/project_creation_dialog.dart`
+
+#### 6. Lists (cópia direta):
+- **ORIGEM**: `lib/features/task_management/widgets/lists/list_panel.dart`
+- **DESTINO**: `lib/features/task_screen/widgets/lists/list_panel.dart`
+- **ORIGEM**: `lib/features/task_management/widgets/lists/list_item.dart`
+- **DESTINO**: `lib/features/task_screen/widgets/lists/list_item.dart`
+- **ORIGEM**: `lib/features/task_management/widgets/lists/list_form_dialog.dart`
+- **DESTINO**: `lib/features/task_screen/widgets/lists/list_form_dialog.dart`
+- **ORIGEM**: `lib/features/task_management/widgets/lists/list_delete_dialog.dart`
+- **DESTINO**: `lib/features/task_screen/widgets/lists/list_delete_dialog.dart`
+- **ORIGEM**: `lib/features/task_management/widgets/lists/list_context_menu.dart`
+- **DESTINO**: `lib/features/task_screen/widgets/lists/list_context_menu.dart`
+
+#### 7. Task Panel (base):
+- **ORIGEM**: `lib/features/task_management/widgets/task/task_panel.dart`
+- **DESTINO**: `lib/features/task_screen/widgets/task/task_panel.dart`
+
+#### 8. Task Item Components (refatorar de today_*):
+- **ORIGEM**: `lib/features/task_management/widgets/today/today_task_item.dart`
+- **DESTINO**: `lib/features/task_screen/widgets/task/task_item/task_item.dart` (REFATORAR)
+- **ORIGEM**: `lib/features/task_management/widgets/today/today_task_checkbox.dart`
+- **DESTINO**: `lib/features/task_screen/widgets/task/task_item/task_checkbox.dart` (REFATORAR)
+- **ORIGEM**: `lib/features/task_management/widgets/today/today_task_list_icon.dart`
+- **DESTINO**: `lib/features/task_screen/widgets/task/task_item/task_list_icon.dart` (REFATORAR)
+- **ORIGEM**: `lib/features/task_management/widgets/today/today_task_content.dart`
+- **DESTINO**: `lib/features/task_screen/widgets/task/task_item/task_content.dart` (REFATORAR)
+- **ORIGEM**: `lib/features/task_management/widgets/today/today_task_controls.dart`
+- **DESTINO**: `lib/features/task_screen/widgets/task/task_item/task_controls.dart` (REFATORAR)
+- **ORIGEM**: `lib/features/task_management/widgets/today/today_task_border_helper.dart`
+- **DESTINO**: `lib/features/task_screen/widgets/task/task_item/task_border_helper.dart` (REFATORAR)
+- **ORIGEM**: `lib/features/task_management/widgets/today/today_task_item_constants.dart`
+- **DESTINO**: `lib/features/task_screen/widgets/task/task_item/constants.dart` (REFATORAR)
+
+#### 9. Task Groups:
+- **ORIGEM**: `lib/features/task_management/widgets/today/expansible_task_group.dart`
+- **DESTINO**: `lib/features/task_screen/widgets/task/task_group/expansible_group.dart` (REFATORAR)
+
+#### 10. Task Views:
+- **ORIGEM**: `lib/features/task_management/widgets/today/today_panel.dart`
+- **DESTINO**: `lib/features/task_screen/widgets/task/views/today_view.dart` (REFATORAR)
+
+#### 11. Detail Components:
+- **ORIGEM**: `lib/features/task_management/widgets/task/task_detail_panel/task_detail_panel.dart`
+- **DESTINO**: `lib/features/task_screen/widgets/detail/task_detail_panel.dart`
+- **ORIGEM**: `lib/features/task_management/widgets/task/task_detail_panel/widgets/task_header.dart`
+- **DESTINO**: `lib/features/task_screen/widgets/detail/task_header.dart`
+- **ORIGEM**: `lib/features/task_management/widgets/task/task_detail_panel/widgets/task_notes_section.dart`
+- **DESTINO**: `lib/features/task_screen/widgets/detail/task_notes_section.dart`
+- **ORIGEM**: `lib/features/task_management/widgets/task/task_detail_panel/widgets/task_diary_entry_form.dart`
+- **DESTINO**: `lib/features/task_screen/widgets/detail/task_diary_entry_form.dart`
+- **ORIGEM**: `lib/features/task_management/widgets/task/task_detail_panel/widgets/task_diary_entry_item.dart`
+- **DESTINO**: `lib/features/task_screen/widgets/detail/task_diary_entry_item.dart`
+- **ORIGEM**: `lib/features/task_management/widgets/task/task_detail_panel/widgets/task_diary_section.dart`
+- **DESTINO**: `lib/features/task_screen/widgets/detail/task_diary_section.dart`
+- **ORIGEM**: `lib/features/task_management/widgets/task/task_detail_panel/widgets/task_footer.dart`
+- **DESTINO**: `lib/features/task_screen/widgets/detail/task_footer.dart`
+- **ORIGEM**: `lib/features/task_management/widgets/task/task_detail_panel/widgets/task_subtasks_section.dart`
+- **DESTINO**: `lib/features/task_screen/widgets/detail/task_subtasks_section.dart`
+
+#### 12. Sidebar Components (Extração de task_management_screen.dart):
+- **ORIGEM**: `task_management_screen.dart -> _buildSidebar()`
+- **DESTINO**: `lib/features/task_screen/widgets/sidebar/task_sidebar.dart`
+- **ORIGEM**: `task_management_screen.dart -> _buildTodaySection() + _buildActivitiesSection() + _buildLogsSection()`
+- **DESTINO**: `lib/features/task_screen/widgets/sidebar/sidebar_header.dart`
+- **ORIGEM**: `task_management_screen.dart -> _buildSettingsSection()`
+- **DESTINO**: `lib/features/task_screen/widgets/sidebar/settings_sidebar_section.dart`
+- **REUTILIZAÇÃO**: `ProjectPanel` e `ListPanel` são chamados diretamente no `task_sidebar.dart` (sem wrappers desnecessários)
+
+#### 13. Common Components:
+- **ORIGEM**: `lib/features/task_management/widgets/common/app_state_handler.dart`
+- **DESTINO**: `lib/features/task_screen/widgets/common/app_state_handler.dart`
+- **ORIGEM**: `lib/features/task_management/widgets/common/task_app_bar.dart`
+- **DESTINO**: `lib/features/task_screen/widgets/common/task_app_bar.dart`
+- **ORIGEM**: `lib/features/task_management/widgets/common/sidebar_theme_toggle.dart`
+- **DESTINO**: `lib/features/task_screen/widgets/common/sidebar_theme_toggle.dart`
+
+#### 13. Input Components:
+- **ORIGEM**: `lib/features/task_management/widgets/task/quick_add_task_input.dart`
+- **DESTINO**: `lib/features/task_screen/widgets/input/quick_add_task_input.dart`
+- **ORIGEM**: `lib/features/task_management/widgets/task/mobile_quick_add_task_input.dart`
+- **DESTINO**: `lib/features/task_screen/widgets/input/mobile_quick_add_task_input.dart`
+
+#### 14. Samsung Style Components:
+- **ORIGEM**: `lib/features/task_management/widgets/layouts/samsung_style/index.dart`
+- **DESTINO**: `lib/features/task_screen/widgets/settings/samsung_style/index.dart`
+- **ORIGEM**: `lib/features/task_management/widgets/layouts/samsung_style/samsung_sidebar.dart`
+- **DESTINO**: `lib/features/task_screen/widgets/settings/samsung_style/samsung_sidebar.dart`
+- **ORIGEM**: `lib/features/task_management/widgets/layouts/samsung_style/samsung_sidebar_theme.dart`
+- **DESTINO**: `lib/features/task_screen/widgets/settings/samsung_style/samsung_sidebar_theme.dart`
+- **ORIGEM**: `lib/features/task_management/widgets/layouts/samsung_style/samsung_list_item.dart`
+- **DESTINO**: `lib/features/task_screen/widgets/settings/samsung_style/samsung_list_item.dart`
+- **ORIGEM**: `lib/features/task_management/widgets/layouts/samsung_style/samsung_section_header.dart`
+- **DESTINO**: `lib/features/task_screen/widgets/settings/samsung_style/samsung_section_header.dart`
+
+---
+
+## ANÁLISE DO SIDEBAR EXISTENTE
+
+### Situação Atual:
+O sidebar JÁ EXISTE e está implementado no arquivo `task_management_screen.dart` através do método `_buildSidebar()`.
+
+### Implementação Atual Identificada:
+```dart
+// Método principal
+Widget _buildSidebar(BuildContext context, TaskController controller)
+
+// Seções existentes:
+Widget _buildTodaySection(BuildContext context, TaskController controller)
+Widget _buildActivitiesSection(BuildContext context, TaskController controller)  
+Widget _buildLogsSection(BuildContext context, TaskController controller)
+Widget _buildSettingsSection(BuildContext context)
+```
+
+### Componentes Já Funcionais:
+- **Seção Hoje**: Com contador de tarefas e toggle de visualização
+- **Seção Atividades**: Toggle para visualização de atividades do dia
+- **Seção Logs**: Com contador de logs ativos e navegação para LogScreen
+- **Seção Projetos**: Usa o componente `ProjectPanel` existente
+- **Seção Listas**: Usa o componente `ListPanel` existente  
+- **Seção Configurações**: Navegação para SettingsScreen
+
+### Estratégia para Reorganização:
+1. **Extrair** os métodos do sidebar atual para componentes separados
+2. **Modularizar** cada seção em widgets independentes
+3. **Reutilizar** ProjectPanel e ListPanel que já funcionam perfeitamente
+4. **Manter** toda funcionalidade existente
+
+---
+
+## SISTEMA COMPLETO DE LAYOUTS E TEMAS - ANÁLISE E ORGANIZAÇÃO
+
+### **SITUAÇÃO ATUAL: MÚLTIPLOS SISTEMAS IMPLEMENTADOS MAS DESORGANIZADOS**
+
+#### **✅ Funcionalidades já implementadas (mas espalhadas):**
+
+1. **Card Layouts para Tasks:**
+   - `CardStyle.dynamic` - Cor muda com a lista selecionada (atual)
+   - `CardStyle.clean` - Cor de fundo constante, minimalista
+   - `TodayCardStyle.withEmoji` - Cards com emoji da lista (atual)
+   - `TodayCardStyle.withColorBorder` - Cards com borda colorida à esquerda
+
+2. **Background Layouts:**
+   - `BackgroundColorStyle.listColor` - Usa cor da lista (atual)
+   - `BackgroundColorStyle.samsungLight` - Cinza claro Samsung Notes
+   - `BackgroundColorStyle.white` - Branco total
+   - `BackgroundColorStyle.systemTheme` - Cor do sistema
+
+3. **Sidebar Themes:**
+   - `SidebarTheme.defaultTheme` - Colorido com emojis (atual)
+   - `SidebarTheme.samsungNotes` - Minimalista e clean
+   - `SidebarColorStyle` - 5 opções de cor (systemTheme, samsungLight, white, listColor, dark)
+
+4. **Panel Layouts:**
+   - `ListPanelStyle.compact` - Minimalista com animações (atual)
+   - `ListPanelStyle.decorated` - Containers coloridos para emojis
+
+#### **❌ PROBLEMAS IDENTIFICADOS:**
+
+1. **Settings Screen gigante** (1300+ linhas) - precisa ser modularizado
+2. **Temas espalhados** em múltiplos arquivos sem organização clara
+3. **Falta de presets** temáticos (ex: "Tema Samsung Completo")
+4. **Documentação incompleta** sobre layouts de tasks
+5. **Estrutura de pastas** não reflete a complexidade dos temas
+
+### **ESTRATÉGIA DE REORGANIZAÇÃO COMPLETA:**
+
+#### **🎯 PRINCÍPIO ORGANIZACIONAL: "AGRUPE POR RESPONSABILIDADE DO USUÁRIO"**
+
+**PERGUNTA-CHAVE:** *"Onde o usuário vai para configurar isso?"*  
+**RESPOSTA:** *"Nas Settings!"*
+
+**LOGO, layouts/themes/presets devem estar DENTRO de settings, não espalhados!**
+
+#### **1. Modularizar Settings Screen (1300+ linhas → múltiplos arquivos):**
+```
+widgets/settings/
+├── settings_screen.dart              # 100-150 linhas (estrutura principal)
+├── sections/
+│   ├── theme_settings_section.dart   # Seleção de temas globais
+│   ├── layout_settings_section.dart  # Layouts de cards e painéis
+│   ├── card_settings_section.dart    # Estilos específicos de cards
+│   ├── background_settings_section.dart # Cores de fundo
+│   ├── sidebar_settings_section.dart # Temas e cores da sidebar
+│   └── about_settings_section.dart   # Informações do app
+└── widgets/
+    ├── theme_selector.dart           # Widget reutilizável para seleção
+    ├── layout_preview.dart           # Previews de layouts
+    ├── color_picker.dart             # Seletor de cores
+    └── settings_group.dart           # Container para grupos de configurações
+```
+
+#### **2. Organizar Sistema de Temas:**
+```
+themes/                               # SÓ O ESSENCIAL
+├── app_theme.dart                    # Enums básicos
+├── theme_provider.dart               # Provider principal  
+└── theme_config.dart                 # Configurações base
+
+widgets/settings/                     # TUDO DE CONFIGURAÇÃO AQUI
+├── layouts/                          # Definições de layouts  
+│   ├── card_layouts.dart             # TodoCard, TaskCard layouts
+│   ├── background_layouts.dart       # Cores e estilos de fundo
+│   ├── sidebar_layouts.dart          # Layouts da sidebar
+│   └── panel_layouts.dart            # Layouts dos painéis
+├── presets/                          # Presets completos
+│   ├── samsung_theme_preset.dart     # Tema Samsung completo
+│   ├── minimal_theme_preset.dart     # Tema minimalista completo
+│   └── classic_theme_preset.dart     # Tema clássico/atual
+├── sections/                         # Seções de configuração
+│   ├── theme_settings_section.dart   # UI para selecionar temas
+│   ├── layout_settings_section.dart  # UI para selecionar layouts
+│   └── ...
+└── widgets/                          # Widgets de configuração
+    ├── theme_selector.dart           # Seletor de temas
+    ├── layout_preview.dart           # Preview de layouts
+    └── ...
+```
+
+#### **3. Benefícios desta Organização:**
+
+- ✅ **Coesão funcional** - Tudo relacionado a configurações fica junto
+- ✅ **Facilita desenvolvimento** - Developer vai em settings/ para mexer em temas
+- ✅ **Facilita manutenção** - Layouts e UIs das configurações no mesmo local
+- ✅ **Lógica do usuário** - Usuário pensa "configurações = settings"
+- ✅ **Imports mais claros** - `import '../settings/layouts/card_layouts.dart'`
+- ✅ **Separação clara** - Themes/ só tem o essencial (provider, enums)
+
+#### **4. Divisão Clara:**
+
+**`themes/` - SÓ ARQUITETURA:**
+- `app_theme.dart` - Enums básicos
+- `theme_provider.dart` - Provider que gerencia estado
+- `theme_config.dart` - Configurações básicas
+
+**`widgets/settings/` - TUDO DE CONFIGURAÇÃO:**
+- `layouts/` - Definições de como renderizar cada estilo
+- `presets/` - Combinações predefinidas de estilos  
+- `sections/` - UIs para o usuário escolher
+- `widgets/` - Componentes reutilizáveis para configuração
+
+#### **5. Task Layouts - Sistema Completo:**
+
+**Task Card Styles disponíveis:**
+- **Dynamic Cards** - Cor muda com lista selecionada (atual)
+- **Clean Cards** - Fundo neutro, bordas coloridas
+- **Outlined Cards** - Apenas bordas, sem preenchimento
+- **Flat Cards** - Sem bordas, divisores simples
+- **Samsung Notes Style** - Minimalista absoluto
+
+**Task Content Layouts:**
+- **With Emoji** - Mostra emoji da lista (atual)
+- **With Color Border** - Borda colorida à esquerda
+- **With Icon** - Ícone da lista ao invés de emoji
+- **Minimal** - Só texto, sem indicadores visuais
+
+**Task Organization Layouts:**
+- **Grouped by List** - Agrupado por lista (atual)
+- **Grouped by Priority** - Agrupado por prioridade
+- **Grouped by Date** - Agrupado por data
+- **Flat List** - Lista simples sem agrupamento
+
+#### **6. Presets Temáticos Completos:**
+
+**Samsung Notes Preset:**
+- Background: Samsung Light Gray
+- Cards: Clean style com bordas sutis
+- Sidebar: Samsung Notes theme
+- Panels: Compact style
+- Content: Minimal sem emojis
+
+**Colorful Classic Preset:**
+- Background: List Color (atual)
+- Cards: Dynamic style
+- Sidebar: Default theme
+- Panels: Decorated style  
+- Content: With Emoji
+
+**Minimal Dark Preset:**
+- Background: Dark system theme
+- Cards: Outlined style
+- Sidebar: Dark theme
+- Panels: Compact style
+- Content: With Icon
+
+#### **7. Mapeamento de Arquivos a Criar:**
+
+**Themes Layout:**
+- `card_layouts.dart` - Extrair estilos de TaskCard
+- `background_layouts.dart` - Extrair BackgroundColorStyle
+- `sidebar_layouts.dart` - Extrair SidebarTheme/SidebarColorStyle
+- `panel_layouts.dart` - Extrair ListPanelStyle
+
+**Settings Modularização:**
+- `theme_settings_section.dart` - Linhas 1-200 do settings atual
+- `layout_settings_section.dart` - Linhas 200-400 do settings atual  
+- `card_settings_section.dart` - Linhas 400-600 do settings atual
+- `background_settings_section.dart` - Linhas 600-800 do settings atual
+- `sidebar_settings_section.dart` - Linhas 800-1000 do settings atual
+- `about_settings_section.dart` - Linhas 1000+ do settings atual
+
+**Layouts e Presets (DENTRO de settings):**
+- `layouts/card_layouts.dart` - Definições de estilos de TaskCard
+- `layouts/background_layouts.dart` - Definições de BackgroundColorStyle
+- `layouts/sidebar_layouts.dart` - Definições de SidebarTheme/SidebarColorStyle
+- `layouts/panel_layouts.dart` - Definições de ListPanelStyle
+- `presets/samsung_theme_preset.dart` - Preset completo Samsung
+- `presets/minimal_theme_preset.dart` - Preset minimalista  
+- `presets/classic_theme_preset.dart` - Preset clássico
+
+---
+
+## COMPONENTES A SEREM CRIADOS (INCLUINDO LAYOUTS DE TASKS):
+
+### 1. Sidebar Components:
+- `lib/features/task_screen/widgets/sidebar/task_sidebar.dart` - Extraído do _buildSidebar (~80 linhas)
+- `lib/features/task_screen/widgets/sidebar/sidebar_header.dart` - Extraído do _buildTodaySection + _buildActivitiesSection + _buildLogsSection (~60 linhas)
+- `lib/features/task_screen/widgets/sidebar/settings_sidebar_section.dart` - Extraído do _buildSettingsSection (~15 linhas)
+
+### 2. Task Layout Components (NOVO):
+- `lib/features/task_screen/widgets/task/layouts/task_card_variants.dart` - Diferentes estilos de card (dynamic, clean, outlined, flat)
+- `lib/features/task_screen/widgets/task/layouts/task_content_variants.dart` - Diferentes layouts de conteúdo (emoji, icon, border, minimal)
+- `lib/features/task_screen/widgets/task/layouts/task_grouping_variants.dart` - Diferentes agrupamentos (lista, prioridade, data, flat)
+
+### 3. Theme System (REORGANIZADO):
+- `lib/features/task_screen/widgets/settings/layouts/card_layouts.dart` - Sistema de layouts de cards
+- `lib/features/task_screen/widgets/settings/layouts/background_layouts.dart` - Sistema de backgrounds
+- `lib/features/task_screen/widgets/settings/layouts/sidebar_layouts.dart` - Sistema de layouts da sidebar
+- `lib/features/task_screen/widgets/settings/layouts/panel_layouts.dart` - Sistema de layouts dos painéis
+- `lib/features/task_screen/widgets/settings/presets/samsung_theme_preset.dart` - Preset completo Samsung
+- `lib/features/task_screen/widgets/settings/presets/minimal_theme_preset.dart` - Preset minimalista
+- `lib/features/task_screen/widgets/settings/presets/classic_theme_preset.dart` - Preset clássico
+
+### 4. Settings Modularização (CRÍTICO):
+- `lib/features/task_screen/widgets/settings/sections/theme_settings_section.dart` - Temas globais (~200 linhas)
+- `lib/features/task_screen/widgets/settings/sections/layout_settings_section.dart` - Layouts gerais (~200 linhas)
+- `lib/features/task_screen/widgets/settings/sections/card_settings_section.dart` - Estilos de cards (~200 linhas)
+- `lib/features/task_screen/widgets/settings/sections/background_settings_section.dart` - Cores de fundo (~200 linhas)
+- `lib/features/task_screen/widgets/settings/sections/sidebar_settings_section.dart` - Sidebar (~200 linhas)
+- `lib/features/task_screen/widgets/settings/sections/about_settings_section.dart` - Sobre o app (~200 linhas)
+- `lib/features/task_screen/widgets/settings/widgets/theme_selector.dart` - Widget reutilizável
+- `lib/features/task_screen/widgets/settings/widgets/layout_preview.dart` - Previews
+- `lib/features/task_screen/widgets/settings/widgets/color_picker.dart` - Seletor de cores
+- `lib/features/task_screen/widgets/settings/widgets/settings_group.dart` - Container de grupos
+
+### 2. Task Group Components:
+- `lib/features/task_screen/widgets/task/task_group/task_group.dart` - Interface comum para grupos
+- `lib/features/task_screen/widgets/task/task_group/simple_group.dart` - Grupo simples (listas normais)
+
+### 3. Task Views:
+- `lib/features/task_screen/widgets/task/views/all_tasks_view.dart` - Visualização "Todas as tarefas"
+- `lib/features/task_screen/widgets/task/views/list_view.dart` - Visualização por lista específica
+
+---
+
+## PASSOS PARA EXECUÇÃO:
+
+### ETAPA 1: Criar Estrutura de Pastas
+```
+lib/features/task_screen/
+├── screens/
+├── controllers/
+├── models/
+├── themes/
+└── widgets/
+    ├── sidebar/
+    ├── projects/
+    ├── lists/
+    ├── task/
+    │   ├── task_item/
+    │   ├── task_group/
+    │   └── views/
+    ├── detail/
+    ├── common/
+    ├── input/
+    └── layouts/
+        └── samsung_style/
+```
+
+### ETAPA 2: Duplicar Arquivos Existentes
+- Copiar TODOS os arquivos listados na seção "ARQUIVOS QUE EXISTEM E DEVEM SER COPIADOS"
+- Manter imports relativos funcionando
+- NÃO alterar imports ainda
+
+### ETAPA 3: Refatorar Componentes Today para Base
+- Refatorar `today_task_item.dart` para `task_item.dart` (componente configurável)
+- Refatorar `today_task_*` para `task_*` (remover prefixo "today")
+- Tornar componentes reutilizáveis através de parâmetros de configuração
+
+### ETAPA 4: Criar Sistema de Layouts de Tasks
+- Criar variantes de task cards (dynamic, clean, outlined, flat)
+- Criar variantes de conteúdo (emoji, icon, border, minimal)
+- Criar sistema de agrupamento configurável
+- Implementar presets temáticos completos
+
+### ETAPA 5: Modularizar Settings Screen (CRÍTICO)
+- Quebrar settings_screen.dart (1300+ linhas) em 6 seções menores
+- Criar widgets reutilizáveis (SettingsGroup, ThemeSelector, LayoutPreview)
+- Implementar navegação entre seções
+- Testar cada seção isoladamente
+
+### ETAPA 5: Modularizar Settings Screen (CRÍTICO)
+- Quebrar settings_screen.dart (1300+ linhas) em 6 seções menores
+- Criar widgets reutilizáveis (SettingsGroup, ThemeSelector, LayoutPreview)
+- Implementar navegação entre seções
+- Testar cada seção isoladamente
+
+### ETAPA 6: Atualizar Imports
+- Atualizar todos os imports para apontar para nova estrutura
+- Testar funcionamento
+
+### ETAPA 7: Integração e Testes
+- Testar cada componente isoladamente
+- Integrar na aplicação principal
+- Validar funcionalidades
+- Testar todos os layouts e temas
+
+### ETAPA 8: Limpeza Final
+- Quando tudo estiver funcionando, remover pasta antiga
+- Documentar mudanças
+
+---
+
+## PONTOS IMPORTANTES DE REFATORAÇÃO:
+
+### 1. Task Item Configurável:
+O `today_task_item.dart` deve virar um componente base configurável que pode ser usado em diferentes contextos (hoje, lista, importante) através de parâmetros como:
+- `TaskItemStyle` (today, list, compact)
+- `showBorders` (boolean)
+- `allowExpansion` (boolean)
+
+### 2. Reutilização de Constantes:
+A `today_task_item_constants.dart` vira `constants.dart` com valores configuráveis para diferentes estilos.
+
+### 3. Border Helper Inteligente:
+O `task_border_helper.dart` deve centralizar TODA a lógica de bordas em um só lugar, usando a constante `colorBorderWidth = 6.0` que definimos.
+
+### 4. Views Especializadas:
+- `today_view.dart` - Para visualização "Hoje" com grupos expansíveis
+- `all_tasks_view.dart` - Para "Todas as tarefas" com lista simples  
+- `list_view.dart` - Para visualização de lista específica
+
+---
+
+## INSTRUÇÕES ESPECÍFICAS PARA EXTRAÇÃO DO SIDEBAR:
+
+### IMPORTANTE: Sidebar JÁ existe no task_management_screen.dart
+
+O sidebar não precisa ser "criado" - ele precisa ser **EXTRAÍDO** e **MODULARIZADO**.
+
+### Passos para Extração:
+
+#### 1. Criar task_sidebar.dart:
+- Extrair o método `_buildSidebar()` completo
+- Manter toda funcionalidade existente
+- Aceitar TaskController como parâmetro
+
+#### 2. Criar sidebar_header.dart:
+- Combinar os métodos: `_buildTodaySection()`, `_buildActivitiesSection()` e `_buildLogsSection()`
+- Manter contadores e funcionalidades de cada seção
+- Organizar em um componente coeso da área de navegação
+
+#### 3. Criar settings_sidebar_section.dart:
+- Extrair apenas o método `_buildSettingsSection()`
+- Manter navegação para SettingsScreen
+
+#### 4. Integração direta no task_sidebar.dart:
+- `ProjectPanel()` e `ListPanel()` são chamados diretamente
+- Sem necessidade de wrappers desnecessários
+- Estrutura mais enxuta e eficiente
+
+#### 4. Manter funcionalidades existentes:
+- ✅ Contadores de tarefas na seção "Hoje"
+- ✅ Contadores de logs ativos na seção "Logs"
+- ✅ Navegação para LogScreen e SettingsScreen
+- ✅ Toggles de visualização (Today, Activities)
+- ✅ Integração com TaskController e LogController
+- ✅ Temas e estilos visuais atuais
+
+#### 5. Exemplo de extração para sidebar_header.dart:
+```dart
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../../controllers/task_controller.dart';
+import '../../../log_screen/controllers/log_controller.dart';
+
+class SidebarHeader extends StatelessWidget {
+  const SidebarHeader({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Consumer<TaskController>(
+      builder: (context, controller, child) {
+        return Column(
+          children: [
+            // COLAR AQUI o código do _buildTodaySection()
+            _buildTodaySection(context, controller),
+            
+            // COLAR AQUI o código do _buildActivitiesSection()  
+            _buildActivitiesSection(context, controller),
+            
+            // COLAR AQUI o código do _buildLogsSection()
+            _buildLogsSection(context, controller),
+          ],
+        );
+      },
+    );
+  }
+  
+  // Métodos privados extraídos do task_management_screen.dart
+  Widget _buildTodaySection(BuildContext context, TaskController controller) {
+    // ... código completo do método original
+  }
+  
+  Widget _buildActivitiesSection(BuildContext context, TaskController controller) {
+    // ... código completo do método original
+  }
+  
+  Widget _buildLogsSection(BuildContext context, TaskController controller) {
+    // ... código completo do método original
+  }
+}
+```
+
+### RESULTADO ESPERADO DA EXTRAÇÃO:
+
+Ao final desta extração, o sidebar estará modularizado em:
+1. ✅ Um widget principal (`task_sidebar.dart`) - ~80 linhas
+2. ✅ Seção de navegação (`sidebar_header.dart`) - ~60 linhas com Hoje + Atividades + Logs
+3. ✅ Seção de configurações (`settings_sidebar_section.dart`) - ~15 linhas
+4. ✅ Integração direta com `ProjectPanel()` e `ListPanel()` no sidebar principal
+5. ✅ Mesma funcionalidade de antes
+6. ✅ Código mais organizado e manutenível
+7. ✅ Estrutura simples sem subpastas desnecessárias
+
+**Total de arquivos: 3 (muito mais enxuto que os 7 originalmente propostos!)**
+
+---
+
+## 🚨 MAPEAMENTO COMPLETO E DETALHADO: SETTINGS SCREEN (1284 LINHAS)
+
+### **ARQUIVO PRINCIPAL DE CONFIGURAÇÕES:**
+**ORIGEM:** `f:\repos\teste_flutter\lib\features\task_management\screens\settings_screen.dart` (1284 linhas)
+
+### **📊 ANÁLISE ESTRUTURAL COMPLETA:**
+
+#### **1. ESTRUTURA PRINCIPAL (Linhas 1-58):**
+- Imports e declaração da classe
+- Método `build()` principal
+- ListView com todas as seções
+
+#### **2. MÉTODOS AUXILIARES BÁSICOS:**
+- **`_buildSectionHeader()`** - Linha 59-71 (12 linhas)
+
+---
+
+### **📋 SEÇÕES IDENTIFICADAS E SEUS INTERVALOS DE LINHAS:**
+
+#### **SEÇÃO 1: APARÊNCIA/TEMAS GLOBAIS (Linhas 72-169)**
+- **MÉTODOS:**
+  - `_buildThemeSelector()` - Linhas 72-105 (33 linhas)
+  - `_buildThemeOption()` - Linhas 106-169 (63 linhas)
+- **FUNCIONALIDADE:** Seleção entre Classic, Glass, Modern
+- **DESTINO:** `widgets/settings/sections/theme_settings_section.dart`
+
+#### **SEÇÃO 2: ESTILO DO PAINEL DE LISTA (Linhas 170-260)**
+- **MÉTODOS:**
+  - `_buildListStyleSelector()` - Linhas 170-195 (25 linhas)
+  - `_buildListStyleOption()` - Linhas 196-260 (64 linhas)
+- **FUNCIONALIDADE:** Compact vs Decorated
+- **DESTINO:** `widgets/settings/sections/layout_settings_section.dart`
+
+#### **SEÇÃO 3: ESTILO DE TAREFAS/CARDS (Linhas 261-350)**
+- **MÉTODOS:**
+  - `_buildCardStyleSelector()` - Linhas 261-286 (25 linhas)
+  - `_buildCardStyleOption()` - Linhas 287-350 (63 linhas)
+- **FUNCIONALIDADE:** Dynamic vs Clean card styles
+- **DESTINO:** `widgets/settings/sections/card_settings_section.dart`
+
+#### **SEÇÃO 4: TEMA DO PAINEL LATERAL (Linhas 431-544)**
+- **MÉTODOS:**
+  - `_buildSidebarThemeSelector()` - Linhas 431-457 (26 linhas)
+  - `_buildSidebarThemeOption()` - Linhas 458-544 (86 linhas)
+- **FUNCIONALIDADE:** Default vs Samsung Notes sidebar
+- **DESTINO:** `widgets/settings/sections/sidebar_settings_section.dart` (parte 1)
+
+#### **SEÇÃO 5: COR DE FUNDO (Linhas 545-705)**
+- **MÉTODOS:**
+  - `_buildBackgroundColorSelector()` - Linhas 545-566 (21 linhas)
+  - `_buildBackgroundColorOption()` - Linhas 567-653 (86 linhas)
+  - `_buildBackgroundColorPreview()` - Linhas 654-705 (51 linhas)
+- **FUNCIONALIDADE:** List Color, Samsung Light, White, System
+- **DESTINO:** `widgets/settings/sections/background_settings_section.dart`
+
+#### **SEÇÃO 6: ESTILO DOS CARDS HOJE (Linhas 706-971)**
+- **MÉTODOS:**
+  - `_buildTodayCardStyleSelector()` - Linhas 706-727 (21 linhas)
+  - `_buildTodayCardStyleOption()` - Linhas 728-808 (80 linhas)
+  - `_buildTodayCardMiniPreview()` - Linhas 809-861 (52 linhas)
+  - `_buildTodayCardStylePreview()` - Linhas 862-889 (27 linhas)
+  - `_buildTodayCardFullPreview()` - Linhas 890-971 (81 linhas)
+- **FUNCIONALIDADE:** WithEmoji vs WithColorBorder
+- **DESTINO:** `widgets/settings/sections/card_settings_section.dart` (parte 2)
+
+#### **SEÇÃO 7: COR DA BARRA DE NAVEGAÇÃO (Linhas 972-1144)**
+- **MÉTODOS:**
+  - `_buildNavigationBarColorSelector()` - Linhas 972-994 (22 linhas)
+  - `_buildNavigationBarColorOption()` - Linhas 995-1079 (84 linhas)
+  - `_buildNavigationBarColorPreview()` - Linhas 1080-1144 (64 linhas)
+- **FUNCIONALIDADE:** 5 opções de cor da navigation bar
+- **DESTINO:** `widgets/settings/sections/background_settings_section.dart` (parte 2)
+
+#### **SEÇÃO 8: COR DO PAINEL LATERAL (Linhas 1145-1327)**
+- **MÉTODOS:**
+  - `_buildSidebarColorSelector()` - Linhas 1145-1167 (22 linhas)
+  - `_buildSidebarColorOption()` - Linhas 1168-1251 (83 linhas)
+  - `_buildSidebarColorPreview()` - Linhas 1252-1327 (75 linhas)
+- **FUNCIONALIDADE:** 5 opções de cor da sidebar
+- **DESTINO:** `widgets/settings/sections/sidebar_settings_section.dart` (parte 2)
+
+#### **SEÇÃO 9: SOBRE O APP (Linhas 351-430)**
+- **MÉTODOS:**
+  - `_buildAboutSection()` - Linhas 351-430 (79 linhas)
+- **FUNCIONALIDADE:** Informações, versão, créditos
+- **DESTINO:** `widgets/settings/sections/about_settings_section.dart`
+
+---
+
+### **🎯 ESTRATÉGIA DE MODULARIZAÇÃO DETALHADA:**
+
+#### **NOVA ORGANIZAÇÃO POR RESPONSABILIDADE:**
+
+**1. `theme_settings_section.dart` (~100 linhas):**
+```
+LINHAS 72-169: Seleção de temas globais (Classic, Glass, Modern)
++ Widgets auxiliares: ThemeSelector, ThemePreview
+```
+
+**2. `layout_settings_section.dart` (~90 linhas):**
+```
+LINHAS 170-260: Estilos de painel (Compact vs Decorated)
++ Widgets auxiliares: LayoutSelector, LayoutPreview
+```
+
+**3. `card_settings_section.dart` (~250 linhas):**
+```
+LINHAS 261-350: Card styles (Dynamic vs Clean)
+LINHAS 706-971: Today card styles (WithEmoji vs WithColorBorder)
++ Widgets auxiliares: CardPreview, CardSelector
+```
+
+**4. `background_settings_section.dart` (~230 linhas):**
+```
+LINHAS 545-705: Background colors (List, Samsung, White, System)
+LINHAS 972-1144: Navigation bar colors (5 opções)
++ Widgets auxiliares: ColorPreview, ColorSelector
+```
+
+**5. `sidebar_settings_section.dart` (~270 linhas):**
+```
+LINHAS 431-544: Sidebar themes (Default vs Samsung Notes)
+LINHAS 1145-1327: Sidebar colors (5 opções)
++ Widgets auxiliares: SidebarPreview, SidebarSelector
+```
+
+**6. `about_settings_section.dart` (~80 linhas):**
+```
+LINHAS 351-430: About section
++ App info, version, credits
+```
+
+---
+
+### **📁 ARQUIVOS DE TEMAS E LAYOUTS EXISTENTES:**
+
+#### **TEMAS PRINCIPAIS:**
+- **`themes/app_theme.dart`** (238 linhas) - Todos os enums de configuração
+- **`themes/theme_provider.dart`** (383 linhas) - Provider principal com estado
+- **`themes/theme_config.dart`** - Configurações específicas dos temas
+
+#### **LAYOUTS SAMSUNG STYLE:**
+- **`widgets/layouts/samsung_style/index.dart`** - Exports principais
+- **`widgets/layouts/samsung_style/samsung_sidebar.dart`** - Implementação da sidebar Samsung
+- **`widgets/layouts/samsung_style/samsung_sidebar_theme.dart`** - Tema específico Samsung
+- **`widgets/layouts/samsung_style/samsung_list_item.dart`** - Item de lista Samsung
+- **`widgets/layouts/samsung_style/samsung_section_header.dart`** - Cabeçalho Samsung
+
+#### **WIDGETS AUXILIARES:**
+- **`widgets/common/sidebar_theme_toggle.dart`** - Toggle de tema da sidebar
+- **`widgets/demo/sidebar_theme_demo.dart`** - Demo para testes
+
+---
+
+### **🔧 WIDGETS REUTILIZÁVEIS A SEREM CRIADOS:**
+
+#### **1. `widgets/settings/widgets/settings_group.dart`:**
+```dart
+// Container padrão para grupos de configurações
+// Reutilizado em todas as seções
+```
+
+#### **2. `widgets/settings/widgets/theme_selector.dart`:**
+```dart
+// Seletor genérico para qualquer enum de tema
+// Usado em todas as seções que precisam de seleção
+```
+
+#### **3. `widgets/settings/widgets/layout_preview.dart`:**
+```dart
+// Preview consistente para layouts
+// Mostra como ficará o resultado da configuração
+```
+
+#### **4. `widgets/settings/widgets/color_picker.dart`:**
+```dart
+// Seletor de cores padronizado
+// Usado nas seções de background e sidebar
+```
+
+---
+
+### **📋 ENUMS DISPONÍVEIS EM APP_THEME.DART:**
+
+**Já implementados e funcionais:**
+- `AppTheme` - classic, glass, modern
+- `ListPanelStyle` - compact, decorated
+- `CardStyle` - dynamic, clean
+- `SidebarTheme` - defaultTheme, samsungNotes
+- `BackgroundColorStyle` - listColor, samsungLight, white, systemTheme
+- `TodayCardStyle` - withEmoji, withColorBorder
+- `NavigationBarColorStyle` - systemTheme, samsungLight, white, listColor, dark
+- `SidebarColorStyle` - systemTheme, samsungLight, white, listColor, dark
+
+---
+
+### **🎨 SISTEMA DE LAYOUTS DISPONÍVEIS:**
+
+#### **LAYOUTS DEFINIDOS (para widgets/settings/layouts/):**
+
+**1. `card_layouts.dart`:**
+- Extrair definições de CardStyle e TodayCardStyle
+- Implementar previews e configurações
+
+**2. `background_layouts.dart`:**
+- Extrair BackgroundColorStyle e NavigationBarColorStyle
+- Implementar previews de cores
+
+**3. `sidebar_layouts.dart`:**
+- Extrair SidebarTheme e SidebarColorStyle
+- Integrar com samsung_style/ components
+
+**4. `panel_layouts.dart`:**
+- Extrair ListPanelStyle
+- Implementar variações de layout dos painéis
+
+#### **PRESETS TEMÁTICOS (para widgets/settings/presets/):**
+
+**1. `samsung_theme_preset.dart`:**
+```dart
+// Combinação completa Samsung:
+// - SidebarTheme.samsungNotes
+// - BackgroundColorStyle.samsungLight
+// - CardStyle.clean
+// - TodayCardStyle.withColorBorder
+// - ListPanelStyle.compact
+```
+
+**2. `classic_theme_preset.dart`:**
+```dart
+// Combinação atual:
+// - SidebarTheme.defaultTheme
+// - BackgroundColorStyle.listColor
+// - CardStyle.dynamic
+// - TodayCardStyle.withEmoji
+// - ListPanelStyle.compact
+```
+
+**3. `minimal_theme_preset.dart`:**
+```dart
+// Combinação minimalista:
+// - SidebarTheme.samsungNotes
+// - BackgroundColorStyle.white
+// - CardStyle.clean
+// - TodayCardStyle.withColorBorder
+// - ListPanelStyle.compact
+```
+
+---
+
+### **PROBLEMA IDENTIFICADO:**
+O `settings_screen.dart` atual tem **1300+ linhas** e é um **elefante** que precisa ser modularizado urgentemente.
+
+### **ESTRATÉGIA DE QUEBRA:**
+
+#### **1. Settings Screen Principal (100-150 linhas):**
+```dart
+// settings_screen.dart - SÓ A ESTRUTURA
+class SettingsScreen extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text('Configurações')),
+      body: ListView(
+        children: [
+          ThemeSettingsSection(),      // ~200 linhas
+          LayoutSettingsSection(),     // ~200 linhas
+          CardSettingsSection(),       // ~200 linhas
+          BackgroundSettingsSection(), // ~200 linhas
+          SidebarSettingsSection(),    // ~200 linhas
+          AboutSettingsSection(),      // ~200 linhas
+        ],
+      ),
+    );
+  }
+}
+```
+
+#### **2. Modularização por Responsabilidade:**
+
+**ThemeSettingsSection** (~200 linhas):
+- Seleção de tema global (Classic, Glass, Modern)
+- Presets temáticos (Samsung, Minimal, Colorful)
+- Preview geral do tema
+
+**LayoutSettingsSection** (~200 linhas):
+- Layout dos painéis (Compact vs Decorated)
+- Organização de tasks (Por lista, prioridade, data)
+- Estilos de agrupamento
+
+**CardSettingsSection** (~200 linhas):
+- Estilos de cards (Dynamic, Clean, Outlined, Flat)
+- Conteúdo dos cards (Emoji, Icon, Border, Minimal)
+- Preview de diferentes estilos
+
+**BackgroundSettingsSection** (~200 linhas):
+- Cores de fundo (List Color, Samsung Light, White, System)
+- Preview das cores
+- Configurações de transparência
+
+**SidebarSettingsSection** (~200 linhas):
+- Tema da sidebar (Default vs Samsung Notes)
+- Cores da sidebar (5 opções)
+- Layout da sidebar
+
+**AboutSettingsSection** (~200 linhas):
+- Informações do app
+- Versão, créditos, licenças
+- Configurações de debug
+
+#### **3. Widgets Reutilizáveis:**
+
+**SettingsGroup** - Container padrão:
+```dart
+class SettingsGroup extends StatelessWidget {
+  final String title;
+  final List<Widget> children;
+  final Widget? preview;
+  
+  // Usado em todas as seções para consistência
+}
+```
+
+**ThemeSelector** - Seletor padrão:
+```dart
+class ThemeSelector<T> extends StatelessWidget {
+  final T currentValue;
+  final List<T> options;
+  final Function(T) onChanged;
+  final Widget Function(T) itemBuilder;
+  
+  // Reutilizado para todos os seletores
+}
+```
+
+**LayoutPreview** - Preview padrão:
+```dart
+class LayoutPreview extends StatelessWidget {
+  final Widget child;
+  final String title;
+  final bool isSelected;
+  
+  // Preview consistente para todos os layouts
+}
+```
+
+#### **4. Mapeamento de Extração:**
+
+```
+ORIGEM: settings_screen.dart (linhas 1-200)
+DESTINO: widgets/settings/sections/theme_settings_section.dart
+
+ORIGEM: settings_screen.dart (linhas 200-400)  
+DESTINO: widgets/settings/sections/layout_settings_section.dart
+
+ORIGEM: settings_screen.dart (linhas 400-600)
+DESTINO: widgets/settings/sections/card_settings_section.dart
+
+ORIGEM: settings_screen.dart (linhas 600-800)
+DESTINO: widgets/settings/sections/background_settings_section.dart
+
+ORIGEM: settings_screen.dart (linhas 800-1000)
+DESTINO: widgets/settings/sections/sidebar_settings_section.dart
+
+ORIGEM: settings_screen.dart (linhas 1000+)
+DESTINO: widgets/settings/sections/about_settings_section.dart
+```
+
+#### **5. Benefícios da Modularização:**
+
+- ✅ **Manutenção mais fácil** - cada seção em arquivo separado
+- ✅ **Reutilização de código** - widgets comuns
+- ✅ **Melhor organização** - responsabilidades claras  
+- ✅ **Fácil navegação** - arquivos menores
+- ✅ **Testes unitários** - cada seção testável isoladamente
+- ✅ **Performance** - carregamento sob demanda
+
+---
+
+## ESTRATÉGIA DE IMPORTS - FACILITANDO MANUTENÇÃO E REFATORAÇÃO
+
+### **RECOMENDAÇÃO: Use IMPORTS RELATIVOS sempre que possível**
+
+#### **Por que imports relativos são melhores:**
+1. **🔄 Facilita movimentação de arquivos** - Se mover uma pasta inteira, os imports continuam funcionando
+2. **✏️ Facilita renomeação** - Renomear `task_management` para `task_screen` não quebra imports internos
+3. **📦 Melhor modularidade** - Cada feature fica independente
+4. **🚀 Menos refatoração** - Mudanças de estrutura exigem menos alterações
+
+#### **Padrão de imports a seguir:**
+
+**✅ DENTRO da mesma feature (task_screen):**
+```dart
+// ✅ BOM - Import relativo
+import '../controllers/task_controller.dart';
+import '../models/task_model.dart';
+import '../widgets/projects/project_panel.dart';
+import './sidebar_header.dart';
+```
+
+**✅ ENTRE features diferentes:**
+```dart
+// ✅ BOM - Import absoluto para outras features
+import '../../../log_screen/controllers/log_controller.dart';
+import '../../../log_screen/screens/log_screen.dart';
+```
+
+**✅ PACKAGES externos:**
+```dart
+// ✅ BOM - Sempre absoluto
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+```
+
+#### **Exemplos práticos para task_screen:**
+
+**Para `task_sidebar.dart`:**
+```dart
+import 'package:flutter/material.dart';           // Package
+import 'package:provider/provider.dart';          // Package
+import '../controllers/task_controller.dart';     // Relativo (mesmo feature)
+import '../widgets/projects/project_panel.dart';  // Relativo (mesmo feature)
+import '../widgets/lists/list_panel.dart';        // Relativo (mesmo feature)
+import './sidebar_header.dart';                   // Relativo (mesma pasta)
+import './settings_sidebar_section.dart';         // Relativo (mesma pasta)
+```
+
+**Para `sidebar_header.dart`:**
+```dart
+import 'package:flutter/material.dart';                        // Package
+import 'package:provider/provider.dart';                       // Package
+import '../controllers/task_controller.dart';                  // Relativo (mesmo feature)
+import '../../../log_screen/controllers/log_controller.dart';  // Absoluto (outra feature)
+```
+
+#### **Benefícios desta estratégia:**
+- ✅ **Renomear `task_management` → `task_screen`**: Só precisa alterar imports externos
+- ✅ **Mover arquivos dentro da feature**: Imports relativos se ajustam automaticamente
+- ✅ **Reestruturar pastas internas**: Menos quebras de import
+- ✅ **Melhor organização**: Fica claro o que é interno vs externo
+
+#### **Regra de ouro:**
+> **Se está na mesma feature → import relativo**  
+> **Se está em outra feature → import absoluto**
+
+---
+
+## RESULTADO ESPERADO FINAL:
+
+Ao final, teremos:
+1. ✅ Estrutura organizada e escalável
+2. ✅ Componentes reutilizáveis
+3. ✅ Código funcionando sem quebras
+4. ✅ Fácil manutenção futura
+5. ✅ Possibilidade de adicionar novos estilos/views facilmente
+
+O importante é seguir a ordem das etapas e testar cada componente antes de prosseguir para o próximo.
+
+---
+
+## 🔗 MAPEAMENTO COMPLETO DE ARQUIVOS DE TEMAS E LAYOUTS
+
+### **ARQUIVOS PRINCIPAIS DE CONFIGURAÇÃO:**
+
+#### **1. ARQUIVO GIGANTE - SETTINGS_SCREEN.DART (1284 LINHAS):**
+```
+ARQUIVO: f:\repos\teste_flutter\lib\features\task_management\screens\settings_screen.dart
+STATUS: 🚨 CRÍTICO - Precisa ser modularizado em 6 seções
+LINHAS TOTAIS: 1284
+
+SEÇÕES MAPEADAS:
+├── Linhas 1-58:    Estrutura principal e imports
+├── Linhas 59-71:   _buildSectionHeader (widget auxiliar)
+├── Linhas 72-169:  TEMA GLOBAL (Aparência) 
+├── Linhas 170-260: LAYOUT PAINEL (Lista Compact/Decorated)
+├── Linhas 261-350: CARD STYLES (Dynamic/Clean)
+├── Linhas 351-430: SOBRE (About section)
+├── Linhas 431-544: SIDEBAR THEME (Default/Samsung)
+├── Linhas 545-705: BACKGROUND COLOR (4 opções)
+├── Linhas 706-971: TODAY CARD STYLE (Emoji/Border)
+├── Linhas 972-1144: NAVIGATION BAR COLOR (5 opções)
+└── Linhas 1145-1327: SIDEBAR COLOR (5 opções)
+```
+
+#### **2. ENUMS DE CONFIGURAÇÃO - APP_THEME.DART (238 LINHAS):**
+```
+ARQUIVO: f:\repos\teste_flutter\lib\features\task_management\themes\app_theme.dart
+CONTEÚDO: Todos os enums de configuração disponíveis
+
+ENUMS IMPLEMENTADOS:
+├── AppTheme (classic, glass, modern)
+├── ListPanelStyle (compact, decorated)
+├── CardStyle (dynamic, clean)
+├── SidebarTheme (defaultTheme, samsungNotes)
+├── BackgroundColorStyle (listColor, samsungLight, white, systemTheme)
+├── TodayCardStyle (withEmoji, withColorBorder)
+├── NavigationBarColorStyle (systemTheme, samsungLight, white, listColor, dark)
+├── SidebarColorStyle (systemTheme, samsungLight, white, listColor, dark)
+└── Extensions com nomes e descrições amigáveis
+```
+
+#### **3. PROVIDER PRINCIPAL - THEME_PROVIDER.DART (383 LINHAS):**
+```
+ARQUIVO: f:\repos\teste_flutter\lib\features\task_management\themes\theme_provider.dart
+FUNCIONALIDADE: Gerencia estado de todos os temas e persistência
+
+MÉTODOS PRINCIPAIS:
+├── _loadTheme() - Carrega configurações salvas
+├── setTheme() - Altera tema principal
+├── setListPanelStyle() - Altera estilo do painel
+├── setCardStyle() - Altera estilo dos cards
+├── setSidebarTheme() - Altera tema da sidebar
+├── setBackgroundColorStyle() - Altera cor de fundo
+├── setTodayCardStyle() - Altera estilo dos cards hoje
+├── setNavigationBarColorStyle() - Altera cor da navigation bar
+├── setSidebarColorStyle() - Altera cor da sidebar
+├── getBackgroundColor() - Helper para cor de fundo
+├── getNavigationBarColor() - Helper para cor da navigation bar
+└── getSidebarColor() - Helper para cor da sidebar
+```
+
+#### **4. CONFIGURAÇÕES DE TEMA - THEME_CONFIG.DART (121 LINHAS):**
+```
+ARQUIVO: f:\repos\teste_flutter\lib\features\task_management\themes\theme_config.dart
+FUNCIONALIDADE: Configurações específicas para cada tema
+
+FACTORY METHODS:
+├── classic() - Configuração tema clássico
+├── glass() - Configuração tema glass
+├── modern() - Configuração tema moderno
+├── clean() - Configuração tema clean
+└── getConfig() - Factory principal
+```
+
+### **ARQUIVOS SAMSUNG STYLE:**
+
+#### **5. SAMSUNG SIDEBAR - IMPLEMENTAÇÃO COMPLETA:**
+```
+PASTA: f:\repos\teste_flutter\lib\features\task_management\widgets\layouts\samsung_style\
+
+ARQUIVOS:
+├── index.dart - Exports principais
+├── samsung_sidebar.dart - Widget principal da sidebar Samsung
+├── samsung_sidebar_theme.dart - Tema específico (cores, espaçamentos, tipografia)
+├── samsung_list_item.dart - Item de lista no estilo Samsung
+└── samsung_section_header.dart - Cabeçalho de seção Samsung
+```
+
+#### **6. WIDGETS AUXILIARES DE TEMA:**
+```
+ARQUIVOS RELACIONADOS:
+├── widgets/common/sidebar_theme_toggle.dart - Toggle para alternar tema
+├── widgets/demo/sidebar_theme_demo.dart - Demo completo para testes
+└── widgets/layouts/SIDEBAR_THEMES_README.md - Documentação detalhada
+```
+
+### **📊 ESTRATÉGIA DE MODULARIZAÇÃO FINAL:**
+
+#### **NOVA ORGANIZAÇÃO (6 ARQUIVOS):**
+
+**1. `theme_settings_section.dart` (~100 linhas):**
+- Linhas 72-169 do settings atual
+- Widget: ThemeSelector reutilizável  
+- Preview de temas
+
+**2. `layout_settings_section.dart` (~90 linhas):**
+- Linhas 170-260 do settings atual
+- Compact vs Decorated panels
+- Widget: LayoutPreview
+
+**3. `card_settings_section.dart` (~355 linhas):**
+- Linhas 261-350 + 706-971 do settings atual
+- Card styles + Today card styles
+- Widget: CardPreview com mini e full
+
+**4. `background_settings_section.dart` (~335 linhas):**
+- Linhas 545-705 + 972-1144 do settings atual
+- Background + Navigation bar colors
+- Widget: ColorPreview
+
+**5. `sidebar_settings_section.dart` (~295 linhas):**
+- Linhas 431-544 + 1145-1327 do settings atual
+- Sidebar theme + Sidebar colors
+- Widget: SidebarPreview
+
+**6. `about_settings_section.dart` (~80 linhas):**
+- Linhas 351-430 do settings atual
+- Informações e créditos
+- Widget: InfoCard
+
+### **📋 WIDGETS REUTILIZÁVEIS A CRIAR:**
+
+#### **WIDGETS COMUNS:**
+```
+widgets/settings/widgets/
+├── settings_group.dart - Container padrão (~50 linhas)
+├── theme_selector.dart - Seletor genérico (~80 linhas)
+├── layout_preview.dart - Preview padrão (~60 linhas)
+├── color_picker.dart - Seletor de cores (~70 linhas)
+├── card_preview.dart - Preview de cards (~100 linhas)
+├── sidebar_preview.dart - Preview da sidebar (~90 linhas)
+└── info_card.dart - Card de informações (~40 linhas)
+```
+
+#### **LAYOUTS DE DEFINIÇÃO:**
+```
+widgets/settings/layouts/
+├── card_layouts.dart - Definições de CardStyle e TodayCardStyle (~150 linhas)
+├── background_layouts.dart - Definições de BackgroundColorStyle e NavigationBarColorStyle (~120 linhas)
+├── sidebar_layouts.dart - Definições de SidebarTheme e SidebarColorStyle (~100 linhas)
+└── panel_layouts.dart - Definições de ListPanelStyle (~80 linhas)
+```
+
+#### **PRESETS TEMÁTICOS:**
+```
+widgets/settings/presets/
+├── samsung_theme_preset.dart - Preset completo Samsung (~100 linhas)
+├── classic_theme_preset.dart - Preset atual (~80 linhas)
+└── minimal_theme_preset.dart - Preset minimalista (~90 linhas)
+```
+
+### **🎯 RESUMO DE ONDE ENCONTRAR CADA CÓDIGO:**
+
+#### **PARA A IA IMPLEMENTADORA:**
+
+**SIDEBAR (já mapeado):**
+- Código: `task_management_screen.dart` linhas 416-470 + 479-641
+- Destino: 3 arquivos de sidebar
+
+**SETTINGS (1284 linhas → 6 arquivos):**
+- **theme_settings_section.dart**: Copiar linhas 72-169 de settings_screen.dart
+- **layout_settings_section.dart**: Copiar linhas 170-260 de settings_screen.dart  
+- **card_settings_section.dart**: Copiar linhas 261-350 + 706-971 de settings_screen.dart
+- **background_settings_section.dart**: Copiar linhas 545-705 + 972-1144 de settings_screen.dart
+- **sidebar_settings_section.dart**: Copiar linhas 431-544 + 1145-1327 de settings_screen.dart
+- **about_settings_section.dart**: Copiar linhas 351-430 de settings_screen.dart
+
+**ENUMS E PROVIDERS (já existem):**
+- `app_theme.dart` - Todos os enums disponíveis 
+- `theme_provider.dart` - Provider principal com métodos de alteração
+- `theme_config.dart` - Configurações específicas
+
+**SAMSUNG STYLE (já existe):**
+- Pasta `samsung_style/` completa - Apenas copiar para nova estrutura
+
+**TOTAL DE TRABALHO:**
+- ✅ Sidebar: 213 linhas → 3 arquivos  
+- 🚨 Settings: 1284 linhas → 6 arquivos + 7 widgets reutilizáveis
+- ✅ Themes: Arquivos já existem, apenas copiar
+- ✅ Samsung: Pasta já existe, apenas copiar
+
+**PRIORIDADE:** Settings é o maior desafio (1284 linhas). Sidebar e outros são mais simples.

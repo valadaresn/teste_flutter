@@ -1,0 +1,659 @@
+# PLANO DE REFATORAÇÃO INTERNA - TASK_MANAGEMENT
+
+## 📋 VISÃO GERAL
+Refatoração da estrutura interna da pasta `lib/features/task_management/` para uma organização mais modular e escalável, mantendo a pasta principal e reorganizando arquivos e pastas internas.
+
+## 🎯 OBJETIVOS
+1. **MANTER** pasta principal: `lib/features/task_management/` (não renomear)
+2. **MANTER** pasta `widgets/tasks/` e reorganizar sua estrutura interna
+3. Extrair componentes de `task_item.dart` em subcomponentes dentro de `tasks/task_item/`
+4. Transformar `today_panel.dart` em `today_view.dart` dentro de `tasks/views/`
+5. Criar estrutura de settings mais organizada
+6. Manter funcionalidade 100% preservada
+
+## 🔄 CORREÇÕES IMPORTANTES
+**PASTA TASKS**: Manter `widgets/tasks/` existente (não criar `widgets/task/`)
+**ESTRUTURA INTERNA**: Reorganizar dentro de `tasks/` com subpastas `task_item/`, `task_group/`, `views/`
+
+## 📊 ANÁLISE DE ARQUIVOS E DEPENDÊNCIAS
+
+### ✅ ARQUIVOS JÁ NA POSIÇÃO CORRETA (Não mover)
+
+#### **LEVEL 1 - MODELOS (Já corretos)**
+```
+1. task_model.dart
+   📍 Atual: lib/features/task_management/models/task_model.dart
+   🎯 Destino: lib/features/task_management/models/task_model.dart
+   🔄 Ação: ✅ JÁ ESTÁ CORRETO
+   📦 Dependências: Nenhuma (modelo base)
+
+2. list_model.dart
+   📍 Atual: lib/features/task_management/models/list_model.dart
+   🎯 Destino: lib/features/task_management/models/list_model.dart
+   🔄 Ação: ✅ JÁ ESTÁ CORRETO
+   📦 Dependências: Nenhuma (modelo base)
+
+3. project_model.dart
+   📍 Atual: lib/features/task_management/models/project_model.dart
+   🎯 Destino: lib/features/task_management/models/project_model.dart
+   🔄 Ação: ✅ JÁ ESTÁ CORRETO
+   📦 Dependências: Nenhuma (modelo base)
+```
+
+#### **LEVEL 2 - TEMAS (Já corretos)**
+```
+4. app_theme.dart
+   📍 Atual: lib/features/task_management/themes/app_theme.dart
+   🎯 Destino: lib/features/task_management/themes/app_theme.dart
+   🔄 Ação: ✅ JÁ ESTÁ CORRETO
+   📦 Dependências: Apenas Flutter Material
+
+5. theme_config.dart
+   📍 Atual: lib/features/task_management/themes/theme_config.dart
+   🎯 Destino: lib/features/task_management/themes/theme_config.dart
+   🔄 Ação: ✅ JÁ ESTÁ CORRETO
+   📦 Dependências: app_theme.dart
+
+6. theme_provider.dart
+   📍 Atual: lib/features/task_management/themes/theme_provider.dart
+   🎯 Destino: lib/features/task_management/themes/theme_provider.dart
+   🔄 Ação: ✅ JÁ ESTÁ CORRETO
+   📦 Dependências: app_theme.dart, theme_config.dart
+```
+
+#### **LEVEL 3 - CONTROLLERS E REPOSITÓRIOS (Já corretos)**
+```
+7. task_repository.dart
+   📍 Atual: lib/features/task_management/repositories/task_repository.dart
+   🎯 Destino: lib/features/task_management/repositories/task_repository.dart
+   🔄 Ação: ✅ JÁ ESTÁ CORRETO
+   📦 Dependências: task_model.dart, list_model.dart, project_model.dart
+
+8. task_controller.dart
+   📍 Atual: lib/features/task_management/controllers/task_controller.dart
+   🎯 Destino: lib/features/task_management/controllers/task_controller.dart
+   🔄 Ação: ✅ JÁ ESTÁ CORRETO
+   📦 Dependências: Modelos + repository
+```
+
+#### **LEVEL 4 - SCREENS (Já corretos)**
+```
+9. task_management_screen.dart
+   📍 Atual: lib/features/task_management/screens/task_management_screen.dart
+   🎯 Destino: lib/features/task_management/screens/task_management_screen.dart
+   🔄 Ação: ✅ JÁ ESTÁ CORRETO (apenas atualizar imports internos)
+   📦 Dependências: Todos os widgets
+```
+
+### 🔄 ARQUIVOS QUE PRECISAM MOVER/RENOMEAR
+
+#### **LEVEL 5 - WIDGETS COMMON (Já corretos)**
+```
+10. app_state_handler.dart
+    📍 Atual: lib/features/task_management/widgets/common/app_state_handler.dart
+    🎯 Destino: lib/features/task_management/widgets/common/app_state_handler.dart
+    🔄 Ação: ✅ JÁ ESTÁ CORRETO
+    📦 Dependências: task_controller.dart
+
+11. sidebar_theme_toggle.dart
+    📍 Atual: lib/features/task_management/widgets/common/sidebar_theme_toggle.dart
+    🎯 Destino: lib/features/task_management/widgets/common/sidebar_theme_toggle.dart
+    🔄 Ação: ✅ JÁ ESTÁ CORRETO
+    📦 Dependências: theme_provider.dart
+
+12. task_app_bar.dart
+    📍 Atual: lib/features/task_management/widgets/common/task_app_bar.dart
+    🎯 Destino: lib/features/task_management/widgets/common/task_app_bar.dart
+    🔄 Ação: ✅ JÁ ESTÁ CORRETO
+    📦 Dependências: task_controller.dart
+```
+
+#### **LEVEL 6 - WIDGETS PROJECTS (Já corretos)**
+```
+13. project_panel.dart
+    📍 Atual: lib/features/task_management/widgets/projects/project_panel.dart
+    🎯 Destino: lib/features/task_management/widgets/projects/project_panel.dart
+    🔄 Ação: ✅ JÁ ESTÁ CORRETO
+
+14. project_item.dart
+    📍 Atual: lib/features/task_management/widgets/projects/project_item.dart
+    🎯 Destino: lib/features/task_management/widgets/projects/project_item.dart
+    🔄 Ação: ✅ JÁ ESTÁ CORRETO
+
+15. project_form_dialog.dart
+    📍 Atual: lib/features/task_management/widgets/projects/project_form_dialog.dart
+    🎯 Destino: lib/features/task_management/widgets/projects/project_form_dialog.dart
+    🔄 Ação: ✅ JÁ ESTÁ CORRETO
+
+16. project_delete_dialog.dart
+    📍 Atual: lib/features/task_management/widgets/projects/project_delete_dialog.dart
+    🎯 Destino: lib/features/task_management/widgets/projects/project_delete_dialog.dart
+    🔄 Ação: ✅ JÁ ESTÁ CORRETO
+
+17. project_creation_dialog.dart
+    📍 Atual: lib/features/task_management/widgets/projects/project_creation_dialog.dart
+    🎯 Destino: lib/features/task_management/widgets/projects/project_creation_dialog.dart
+    🔄 Ação: ✅ JÁ ESTÁ CORRETO
+```
+
+#### **LEVEL 7 - WIDGETS LISTS (Já corretos)**
+```
+18. list_panel.dart
+    📍 Atual: lib/features/task_management/widgets/lists/list_panel.dart
+    🎯 Destino: lib/features/task_management/widgets/lists/list_panel.dart
+    🔄 Ação: ✅ JÁ ESTÁ CORRETO
+
+19. list_item.dart
+    📍 Atual: lib/features/task_management/widgets/lists/list_item.dart
+    🎯 Destino: lib/features/task_management/widgets/lists/list_item.dart
+    🔄 Ação: ✅ JÁ ESTÁ CORRETO
+
+20. list_form_dialog.dart
+    📍 Atual: lib/features/task_management/widgets/lists/list_form_dialog.dart
+    🎯 Destino: lib/features/task_management/widgets/lists/list_form_dialog.dart
+    🔄 Ação: ✅ JÁ ESTÁ CORRETO
+
+21. list_delete_dialog.dart
+    📍 Atual: lib/features/task_management/widgets/lists/list_delete_dialog.dart
+    🎯 Destino: lib/features/task_management/widgets/lists/list_delete_dialog.dart
+    🔄 Ação: ✅ JÁ ESTÁ CORRETO
+
+22. list_context_menu.dart
+    📍 Atual: lib/features/task_management/widgets/lists/list_context_menu.dart
+    🎯 Destino: lib/features/task_management/widgets/lists/list_context_menu.dart
+    🔄 Ação: ✅ JÁ ESTÁ CORRETO
+```
+
+#### **LEVEL 8 - WIDGETS PARA MOVER PARA INPUT**
+```
+23. quick_add_task_input.dart
+    📍 Atual: lib/features/task_management/widgets/tasks/quick_add_task_input.dart
+    🎯 Destino: lib/features/task_management/widgets/input/quick_add_task_input.dart
+    🔄 Ação: 🔄 MOVER
+
+24. mobile_quick_add_task_input.dart
+    📍 Atual: lib/features/task_management/widgets/tasks/mobile_quick_add_task_input.dart
+    🎯 Destino: lib/features/task_management/widgets/input/mobile_quick_add_task_input.dart
+    🔄 Ação: 🔄 MOVER
+
+25. quick_date_selector.dart
+    📍 Atual: lib/features/task_management/widgets/tasks/quick_date_selector.dart
+    🎯 Destino: lib/features/task_management/widgets/input/quick_date_selector.dart
+    🔄 Ação: 🔄 MOVER
+
+26. quick_list_selector.dart
+    📍 Atual: lib/features/task_management/widgets/tasks/quick_list_selector.dart
+    🎯 Destino: lib/features/task_management/widgets/input/quick_list_selector.dart
+    🔄 Ação: 🔄 MOVER
+
+27. quick_pomodoro_selector.dart
+    📍 Atual: lib/features/task_management/widgets/tasks/quick_pomodoro_selector.dart
+    🎯 Destino: lib/features/task_management/widgets/input/quick_pomodoro_selector.dart
+    🔄 Ação: 🔄 MOVER
+```
+
+#### **LEVEL 9 - WIDGETS PARA REORGANIZAR DENTRO DE TASKS**
+```
+28. task_panel.dart
+    📍 Atual: lib/features/task_management/widgets/tasks/task_panel.dart
+    🎯 Destino: lib/features/task_management/widgets/tasks/task_panel.dart
+    🔄 Ação: ✅ JÁ ESTÁ CORRETO (ficar na raiz de tasks/)
+
+29. task_item.dart
+    📍 Atual: lib/features/task_management/widgets/tasks/task_item.dart
+    🎯 Destino: lib/features/task_management/widgets/tasks/task_item/task_item.dart
+    🔄 Ação: 🔄 MOVER + REFATORAR (extrair componentes)
+
+30. task_list.dart
+    📍 Atual: lib/features/task_management/widgets/tasks/task_list.dart
+    🎯 Destino: lib/features/task_management/widgets/tasks/task_list.dart
+    🔄 Ação: ✅ JÁ ESTÁ CORRETO (ficar na raiz de tasks/)
+
+31. task_panel_header.dart
+    📍 Atual: lib/features/task_management/widgets/tasks/task_panel_header.dart
+    🎯 Destino: lib/features/task_management/widgets/tasks/task_panel_header.dart
+    🔄 Ação: ✅ JÁ ESTÁ CORRETO (ficar na raiz de tasks/)
+
+32. simple_task_dialog.dart
+    📍 Atual: lib/features/task_management/widgets/tasks/simple_task_dialog.dart
+    🎯 Destino: lib/features/task_management/widgets/tasks/simple_task_dialog.dart
+    🔄 Ação: ✅ JÁ ESTÁ CORRETO (ficar na raiz de tasks/)
+```
+
+#### **LEVEL 10 - WIDGETS PARA MOVER PARA DETAIL**
+```
+33. task_detail_panel.dart (versão atual)
+    📍 Atual: lib/features/task_management/widgets/tasks/task_detail_panel.dart
+    🎯 Destino: lib/features/task_management/widgets/detail/task_detail_panel.dart
+    🔄 Ação: 🔄 MOVER
+
+34. task_detail_panel.dart (versão clean)
+    📍 Atual: lib/features/task_management/widgets/tasks/task_detail_panel/task_detail_panel.dart
+    🎯 Destino: lib/features/task_management/widgets/detail/task_detail_panel_clean.dart
+    🔄 Ação: 🔄 MOVER + RENOMEAR
+
+35. task_panel_logic.dart
+    📍 Atual: lib/features/task_management/widgets/tasks/task_detail_panel/services/task_panel_logic.dart
+    🎯 Destino: lib/features/task_management/widgets/detail/services/task_panel_logic.dart
+    🔄 Ação: 🔄 MOVER
+
+36. clean_subtask_item.dart
+    📍 Atual: lib/features/task_management/widgets/tasks/task_detail_panel/clean_subtask_item.dart
+    🎯 Destino: lib/features/task_management/widgets/detail/clean_subtask_item.dart
+    🔄 Ação: 🔄 MOVER
+
+37. due_date_selector.dart
+    📍 Atual: lib/features/task_management/widgets/subtasks/due_date_selector.dart
+    🎯 Destino: lib/features/task_management/widgets/detail/due_date_selector.dart
+    🔄 Ação: 🔄 MOVER
+
+38. pomodoro_time_selector.dart
+    📍 Atual: lib/features/task_management/widgets/subtasks/pomodoro_time_selector.dart
+    🎯 Destino: lib/features/task_management/widgets/detail/pomodoro_time_selector.dart
+    🔄 Ação: 🔄 MOVER
+
+39. subtask_edit_dialog.dart
+    📍 Atual: lib/features/task_management/widgets/subtasks/subtask_edit_dialog.dart
+    🎯 Destino: lib/features/task_management/widgets/detail/subtask_edit_dialog.dart
+    🔄 Ação: 🔄 MOVER
+
+40. subtask_item.dart
+    📍 Atual: lib/features/task_management/widgets/subtasks/subtask_item.dart
+    🎯 Destino: lib/features/task_management/widgets/detail/subtask_item.dart
+    🔄 Ação: 🔄 MOVER
+
+41. subtask_list.dart
+    📍 Atual: lib/features/task_management/widgets/subtasks/subtask_list.dart
+    🎯 Destino: lib/features/task_management/widgets/detail/subtask_list.dart
+    🔄 Ação: 🔄 MOVER
+```
+
+#### **LEVEL 11 - WIDGETS TODAY PARA MOVER PARA TASKS**
+```
+42. today_panel.dart
+    📍 Atual: lib/features/task_management/widgets/today/today_panel.dart
+    🎯 Destino: lib/features/task_management/widgets/tasks/views/today_view.dart
+    🔄 Ação: 🔄 MOVER + RENOMEAR + REFATORAR (base para views)
+
+43. expansible_task_group.dart
+    📍 Atual: lib/features/task_management/widgets/today/expansible_task_group.dart
+    🎯 Destino: lib/features/task_management/widgets/tasks/task_group/expansible_group.dart
+    🔄 Ação: 🔄 MOVER + RENOMEAR
+
+44. today_task_item.dart
+    📍 Atual: lib/features/task_management/widgets/today/today_task_item.dart
+    🎯 Destino: lib/features/task_management/widgets/tasks/today_task_item.dart
+    🔄 Ação: 🔄 MOVER
+
+45. today_task_item_new.dart
+    📍 Atual: lib/features/task_management/widgets/today/today_task_item_new.dart
+    🎯 Destino: lib/features/task_management/widgets/tasks/today_task_item_new.dart
+    🔄 Ação: 🔄 MOVER
+```
+
+#### **LEVEL 12 - SETTINGS PARA MOVER**
+```
+46. settings_screen.dart
+    📍 Atual: lib/features/task_management/screens/settings_screen.dart
+    🎯 Destino: lib/features/task_management/widgets/settings/settings_screen.dart
+    🔄 Ação: 🔄 MOVER
+
+47. Samsung Style Components (pasta completa)
+    📍 Atual: lib/features/task_management/widgets/layouts/samsung_style/
+    🎯 Destino: lib/features/task_management/widgets/settings/samsung_style/
+    🔄 Ação: 🔄 MOVER PASTA COMPLETA
+```
+
+### 🔴 ARQUIVOS A CRIAR
+
+#### **SIDEBAR (3 arquivos novos)**
+```
+48. task_sidebar.dart
+    📍 Atual: INEXISTENTE (arquivo vazio existe)
+    🎯 Destino: lib/features/task_management/widgets/sidebar/task_sidebar.dart
+    🔄 Ação: CRIAR NOVO (baseado no layout atual do task_management_screen)
+
+49. sidebar_header.dart
+    📍 Atual: INEXISTENTE
+    🎯 Destino: lib/features/task_management/widgets/sidebar/sidebar_header.dart
+    🔄 Ação: CRIAR NOVO (extrair do task_sidebar)
+
+50. settings_sidebar_section.dart
+    📍 Atual: INEXISTENTE
+    🎯 Destino: lib/features/task_management/widgets/sidebar/settings_sidebar_section.dart
+    🔄 Ação: CRIAR NOVO (extrair seção de configurações)
+```
+
+#### **TASK ITEM COMPONENTS (6 arquivos novos)**
+```
+51. task_checkbox.dart
+    📍 Atual: INEXISTENTE
+    🎯 Destino: lib/features/task_management/widgets/tasks/task_item/task_checkbox.dart
+    🔄 Ação: CRIAR NOVO (extrair de task_item.dart)
+
+52. task_list_icon.dart
+    📍 Atual: INEXISTENTE
+    🎯 Destino: lib/features/task_management/widgets/tasks/task_item/task_list_icon.dart
+    🔄 Ação: CRIAR NOVO (extrair de task_item.dart)
+
+53. task_content.dart
+    📍 Atual: INEXISTENTE
+    🎯 Destino: lib/features/task_management/widgets/tasks/task_item/task_content.dart
+    🔄 Ação: CRIAR NOVO (extrair de task_item.dart)
+
+54. task_controls.dart
+    📍 Atual: INEXISTENTE
+    🎯 Destino: lib/features/task_management/widgets/tasks/task_item/task_controls.dart
+    🔄 Ação: CRIAR NOVO (extrair de task_item.dart)
+
+55. task_border_helper.dart
+    📍 Atual: INEXISTENTE
+    🎯 Destino: lib/features/task_management/widgets/tasks/task_item/task_border_helper.dart
+    🔄 Ação: CRIAR NOVO (extrair helpers de task_item.dart)
+
+56. constants.dart
+    📍 Atual: INEXISTENTE
+    🎯 Destino: lib/features/task_management/widgets/tasks/task_item/constants.dart
+    🔄 Ação: CRIAR NOVO (extrair constantes de task_item.dart)
+```
+
+#### **TASK GROUP COMPONENTS (2 arquivos novos)**
+```
+57. task_group.dart
+    📍 Atual: INEXISTENTE
+    🎯 Destino: lib/features/task_management/widgets/tasks/task_group/task_group.dart
+    🔄 Ação: CRIAR NOVO (classe base para grupos)
+
+58. simple_group.dart
+    📍 Atual: INEXISTENTE
+    🎯 Destino: lib/features/task_management/widgets/tasks/task_group/simple_group.dart
+    🔄 Ação: CRIAR NOVO (versão simplificada de grupo)
+```
+
+#### **TASK VIEWS (2 arquivos novos)**
+```
+59. all_tasks_view.dart
+    📍 Atual: INEXISTENTE
+    🎯 Destino: lib/features/task_management/widgets/tasks/views/all_tasks_view.dart
+    🔄 Ação: CRIAR NOVO (baseado em task_panel.dart)
+
+60. list_view.dart
+    📍 Atual: INEXISTENTE
+    🎯 Destino: lib/features/task_management/widgets/tasks/views/list_view.dart
+    🔄 Ação: CRIAR NOVO (baseado em task_panel.dart)
+```
+
+#### **DETAIL COMPONENTS (7 arquivos novos)**
+```
+61. task_header.dart
+    📍 Atual: INEXISTENTE
+    🎯 Destino: lib/features/task_management/widgets/detail/task_header.dart
+    🔄 Ação: CRIAR NOVO (extrair de task_detail_panel)
+
+62. task_notes_section.dart
+    📍 Atual: INEXISTENTE
+    🎯 Destino: lib/features/task_management/widgets/detail/task_notes_section.dart
+    🔄 Ação: CRIAR NOVO (extrair de task_detail_panel)
+
+63. task_diary_entry_form.dart
+    📍 Atual: INEXISTENTE
+    🎯 Destino: lib/features/task_management/widgets/detail/task_diary_entry_form.dart
+    🔄 Ação: CRIAR NOVO (extrair de task_detail_panel)
+
+64. task_diary_entry_item.dart
+    📍 Atual: INEXISTENTE
+    🎯 Destino: lib/features/task_management/widgets/detail/task_diary_entry_item.dart
+    🔄 Ação: CRIAR NOVO (extrair de task_detail_panel)
+
+65. task_diary_section.dart
+    📍 Atual: INEXISTENTE
+    🎯 Destino: lib/features/task_management/widgets/detail/task_diary_section.dart
+    🔄 Ação: CRIAR NOVO (extrair de task_detail_panel)
+
+66. task_footer.dart
+    📍 Atual: INEXISTENTE
+    🎯 Destino: lib/features/task_management/widgets/detail/task_footer.dart
+    🔄 Ação: CRIAR NOVO (extrair de task_detail_panel)
+
+67. task_subtasks_section.dart
+    📍 Atual: INEXISTENTE
+    🎯 Destino: lib/features/task_management/widgets/detail/task_subtasks_section.dart
+    🔄 Ação: CRIAR NOVO (extrair de task_detail_panel)
+```
+
+#### **SETTINGS STRUCTURE (21 arquivos novos)**
+```
+68-73. Settings Sections (6 arquivos)
+    theme_settings_section.dart
+    layout_settings_section.dart
+    card_settings_section.dart
+    background_settings_section.dart
+    sidebar_settings_section.dart
+    about_settings_section.dart
+    🔄 Ação: CRIAR NOVOS (extrair de settings_screen.dart)
+
+74-77. Settings Widgets (4 arquivos)
+    theme_selector.dart
+    layout_preview.dart
+    color_picker.dart
+    settings_group.dart
+    🔄 Ação: CRIAR NOVOS (componentes de settings)
+
+78-81. Layouts (4 arquivos)
+    card_layouts.dart
+    background_layouts.dart
+    sidebar_layouts.dart
+    panel_layouts.dart
+    🔄 Ação: CRIAR NOVOS (definições de layout)
+
+82-84. Presets (3 arquivos)
+    samsung_theme_preset.dart
+    minimal_theme_preset.dart
+    classic_theme_preset.dart
+    🔄 Ação: CRIAR NOVOS (presets de tema)
+```
+
+## 🚀 ORDEM DE EXECUÇÃO CORRIGIDA
+
+### **FASE 1: PREPARAÇÃO (Criar subpastas dentro de tasks/)**
+```
+1. Criar pasta: widgets/sidebar/
+2. Criar pasta: widgets/input/
+3. Criar pasta: widgets/tasks/task_item/
+4. Criar pasta: widgets/tasks/task_group/
+5. Criar pasta: widgets/tasks/views/
+6. Criar pasta: widgets/detail/
+7. Criar pasta: widgets/detail/services/
+8. Criar pasta: widgets/settings/
+9. Criar pasta: widgets/settings/sections/
+10. Criar pasta: widgets/settings/widgets/
+11. Criar pasta: widgets/settings/layouts/
+12. Criar pasta: widgets/settings/presets/
+```
+
+### **FASE 2: MOVIMENTAÇÃO SEGURA**
+```
+LEVEL 1: Mover widgets input (sair de tasks/ para input/)
+LEVEL 2: Reorganizar task_item.dart dentro de tasks/task_item/
+LEVEL 3: Mover widgets detail (sair de subtasks/ para detail/)
+LEVEL 4: Mover widgets today para tasks/ (today_panel → today_view)
+LEVEL 5: Mover settings (settings_screen, samsung_style)
+```
+
+### **FASE 3: CRIAÇÃO DE NOVOS COMPONENTES**
+```
+1. Sidebar components (extrair de task_management_screen)
+2. Task item components (extrair de task_item.dart)
+3. Task group components
+4. Views (extrair de today_panel.dart e task_panel.dart)
+5. Detail components (extrair de task_detail_panel.dart)
+6. Settings structure (extrair de settings_screen.dart)
+```
+
+### **FASE 4: FINALIZAÇÃO**
+```
+1. Atualizar imports em task_management_screen.dart
+2. Atualizar imports em todos os widgets movidos
+3. Testar funcionamento
+4. Remover pastas antigas vazias (subtasks/, today/, layouts/)
+```
+
+## ⚠️ PONTOS CRÍTICOS
+
+### **IMPORTS A ATUALIZAR**
+```
+Permanece o mesmo base:
+lib/features/task_management/...
+
+Mas mudam os caminhos internos:
+De: widgets/tasks/quick_add_task_input.dart
+Para: widgets/input/quick_add_task_input.dart
+
+De: widgets/today/today_panel.dart
+Para: widgets/tasks/views/today_view.dart
+
+De: widgets/tasks/task_item.dart
+Para: widgets/tasks/task_item/task_item.dart
+
+De: widgets/subtasks/subtask_item.dart
+Para: widgets/detail/subtask_item.dart
+```
+
+### **PASTAS QUE SERÃO REMOVIDAS**
+```
+- widgets/subtasks/ (conteúdo vai para widgets/detail/)
+- widgets/today/ (conteúdo vai para widgets/tasks/)
+- widgets/layouts/ (conteúdo vai para widgets/settings/)
+```
+
+### **ESTRUTURA FINAL ESPERADA**
+```
+lib/features/task_management/
+├── screens/
+│   └── task_management_screen.dart
+├── controllers/
+│   └── task_controller.dart
+├── models/
+│   ├── task_model.dart
+│   ├── list_model.dart
+│   └── project_model.dart
+├── themes/
+│   ├── app_theme.dart
+│   ├── theme_provider.dart
+│   └── theme_config.dart
+└── widgets/
+    ├── sidebar/
+    │   ├── task_sidebar.dart
+    │   ├── sidebar_header.dart
+    │   └── settings_sidebar_section.dart
+    ├── projects/
+    │   ├── project_panel.dart
+    │   ├── project_item.dart
+    │   ├── project_form_dialog.dart
+    │   ├── project_delete_dialog.dart
+    │   └── project_creation_dialog.dart
+    ├── lists/
+    │   ├── list_panel.dart
+    │   ├── list_item.dart
+    │   ├── list_form_dialog.dart
+    │   ├── list_delete_dialog.dart
+    │   └── list_context_menu.dart
+    ├── tasks/
+    │   ├── task_panel.dart
+    │   ├── task_list.dart
+    │   ├── task_panel_header.dart
+    │   ├── simple_task_dialog.dart
+    │   ├── today_task_item.dart
+    │   ├── today_task_item_new.dart
+    │   ├── task_item/
+    │   │   ├── task_item.dart
+    │   │   ├── task_checkbox.dart
+    │   │   ├── task_list_icon.dart
+    │   │   ├── task_content.dart
+    │   │   ├── task_controls.dart
+    │   │   ├── task_border_helper.dart
+    │   │   └── constants.dart
+    │   ├── task_group/
+    │   │   ├── task_group.dart
+    │   │   ├── expansible_group.dart
+    │   │   └── simple_group.dart
+    │   └── views/
+    │       ├── today_view.dart
+    │       ├── all_tasks_view.dart
+    │       └── list_view.dart
+    ├── detail/
+    │   ├── task_detail_panel.dart
+    │   ├── task_detail_panel_clean.dart
+    │   ├── clean_subtask_item.dart
+    │   ├── due_date_selector.dart
+    │   ├── pomodoro_time_selector.dart
+    │   ├── subtask_edit_dialog.dart
+    │   ├── subtask_item.dart
+    │   ├── subtask_list.dart
+    │   ├── task_header.dart
+    │   ├── task_notes_section.dart
+    │   ├── task_diary_entry_form.dart
+    │   ├── task_diary_entry_item.dart
+    │   ├── task_diary_section.dart
+    │   ├── task_footer.dart
+    │   ├── task_subtasks_section.dart
+    │   └── services/
+    │       └── task_panel_logic.dart
+    ├── common/
+    │   ├── app_state_handler.dart
+    │   ├── task_app_bar.dart
+    │   └── sidebar_theme_toggle.dart
+    ├── settings/
+    │   ├── settings_screen.dart
+    │   ├── sections/
+    │   ├── widgets/
+    │   ├── layouts/
+    │   ├── presets/
+    │   └── samsung_style/
+    └── input/
+        ├── quick_add_task_input.dart
+        ├── mobile_quick_add_task_input.dart
+        ├── quick_date_selector.dart
+        ├── quick_list_selector.dart
+        └── quick_pomodoro_selector.dart
+```
+
+## 🎯 RESULTADO ESPERADO
+
+Estrutura final dentro de `lib/features/task_management/`:
+- ✅ 22 arquivos mantidos na posição correta
+- ✅ 20 arquivos movidos/renomeados (5 inputs + 15 outros)
+- ✅ 37 arquivos novos criados
+- ✅ Pasta `widgets/tasks/` mantida e reorganizada internamente
+- ✅ Estrutura modular e escalável
+- ✅ Código 100% preservado
+- ✅ Funcionalidade mantida
+- ✅ Imports atualizados apenas internamente
+- ✅ Zero bugs introduzidos
+
+## 📝 RESUMO FINAL DAS MUDANÇAS
+
+### **MANTIDOS NO LUGAR (22 arquivos):**
+- `models/`, `themes/`, `controllers/`, `repositories/`, `screens/`
+- `widgets/common/`, `widgets/projects/`, `widgets/lists/`
+
+### **MOVIDOS DE TASKS/ PARA INPUT/ (5 arquivos):**
+- `quick_add_task_input.dart`
+- `mobile_quick_add_task_input.dart`
+- `quick_date_selector.dart`
+- `quick_list_selector.dart` 
+- `quick_pomodoro_selector.dart`
+
+### **REORGANIZADOS DENTRO DE TASKS/ (15 arquivos):**
+- `task_item.dart` → `tasks/task_item/task_item.dart`
+- Conteúdo de `today/` → `tasks/views/` e `tasks/`
+- Conteúdo de `subtasks/` → `detail/`
+- Conteúdo de `layouts/` → `settings/`
+
+### **CRIADOS NOVOS (37 arquivos):**
+- `sidebar/` (3 arquivos)
+- `tasks/task_item/` (6 componentes)
+- `tasks/task_group/` (2 componentes)
+- `tasks/views/` (2 views)
+- `detail/` (7 componentes)
+- `settings/` (21 componentes)

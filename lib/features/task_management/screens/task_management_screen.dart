@@ -8,14 +8,13 @@ import '../widgets/common/app_state_handler.dart'; // Novo componente extraído
 import '../widgets/lists/list_panel.dart'; // Novo componente extraído
 import '../widgets/projects/project_panel.dart'; // Novo componente extraído
 import '../widgets/tasks/task_panel.dart'; // Novo componente extraído
-import '../widgets/tasks/task_detail_panel.dart';
-import '../widgets/tasks/task_detail_panel/task_detail_panel.dart' as EditPanel;
-import '../widgets/today/today_panel.dart';
-import '../widgets/layouts/samsung_style/index.dart'; // Novo import para Samsung sidebar
+import '../widgets/detail/task_detail_panel_clean.dart';
+import '../widgets/tasks/views/today_view.dart';
+import '../widgets/settings/samsung_style/index.dart'; // Novo import para Samsung sidebar
 import '../../log_screen/controllers/log_controller.dart';
 import '../../log_screen/screens/log_screen.dart';
 import '../../log_screen/screens/daily_activities_screen.dart'; // Import para tela de atividades
-import '../screens/settings_screen.dart'; // Import para configurações
+import '../widgets/settings/settings_screen.dart'; // Import para configurações
 
 /// Tipos de layout responsivo
 enum LayoutType { mobile, tablet, desktop }
@@ -181,7 +180,7 @@ class _TaskManagementScreenState extends State<TaskManagementScreen>
                 ),
                 child:
                     controller.showTodayView
-                        ? TodayPanel(
+                        ? TodayView(
                           controller: controller,
                           onToggleSidebar: _toggleSidebar,
                         )
@@ -219,14 +218,7 @@ class _TaskManagementScreenState extends State<TaskManagementScreen>
                     ),
                   ),
                 ),
-                child:
-                    controller.showTodayView
-                        ? EditPanel.TaskDetailPanel(controller: controller)
-                        : TaskDetailPanel(
-                          task: controller.getSelectedTask()!,
-                          controller: controller,
-                          onClose: () => controller.selectTask(null),
-                        ),
+                child: TaskDetailPanel(controller: controller),
               ),
           ],
         );
@@ -254,7 +246,7 @@ class _TaskManagementScreenState extends State<TaskManagementScreen>
                 ),
                 child:
                     controller.showTodayView
-                        ? TodayPanel(
+                        ? TodayView(
                           controller: controller,
                           onToggleSidebar:
                               () => Scaffold.of(context).openDrawer(),
@@ -294,14 +286,7 @@ class _TaskManagementScreenState extends State<TaskManagementScreen>
                     ),
                   ),
                 ),
-                child:
-                    controller.showTodayView
-                        ? EditPanel.TaskDetailPanel(controller: controller)
-                        : TaskDetailPanel(
-                          task: controller.getSelectedTask()!,
-                          controller: controller,
-                          onClose: () => controller.selectTask(null),
-                        ),
+                child: TaskDetailPanel(controller: controller),
               ),
           ],
         );
@@ -325,7 +310,7 @@ class _TaskManagementScreenState extends State<TaskManagementScreen>
             children: [
               // Painel principal full-width
               controller.showTodayView
-                  ? TodayPanel(
+                  ? TodayView(
                     controller: controller,
                     onToggleSidebar: () => Scaffold.of(context).openDrawer(),
                   )
@@ -369,17 +354,7 @@ class _TaskManagementScreenState extends State<TaskManagementScreen>
                                 topRight: Radius.circular(16),
                               ),
                             ),
-                            child:
-                                controller.showTodayView
-                                    ? EditPanel.TaskDetailPanel(
-                                      controller: controller,
-                                    )
-                                    : TaskDetailPanel(
-                                      task: controller.getSelectedTask()!,
-                                      controller: controller,
-                                      onClose:
-                                          () => controller.selectTask(null),
-                                    ),
+                            child: TaskDetailPanel(controller: controller),
                           ),
                         ),
                       ),

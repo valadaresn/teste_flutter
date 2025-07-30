@@ -78,6 +78,14 @@ class VerticalNavigationBar extends StatelessWidget {
                 label: 'Tarefas+',
                 index: 3,
               ),
+              const SizedBox(height: 20),
+              // TaskNew
+              _buildNavItem(
+                context: context,
+                icon: Icons.dashboard_customize,
+                label: 'TaskNew',
+                index: 4,
+              ),
             ],
           ),
         );

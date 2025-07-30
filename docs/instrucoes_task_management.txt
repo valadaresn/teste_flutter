@@ -1,0 +1,630 @@
+# INSTRUÇÕES INCREMENTAIS PARA REORGANIZAÇÃO TASK_MANAGEMENT
+
+## 🎯 OBJETIVO PRINCIPAL
+Reorganizar gradualmente a estrutura `task_management` extraindo componentes um por vez, sempre mantendo o código funcionando e sem bugs.
+
+## 🚨 REGRAS RÍGIDAS (ZERO TOLERÂNCIA A BUGS)
+1. **ANTES DE CADA MUDANÇA**: `flutter analyze --no-pub` (DEVE ter zero erros)
+2. **EXTRAIR APENAS 1 COMPONENTE**: Um método/classe por vez
+3. **APÓS CADA MUDANÇA**: `flutter analyze --no-pub` (DEVE ter zero erros)
+4. **SE DER ERRO**: PARAR, corrigir, só depois continuar
+5. **NUNCA QUEBRAR**: Funcionalidade deve permanecer idêntica
+6. **VERIFICAR IMPORTS**: Sempre verificar se imports estão corretos
+7. **TESTAR FUNCIONALIDADE**: Interface deve permanecer idêntica
+
+## 📋 ESTRATÉGIA INCREMENTAL
+- ✅ **UMA TAREFA POR VEZ**: Extrair 1 método, testar, depois próximo
+- ✅ **SEMPRE FUNCIONAL**: Código nunca para de funcionar
+- ✅ **SEM BRIDGES**: Sem temp_types ou sistemas complexos
+- ✅ **EXTRAÇÕES SIMPLES**: Copiar método → criar arquivo → atualizar import
+- ✅ **VERIFICAÇÃO RIGOROSA**: Cada arquivo criado deve ser testado individualmente
+
+---
+
+## 📁 ESTRUTURA FINAL COMPLETA
+
+```
+lib/features/task_screen/
+├── screens/
+│   └── task_management_screen.dart
+├── controllers/
+│   └── task_controller.dart
+├── models/
+│   ├── task_model.dart
+│   ├── list_model.dart
+│   └── project_model.dart
+├── themes/
+│   ├── app_theme.dart
+│   ├── theme_provider.dart
+│   └── theme_config.dart
+└── widgets/
+    ├── sidebar/
+    │   ├── task_sidebar.dart
+    │   ├── sidebar_header.dart
+    │   └── settings_sidebar_section.dart
+    ├── projects/
+    │   ├── project_panel.dart
+    │   ├── project_item.dart
+    │   ├── project_form_dialog.dart
+    │   ├── project_delete_dialog.dart
+    │   └── project_creation_dialog.dart
+    ├── lists/
+    │   ├── list_panel.dart
+    │   ├── list_item.dart
+    │   ├── list_form_dialog.dart
+    │   ├── list_delete_dialog.dart
+    │   └── list_context_menu.dart
+    ├── tasks/
+    │   ├── task_panel.dart
+    │   ├── task_item/
+    │   │   ├── task_item.dart
+    │   │   ├── task_checkbox.dart
+    │   │   ├── task_list_icon.dart
+    │   │   ├── task_content.dart
+    │   │   ├── task_controls.dart
+    │   │   ├── task_border_helper.dart
+    │   │   └── constants.dart
+    │   ├── task_group/
+    │   │   ├── task_group.dart
+    │   │   ├── expansible_group.dart
+    │   │   └── simple_group.dart
+    │   └── views/
+    │       ├── today_view.dart
+    │       ├── all_tasks_view.dart
+    │       └── list_view.dart
+    ├── detail/
+    │   ├── task_detail_panel.dart
+    │   ├── task_header.dart
+    │   ├── task_notes_section.dart
+    │   ├── task_diary_entry_form.dart
+    │   ├── task_diary_entry_item.dart
+    │   ├── task_diary_section.dart
+    │   ├── task_footer.dart
+    │   └── task_subtasks_section.dart
+    ├── common/
+    │   ├── app_state_handler.dart
+    │   ├── task_app_bar.dart
+    │   └── sidebar_theme_toggle.dart
+    ├── settings/
+    │   ├── settings_screen.dart
+    │   ├── sections/
+    │   │   ├── theme_settings_section.dart
+    │   │   ├── layout_settings_section.dart
+    │   │   ├── card_settings_section.dart
+    │   │   ├── background_settings_section.dart
+    │   │   ├── sidebar_settings_section.dart
+    │   │   └── about_settings_section.dart
+    │   ├── widgets/
+    │   │   ├── theme_selector.dart
+    │   │   ├── layout_preview.dart
+    │   │   ├── color_picker.dart
+    │   │   └── settings_group.dart
+    │   ├── layouts/
+    │   │   ├── card_layouts.dart
+    │   │   ├── background_layouts.dart
+    │   │   ├── sidebar_layouts.dart
+    │   │   └── panel_layouts.dart
+    │   ├── presets/
+    │   │   ├── samsung_theme_preset.dart
+    │   │   ├── minimal_theme_preset.dart
+    │   │   └── classic_theme_preset.dart
+    │   └── samsung_style/
+    │       ├── index.dart
+    │       ├── samsung_sidebar.dart
+    │       ├── samsung_sidebar_theme.dart
+    │       ├── samsung_list_item.dart
+    │       └── samsung_section_header.dart
+    └── input/
+        ├── quick_add_task_input.dart
+        └── mobile_quick_add_task_input.dart
+```
+
+---
+
+## 📁 ETAPAS DE IMPLEMENTAÇÃO (COM VERIFICAÇÃO RIGOROSA)
+
+### 🧹 ETAPA 0: LIMPEZA OBRIGATÓRIA
+**ANTES DE COMEÇAR**: Verificar e remover qualquer temp_types existente
+```bash
+flutter analyze --no-pub  # DEVE retornar zero erros
+```
+
+### 🔧 ETAPA 1: EXTRAIR SIDEBAR (_buildSidebar)
+**ARQUIVO ORIGEM**: `task_management_screen.dart`
+**MÉTODO**: `_buildSidebar()` (linhas 416-470)
+**DESTINO**: `lib/features/task_screen/widgets/sidebar/task_sidebar.dart`
+
+**PROCESSO RIGOROSO**:
+1. Criar arquivo `widgets/sidebar/task_sidebar.dart`
+2. Copiar método `_buildSidebar()` completo
+3. Criar classe `TaskSidebar` como StatelessWidget
+4. **VERIFICAR IMPORTS**: Todos devem estar corretos
+5. **`flutter analyze --no-pub`** → DEVE ter zero erros
+6. Substituir chamada no arquivo original
+7. **`flutter analyze --no-pub`** → DEVE ter zero erros
+8. **TESTAR INTERFACE**: Deve permanecer idêntica
+
+### 🎨 ETAPA 2: EXTRAIR PRIMEIRA SEÇÃO SETTINGS
+**ARQUIVO ORIGEM**: `settings_screen.dart` (1284 linhas)
+**SEÇÃO**: Tema Global (linhas 72-169)
+**DESTINO**: `lib/features/task_screen/widgets/settings/sections/theme_settings_section.dart`
+
+**PROCESSO RIGOROSO**:
+1. Criar arquivo da seção
+2. Copiar métodos `_buildThemeSelector()` + `_buildThemeOption()`
+3. Criar classe `ThemeSettingsSection`
+4. **VERIFICAR IMPORTS**: Todos devem estar corretos
+5. **`flutter analyze --no-pub`** → DEVE ter zero erros
+6. Substituir no settings_screen.dart
+7. **`flutter analyze --no-pub`** → DEVE ter zero erros
+8. **TESTAR FUNCIONALIDADE**: Seleção de temas deve funcionar
+
+### 🎨 ETAPA 3: EXTRAIR SEGUNDA SEÇÃO SETTINGS
+**SEÇÃO**: Layout dos Painéis (linhas 170-260)
+**DESTINO**: `lib/features/task_screen/widgets/settings/sections/layout_settings_section.dart`
+**PROCESSO**: (Mesmo processo rigoroso da ETAPA 2)
+
+### 🔄 ETAPAS 4-8: CONTINUAR COM SETTINGS (UMA SEÇÃO POR VEZ)
+Repetir processo rigoroso para as demais seções:
+- **ETAPA 4**: Card Settings (linhas 261-350 + 706-971)
+- **ETAPA 5**: Background Settings (linhas 545-705 + 972-1144)  
+- **ETAPA 6**: Sidebar Settings (linhas 431-544 + 1145-1327)
+- **ETAPA 7**: About Settings (linhas 351-430)
+- **ETAPA 8**: Criar widgets reutilizáveis (SettingsGroup, ThemeSelector, etc.)
+
+---
+
+## 📋 MAPEAMENTO DETALHADO DO CÓDIGO EXISTENTE
+
+### 🔍 SIDEBAR - TASK_MANAGEMENT_SCREEN.DART
+
+**ARQUIVO**: `lib/features/task_management/screens/task_management_screen.dart`
+
+#### **Método Principal**:
+- **`_buildSidebar()`** - Linhas 416-470 (54 linhas)
+  - Container principal com tema Samsung Notes
+  - Chama ProjectPanel e ListPanel diretamente
+  - **DESTINO**: `lib/features/task_screen/widgets/sidebar/task_sidebar.dart`
+
+#### **Seções do Sidebar**:
+- **`_buildTodaySection()`** - Linhas 479-538 (59 linhas)
+- **`_buildActivitiesSection()`** - Linhas 539-574 (35 linhas)  
+- **`_buildLogsSection()`** - Linhas 575-629 (54 linhas)
+- **`_buildSettingsSection()`** - Linhas 630-641 (11 linhas)
+- **DESTINO**: `lib/features/task_screen/widgets/sidebar/sidebar_header.dart`
+
+#### **Métodos Auxiliares**:
+- **`_navigateToLogs()`** - Linhas 621-628
+- **`_navigateToSettings()`** - Linhas 643-648
+- **DESTINO**: `lib/features/task_screen/widgets/sidebar/settings_sidebar_section.dart`
+
+### 🔍 SETTINGS - SETTINGS_SCREEN.DART (1284 LINHAS)
+
+**ARQUIVO**: `lib/features/task_management/screens/settings_screen.dart`
+
+#### **Seções Mapeadas**:
+
+**1. TEMA GLOBAL** (Linhas 72-169):
+- `_buildThemeSelector()` - Linhas 72-105 (33 linhas)
+- `_buildThemeOption()` - Linhas 106-169 (63 linhas)
+- **DESTINO**: `lib/features/task_screen/widgets/settings/sections/theme_settings_section.dart`
+
+**2. LAYOUT PAINÉIS** (Linhas 170-260):
+- `_buildListStyleSelector()` - Linhas 170-195 (25 linhas)
+- `_buildListStyleOption()` - Linhas 196-260 (64 linhas)
+- **DESTINO**: `lib/features/task_screen/widgets/settings/sections/layout_settings_section.dart`
+
+**3. CARD STYLES** (Linhas 261-350):
+- `_buildCardStyleSelector()` - Linhas 261-286 (25 linhas)
+- `_buildCardStyleOption()` - Linhas 287-350 (63 linhas)
+- **DESTINO**: `lib/features/task_screen/widgets/settings/sections/card_settings_section.dart` (parte 1)
+
+**4. SOBRE/ABOUT** (Linhas 351-430):
+- `_buildAboutSection()` - Linhas 351-430 (79 linhas)
+- **DESTINO**: `lib/features/task_screen/widgets/settings/sections/about_settings_section.dart`
+
+**5. SIDEBAR THEME** (Linhas 431-544):
+- `_buildSidebarThemeSelector()` - Linhas 431-457 (26 linhas)
+- `_buildSidebarThemeOption()` - Linhas 458-544 (86 linhas)
+- **DESTINO**: `lib/features/task_screen/widgets/settings/sections/sidebar_settings_section.dart` (parte 1)
+
+**6. BACKGROUND COLOR** (Linhas 545-705):
+- `_buildBackgroundColorSelector()` - Linhas 545-566 (21 linhas)
+- `_buildBackgroundColorOption()` - Linhas 567-653 (86 linhas)
+- `_buildBackgroundColorPreview()` - Linhas 654-705 (51 linhas)
+- **DESTINO**: `lib/features/task_screen/widgets/settings/sections/background_settings_section.dart` (parte 1)
+
+**7. TODAY CARD STYLE** (Linhas 706-971):
+- `_buildTodayCardStyleSelector()` - Linhas 706-727 (21 linhas)
+- `_buildTodayCardStyleOption()` - Linhas 728-808 (80 linhas)
+- `_buildTodayCardMiniPreview()` - Linhas 809-861 (52 linhas)
+- `_buildTodayCardStylePreview()` - Linhas 862-889 (27 linhas)
+- `_buildTodayCardFullPreview()` - Linhas 890-971 (81 linhas)
+- **DESTINO**: `lib/features/task_screen/widgets/settings/sections/card_settings_section.dart` (parte 2)
+
+**8. NAVIGATION BAR COLOR** (Linhas 972-1144):
+- `_buildNavigationBarColorSelector()` - Linhas 972-994 (22 linhas)
+- `_buildNavigationBarColorOption()` - Linhas 995-1079 (84 linhas)
+- `_buildNavigationBarColorPreview()` - Linhas 1080-1144 (64 linhas)
+- **DESTINO**: `lib/features/task_screen/widgets/settings/sections/background_settings_section.dart` (parte 2)
+
+**9. SIDEBAR COLOR** (Linhas 1145-1327):
+- `_buildSidebarColorSelector()` - Linhas 1145-1167 (22 linhas)
+- `_buildSidebarColorOption()` - Linhas 1168-1251 (83 linhas)
+- `_buildSidebarColorPreview()` - Linhas 1252-1327 (75 linhas)
+- **DESTINO**: `lib/features/task_screen/widgets/settings/sections/sidebar_settings_section.dart` (parte 2)
+
+---
+
+## 🎯 MODULARIZAÇÃO PLANEJADA DOS SETTINGS
+
+### **1. theme_settings_section.dart** (~100 linhas):
+```
+ORIGEM: Linhas 72-169 do settings_screen.dart
+CONTEÚDO: Seleção de temas globais (Classic, Glass, Modern)
+WIDGETS: ThemeSelector, ThemePreview
+```
+
+### **2. layout_settings_section.dart** (~90 linhas):
+```
+ORIGEM: Linhas 170-260 do settings_screen.dart
+CONTEÚDO: Estilos de painel (Compact vs Decorated)
+WIDGETS: LayoutSelector, LayoutPreview
+```
+
+### **3. card_settings_section.dart** (~355 linhas):
+```
+ORIGEM: Linhas 261-350 + 706-971 do settings_screen.dart
+CONTEÚDO: Card styles (Dynamic vs Clean) + Today card styles (WithEmoji vs WithColorBorder)
+WIDGETS: CardPreview, CardSelector
+```
+
+### **4. background_settings_section.dart** (~335 linhas):
+```
+ORIGEM: Linhas 545-705 + 972-1144 do settings_screen.dart
+CONTEÚDO: Background colors + Navigation bar colors
+WIDGETS: ColorPreview, ColorSelector
+```
+
+### **5. sidebar_settings_section.dart** (~295 linhas):
+```
+ORIGEM: Linhas 431-544 + 1145-1327 do settings_screen.dart
+CONTEÚDO: Sidebar themes + Sidebar colors
+WIDGETS: SidebarPreview, SidebarSelector
+```
+
+### **6. about_settings_section.dart** (~80 linhas):
+```
+ORIGEM: Linhas 351-430 do settings_screen.dart
+CONTEÚDO: Informações do app, versão, créditos
+WIDGETS: InfoCard
+```
+
+---
+
+## 🧩 WIDGETS REUTILIZÁVEIS A CRIAR
+
+### **WIDGETS COMUNS**:
+```
+widgets/settings/widgets/
+├── settings_group.dart      # Container padrão (~50 linhas)
+├── theme_selector.dart      # Seletor genérico (~80 linhas)
+├── layout_preview.dart      # Preview padrão (~60 linhas)
+├── color_picker.dart        # Seletor de cores (~70 linhas)
+├── card_preview.dart        # Preview de cards (~100 linhas)
+├── sidebar_preview.dart     # Preview da sidebar (~90 linhas)
+└── info_card.dart          # Card de informações (~40 linhas)
+```
+
+---
+
+## 🔄 PROCESSO DETALHADO PARA CADA ETAPA (ZERO TOLERÂNCIA A BUGS)
+
+### **TEMPLATE DE EXTRAÇÃO RIGOROSA**:
+
+**1. Verificar Estado INICIAL**:
+```bash
+flutter analyze --no-pub  # DEVE ter zero erros
+```
+
+**2. Criar Arquivo Destino**:
+```dart
+// Exemplo: lib/features/task_screen/widgets/sidebar/task_sidebar.dart
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../../controllers/task_controller.dart';
+
+class TaskSidebar extends StatelessWidget {
+  const TaskSidebar({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Consumer<TaskController>(
+      builder: (context, controller, child) {
+        // COLAR AQUI o código do método _buildSidebar()
+        return _buildSidebar(context, controller);
+      },
+    );
+  }
+  
+  // Método extraído do arquivo original
+  Widget _buildSidebar(BuildContext context, TaskController controller) {
+    // ... código completo do método original
+  }
+}
+```
+
+**3. Verificar IMPORTS e SINTAXE**:
+```bash
+flutter analyze --no-pub  # DEVE ter zero erros para o arquivo criado
+```
+
+**4. Atualizar Arquivo Original**:
+```dart
+// Substituir chamada do método
+// ANTES:
+_buildSidebar(context, controller)
+
+// DEPOIS:
+TaskSidebar()
+```
+
+**5. Adicionar Import no Arquivo Original**:
+```dart
+import '../widgets/sidebar/task_sidebar.dart';
+```
+
+**6. Verificar Estado FINAL**:
+```bash
+flutter analyze --no-pub  # DEVE ter zero erros em todo o projeto
+```
+
+**7. Testar Funcionalidade OBRIGATORIAMENTE**:
+- ✅ Verificar se interface continua igual
+- ✅ Testar todas as funcionalidades da seção extraída
+- ✅ Confirmar navegação funciona
+- ✅ Verificar se Provider/Context funcionam
+
+**8. Se QUALQUER ERRO**:
+- 🚨 **PARAR imediatamente**
+- 🔍 Analisar e corrigir erro
+- 🔄 Só continuar quando `flutter analyze --no-pub` = zero erros
+
+---
+
+## 📊 ARQUIVOS EXISTENTES - MAPEAMENTO COMPLETO
+
+### **ESTRUTURA ATUAL vs NOVA ESTRUTURA**:
+
+#### **THEMES** (Copiar para `/themes/`):
+- **ORIGEM**: `lib/features/task_management/themes/app_theme.dart` (238 linhas) - Enums de configuração
+- **DESTINO**: `lib/features/task_screen/themes/app_theme.dart`
+- **ORIGEM**: `lib/features/task_management/themes/theme_provider.dart` (383 linhas) - Provider principal
+- **DESTINO**: `lib/features/task_screen/themes/theme_provider.dart`
+- **ORIGEM**: `lib/features/task_management/themes/theme_config.dart` (121 linhas) - Configurações específicas
+- **DESTINO**: `lib/features/task_screen/themes/theme_config.dart`
+
+#### **MODELS** (Copiar para `/models/`):
+- **ORIGEM**: `lib/features/task_management/models/task_model.dart`
+- **DESTINO**: `lib/features/task_screen/models/task_model.dart`
+- **ORIGEM**: `lib/features/task_management/models/list_model.dart`
+- **DESTINO**: `lib/features/task_screen/models/list_model.dart`
+- **ORIGEM**: `lib/features/task_management/models/project_model.dart`
+- **DESTINO**: `lib/features/task_screen/models/project_model.dart`
+
+#### **CONTROLLERS** (Copiar para `/controllers/`):
+- **ORIGEM**: `lib/features/task_management/controllers/task_controller.dart`
+- **DESTINO**: `lib/features/task_screen/controllers/task_controller.dart`
+
+#### **PROJECTS** (Copiar para `/widgets/projects/`):
+- **ORIGEM**: `lib/features/task_management/widgets/projects/project_panel.dart`
+- **DESTINO**: `lib/features/task_screen/widgets/projects/project_panel.dart`
+- **ORIGEM**: `lib/features/task_management/widgets/projects/project_item.dart`
+- **DESTINO**: `lib/features/task_screen/widgets/projects/project_item.dart`
+- **ORIGEM**: `lib/features/task_management/widgets/projects/project_form_dialog.dart`
+- **DESTINO**: `lib/features/task_screen/widgets/projects/project_form_dialog.dart`
+- **ORIGEM**: `lib/features/task_management/widgets/projects/project_delete_dialog.dart`
+- **DESTINO**: `lib/features/task_screen/widgets/projects/project_delete_dialog.dart`
+- **ORIGEM**: `lib/features/task_management/widgets/projects/project_creation_dialog.dart`
+- **DESTINO**: `lib/features/task_screen/widgets/projects/project_creation_dialog.dart`
+
+#### **LISTS** (Copiar para `/widgets/lists/`):
+- **ORIGEM**: `lib/features/task_management/widgets/lists/list_panel.dart`
+- **DESTINO**: `lib/features/task_screen/widgets/lists/list_panel.dart`
+- **ORIGEM**: `lib/features/task_management/widgets/lists/list_item.dart`
+- **DESTINO**: `lib/features/task_screen/widgets/lists/list_item.dart`
+- **ORIGEM**: `lib/features/task_management/widgets/lists/list_form_dialog.dart`
+- **DESTINO**: `lib/features/task_screen/widgets/lists/list_form_dialog.dart`
+- **ORIGEM**: `lib/features/task_management/widgets/lists/list_delete_dialog.dart`
+- **DESTINO**: `lib/features/task_screen/widgets/lists/list_delete_dialog.dart`
+- **ORIGEM**: `lib/features/task_management/widgets/lists/list_context_menu.dart`
+- **DESTINO**: `lib/features/task_screen/widgets/lists/list_context_menu.dart`
+
+#### **TASK COMPONENTS** (Copiar e Refatorar para `/widgets/task/`):
+- **ORIGEM**: `lib/features/task_management/widgets/task/task_panel.dart`
+- **DESTINO**: `lib/features/task_screen/widgets/task/task_panel.dart`
+
+#### **TASK ITEMS** (Refatorar today_* para task_*):
+- **ORIGEM**: `lib/features/task_management/widgets/today/today_task_item.dart`
+- **DESTINO**: `lib/features/task_screen/widgets/task/task_item/task_item.dart`
+- **ORIGEM**: `lib/features/task_management/widgets/today/today_task_checkbox.dart`
+- **DESTINO**: `lib/features/task_screen/widgets/task/task_item/task_checkbox.dart`
+- **ORIGEM**: `lib/features/task_management/widgets/today/today_task_list_icon.dart`
+- **DESTINO**: `lib/features/task_screen/widgets/task/task_item/task_list_icon.dart`
+- **ORIGEM**: `lib/features/task_management/widgets/today/today_task_content.dart`
+- **DESTINO**: `lib/features/task_screen/widgets/task/task_item/task_content.dart`
+- **ORIGEM**: `lib/features/task_management/widgets/today/today_task_controls.dart`
+- **DESTINO**: `lib/features/task_screen/widgets/task/task_item/task_controls.dart`
+- **ORIGEM**: `lib/features/task_management/widgets/today/today_task_border_helper.dart`
+- **DESTINO**: `lib/features/task_screen/widgets/task/task_item/task_border_helper.dart`
+- **ORIGEM**: `lib/features/task_management/widgets/today/today_task_item_constants.dart`
+- **DESTINO**: `lib/features/task_screen/widgets/task/task_item/constants.dart`
+
+#### **TASK GROUPS**:
+- **ORIGEM**: `lib/features/task_management/widgets/today/expansible_task_group.dart`
+- **DESTINO**: `lib/features/task_screen/widgets/task/task_group/expansible_group.dart`
+
+#### **TASK VIEWS**:
+- **ORIGEM**: `lib/features/task_management/widgets/today/today_panel.dart`
+- **DESTINO**: `lib/features/task_screen/widgets/task/views/today_view.dart`
+
+#### **DETAIL COMPONENTS** (Copiar para `/widgets/detail/`):
+- **ORIGEM**: `lib/features/task_management/widgets/task/task_detail_panel/task_detail_panel.dart`
+- **DESTINO**: `lib/features/task_screen/widgets/detail/task_detail_panel.dart`
+- **ORIGEM**: `lib/features/task_management/widgets/task/task_detail_panel/widgets/task_header.dart`
+- **DESTINO**: `lib/features/task_screen/widgets/detail/task_header.dart`
+- **ORIGEM**: `lib/features/task_management/widgets/task/task_detail_panel/widgets/task_notes_section.dart`
+- **DESTINO**: `lib/features/task_screen/widgets/detail/task_notes_section.dart`
+- **ORIGEM**: `lib/features/task_management/widgets/task/task_detail_panel/widgets/task_diary_entry_form.dart`
+- **DESTINO**: `lib/features/task_screen/widgets/detail/task_diary_entry_form.dart`
+- **ORIGEM**: `lib/features/task_management/widgets/task/task_detail_panel/widgets/task_diary_entry_item.dart`
+- **DESTINO**: `lib/features/task_screen/widgets/detail/task_diary_entry_item.dart`
+- **ORIGEM**: `lib/features/task_management/widgets/task/task_detail_panel/widgets/task_diary_section.dart`
+- **DESTINO**: `lib/features/task_screen/widgets/detail/task_diary_section.dart`
+- **ORIGEM**: `lib/features/task_management/widgets/task/task_detail_panel/widgets/task_footer.dart`
+- **DESTINO**: `lib/features/task_screen/widgets/detail/task_footer.dart`
+- **ORIGEM**: `lib/features/task_management/widgets/task/task_detail_panel/widgets/task_subtasks_section.dart`
+- **DESTINO**: `lib/features/task_screen/widgets/detail/task_subtasks_section.dart`
+
+#### **COMMON COMPONENTS** (Copiar para `/widgets/common/`):
+- **ORIGEM**: `lib/features/task_management/widgets/common/app_state_handler.dart`
+- **DESTINO**: `lib/features/task_screen/widgets/common/app_state_handler.dart`
+- **ORIGEM**: `lib/features/task_management/widgets/common/task_app_bar.dart`
+- **DESTINO**: `lib/features/task_screen/widgets/common/task_app_bar.dart`
+- **ORIGEM**: `lib/features/task_management/widgets/common/sidebar_theme_toggle.dart`
+- **DESTINO**: `lib/features/task_screen/widgets/common/sidebar_theme_toggle.dart`
+
+#### **INPUT COMPONENTS** (Copiar para `/widgets/input/`):
+- **ORIGEM**: `lib/features/task_management/widgets/task/quick_add_task_input.dart`
+- **DESTINO**: `lib/features/task_screen/widgets/input/quick_add_task_input.dart`
+- **ORIGEM**: `lib/features/task_management/widgets/task/mobile_quick_add_task_input.dart`
+- **DESTINO**: `lib/features/task_screen/widgets/input/mobile_quick_add_task_input.dart`
+
+#### **SAMSUNG STYLE** (Copiar para `/widgets/settings/samsung_style/`):
+- **ORIGEM**: `lib/features/task_management/widgets/layouts/samsung_style/index.dart`
+- **DESTINO**: `lib/features/task_screen/widgets/settings/samsung_style/index.dart`
+- **ORIGEM**: `lib/features/task_management/widgets/layouts/samsung_style/samsung_sidebar.dart`
+- **DESTINO**: `lib/features/task_screen/widgets/settings/samsung_style/samsung_sidebar.dart`
+- **ORIGEM**: `lib/features/task_management/widgets/layouts/samsung_style/samsung_sidebar_theme.dart`
+- **DESTINO**: `lib/features/task_screen/widgets/settings/samsung_style/samsung_sidebar_theme.dart`
+- **ORIGEM**: `lib/features/task_management/widgets/layouts/samsung_style/samsung_list_item.dart`
+- **DESTINO**: `lib/features/task_screen/widgets/settings/samsung_style/samsung_list_item.dart`
+- **ORIGEM**: `lib/features/task_management/widgets/layouts/samsung_style/samsung_section_header.dart`
+- **DESTINO**: `lib/features/task_screen/widgets/settings/samsung_style/samsung_section_header.dart`
+
+---
+
+## 🎯 RESULTADO ESPERADO
+
+### **SIDEBAR (ETAPA 1)**:
+- ✅ `task_sidebar.dart` - Widget principal (~80 linhas)
+- ✅ Funcionalidade idêntica ao método original
+- ✅ Zero bugs introduzidos
+
+### **SETTINGS (ETAPAS 2-8)**:
+- ✅ Settings principal - ~100 linhas (era 1284 linhas)
+- ✅ 6 seções modularizadas (~200 linhas cada)
+- ✅ 7 widgets reutilizáveis
+- ✅ Funcionalidade idêntica ao arquivo original
+- ✅ Zero bugs introduzidos
+
+### **BENEFÍCIOS FINAIS**:
+- ✅ Código mais organizado e manutenível
+- ✅ Componentes reutilizáveis
+- ✅ Fácil navegação nos arquivos
+- ✅ Estrutura escalável para futuras funcionalidades
+- ✅ Testes unitários possíveis por componente
+- ✅ Zero funcionalidades perdidas ou quebradas
+
+---
+
+## 🚨 PONTOS CRÍTICOS DE ATENÇÃO
+
+### **IMPORTS RELATIVOS**:
+Usar imports relativos dentro da mesma feature:
+```dart
+// ✅ BOM - Import relativo
+import '../controllers/task_controller.dart';
+import '../widgets/projects/project_panel.dart';
+
+// ✅ BOM - Import absoluto para outras features
+import '../../../log_screen/controllers/log_controller.dart';
+```
+
+### **PROVIDERS E CONTEXTO**:
+Manter acesso ao Provider do TaskController:
+```dart
+Consumer<TaskController>(
+  builder: (context, controller, child) {
+    // Usar controller normalmente
+  },
+);
+```
+
+### **MÉTODOS DE NAVEGAÇÃO**:
+Manter navegação para outras telas:
+```dart
+// Manter métodos como _navigateToLogs() e _navigateToSettings()
+Navigator.push(context, MaterialPageRoute(builder: (context) => LogScreen()));
+```
+
+### **PRESERVAR FUNCIONALIDADES**:
+- ✅ Contadores de tarefas
+- ✅ Contadores de logs
+- ✅ Toggles de visualização
+- ✅ Navegação entre telas
+- ✅ Temas e estilos visuais
+- ✅ Persistência de configurações
+
+---
+
+## 📝 CHECKLIST RIGOROSO PARA CADA ETAPA
+
+### **ANTES DE COMEÇAR QUALQUER ETAPA**:
+- [ ] `flutter analyze --no-pub` retorna zero erros
+- [ ] Backup do código atual (commit git)
+- [ ] Identificar exatamente o método/seção a extrair
+- [ ] Confirmar linhas exatas do código fonte
+
+### **DURANTE A EXTRAÇÃO** (OBRIGATÓRIO):
+- [ ] Criar arquivo destino na estrutura correta
+- [ ] Copiar código exato do método (sem modificações)
+- [ ] Criar classe wrapper apropriada
+- [ ] **VERIFICAR TODOS OS IMPORTS** (critical!)
+- [ ] `flutter analyze --no-pub` no arquivo novo = zero erros
+- [ ] Substituir chamada no arquivo original
+- [ ] Adicionar import do novo arquivo
+- [ ] **VERIFICAR IMPORTS RELATIVOS** estão corretos
+
+### **APÓS CADA EXTRAÇÃO** (OBRIGATÓRIO):
+- [ ] `flutter analyze --no-pub` em todo projeto = zero erros
+- [ ] **TESTAR FUNCIONALIDADE** específica extraída
+- [ ] **VERIFICAR INTERFACE** permanece idêntica
+- [ ] **CONFIRMAR NAVEGAÇÃO** funciona (se aplicável)
+- [ ] **TESTAR PROVIDER/CONTEXT** funcionam
+- [ ] **VERIFICAR TEMAS** aplicam corretamente
+- [ ] Salvar progresso (commit git)
+
+### **EM CASO DE QUALQUER ERRO** (PARADA OBRIGATÓRIA):
+- [ ] 🚨 **PARAR IMEDIATAMENTE**
+- [ ] Analisar mensagens de erro do `flutter analyze`
+- [ ] Corrigir imports/sintaxe
+- [ ] Verificar Provider/Context
+- [ ] Verificar paths dos arquivos
+- [ ] **SÓ CONTINUAR** quando `flutter analyze --no-pub` = zero erros
+- [ ] **TESTAR NOVAMENTE** antes de próxima etapa
+
+### **VERIFICAÇÃO DE IMPORTS** (CRÍTICO):
+- [ ] Imports relativos dentro da mesma feature: `../controllers/`, `../models/`
+- [ ] Imports absolutos para outras features: `../../../log_screen/`
+- [ ] Packages sempre absolutos: `package:flutter/material.dart`
+- [ ] Verificar se todos os imports estão funcionando
+- [ ] Não deixar imports não utilizados
+
+---
+
+## 🎯 LEMA DA REFATORAÇÃO
+
+> **"UMA MUDANÇA POR VEZ, SEMPRE FUNCIONANDO, ZERO BUGS"**
+
+**SUCESSO = CÓDIGO MAIS ORGANIZADO + FUNCIONALIDADE INALTERADA + ZERO PROBLEMAS**

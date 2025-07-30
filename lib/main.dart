@@ -5,17 +5,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
 import 'package:teste_flutter/features/habit_screen/habit_screen.dart';
-//import 'package:teste_flutter/screens/hello_world_screen.dart';
-//import 'package:teste_flutter/screens/notes_screen.dart';
 import 'package:teste_flutter/features/note_screen/notes_screen.dart';
 import 'package:teste_flutter/features/task_management/screens/task_management_screen.dart';
 import 'package:teste_flutter/features/task_management/controllers/task_controller.dart';
 import 'package:teste_flutter/features/task_management/themes/theme_provider.dart';
 import 'package:teste_flutter/features/log_screen/controllers/log_controller.dart';
-import 'package:teste_flutter/widgets/navigation/vertical_navigation_bar.dart'; // Novo import
+import 'package:teste_flutter/widgets/navigation/vertical_navigation_bar.dart';
 import 'screens/task_screen/task_screen.dart';
-//import 'screens/diary_screen/diary_screen.dart';
-//import 'screens/diary_screen/diary_screen_optimized.dart'; // Nova tela
 import 'firebase_options.dart';
 import 'services/notification_service.dart';
 
@@ -160,6 +156,10 @@ class _HomeScreenState extends State<HomeScreen> {
                 NavigationDestination(
                   icon: Icon(Icons.task_alt),
                   label: 'Tarefas+',
+                ),
+                NavigationDestination(
+                  icon: Icon(Icons.dashboard_customize),
+                  label: 'TaskNew',
                 ),
               ],
             );

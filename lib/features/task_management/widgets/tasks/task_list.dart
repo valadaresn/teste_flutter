@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import '../../../../components/generic_selector_list.dart';
 import '../../controllers/task_controller.dart';
 import '../../models/task_model.dart';
-import 'task_item.dart';
-import 'quick_add_task_input.dart';
+import 'task_item/task_item.dart';
+import '../input/quick_add_task_input.dart';
 
 class TaskList extends StatelessWidget {
   final TaskController controller;

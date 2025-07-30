@@ -1,0 +1,26 @@
+crie esses arquivos, conforme instruções, nessa exata ordem
+
+LOTE A - Arquivos Independentes (Ordem 1):
+subtask_edit_dialog.dart - só depende de models já migrados
+sidebar_theme_demo.dart - demo simples
+due_date_selector.dart - widget simples
+pomodoro_time_selector.dart - widget simples
+LOTE B - Depende do Lote A (Ordem 2):
+subtask_item.dart - depende de subtask_edit_dialog.dart
+task_item.dart - sem dependências pendentes
+LOTE C - Depende do Lote B (Ordem 3):
+subtask_list.dart - depende de subtask_item.dart
+task_list.dart - depende de task_item.dart
+LOTE D - Depende do Lote C (Ordem 4):
+task_detail_panel.dart - depende de subtask_list.dart
+task_panel.dart - depende de task_list.dart
+LOTE E - Arquivos Today (Ordem 5):
+expansible_task_group.dart - widget base
+today_task_item.dart - depende de expansible_task_group.dart
+today_panel.dart - depende dos items anteriores
+LOTE F - Arquivos Complexos (Ordem 6):
+task_sidebar.dart - arquivo principal sidebar
+task_detail_panel/ - pasta com subcomponentes
+O que entendi: Você quer que eu execute essa lista EXATAMENTE nesta ordem, migrando UM arquivo por vez e validando com flutter analyze após cada cópia, seguindo rigorosamente a sequência de dependências.
+
+Posso começar com o primeiro arquivo (subtask_edit_dialog.dart)?

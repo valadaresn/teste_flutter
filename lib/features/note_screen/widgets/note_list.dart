@@ -14,32 +14,28 @@ class NotesList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (controller.notes.isEmpty) {
-      return Expanded(
-        child: Center(
-          child: Text(
-            controller.hasActiveFilters
-                ? 'Nenhuma nota encontrada com os filtros selecionados.' // ✅ Mensagem específica para filtros
-                : 'Nenhuma nota encontrada. Adicione uma nota.',
-          ),
+      return Center(
+        child: Text(
+          controller.hasActiveFilters
+              ? 'Nenhuma nota encontrada com os filtros selecionados.' // ✅ Mensagem específica para filtros
+              : 'Nenhuma nota encontrada. Adicione uma nota.',
         ),
       );
     }
 
-    return Expanded(
-      child: GenericSelectorList<NotesController, Note>(
-        listSelector: (ctrl) => ctrl.notes,
-        itemById: (ctrl, id) => ctrl.getNoteById(id),
-        idExtractor: (note) => note.id,
-        itemBuilder: (context, note) {
-          return NoteCard(
-            note: note,
-            onTap: () => onNoteTap(note),
-            getTagColor: controller.getTagColor,
-            hasActiveFilters:
-                controller.hasActiveFilters, // ✅ NOVO: Passa info do filtro
-          );
-        },
-      ),
+    return GenericSelectorList<NotesController, Note>(
+      listSelector: (ctrl) => ctrl.notes,
+      itemById: (ctrl, id) => ctrl.getNoteById(id),
+      idExtractor: (note) => note.id,
+      itemBuilder: (context, note) {
+        return NoteCard(
+          note: note,
+          onTap: () => onNoteTap(note),
+          getTagColor: controller.getTagColor,
+          hasActiveFilters:
+              controller.hasActiveFilters, // ✅ NOVO: Passa info do filtro
+        );
+      },
     );
   }
 }
