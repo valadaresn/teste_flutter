@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
-import '../../../controllers/task_controller.dart';
-import '../../../models/task_model.dart';
-import '../today_task_item.dart';
+import 'package:provider/provider.dart';
+import '../../controllers/task_controller.dart';
+import '../../models/task_model.dart';
+import '../../themes/theme_provider.dart';
+import 'card_factory.dart';
 
 /// Enum para identificar os tipos de grupos de tarefas
 enum TaskGroupType {
@@ -109,11 +111,17 @@ class _ExpansibleGroupState extends State<ExpansibleGroup> {
 
                   return Column(
                     children: [
-                      TodayTaskItem(
-                        task: task,
-                        controller: widget.controller,
-                        groupType: widget.taskType,
-                        isSelected: widget.controller.selectedTaskId == task.id,
+                      Consumer<ThemeProvider>(
+                        builder: (context, themeProvider, child) {
+                          return CardFactory.buildCard(
+                            style: themeProvider.todayViewCardStyle,
+                            task: task,
+                            controller: widget.controller,
+                            isSelected:
+                                widget.controller.selectedTaskId == task.id,
+                            groupType: widget.taskType,
+                          );
+                        },
                       ),
 
                       // Divisor sutil entre itens (exceto o último)

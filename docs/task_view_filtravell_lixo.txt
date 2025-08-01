@@ -1,0 +1,340 @@
+# PLANO DE IMPLEMENTAÇÃO: Sistema de Views Filtráveis
+
+## 🎯 OBJETIVO FINAL
+Implementar um sistema de views filtráveis que permite ao usuário aplicar filtros cumulativos em uma única interface, substituindo as múltiplas views separadas por uma solução mais elegante e flexível.
+
+## 📋 ETAPAS DE IMPLEMENTAÇÃO
+
+### ETAPA 1: CRIAR SISTEMA DE FILTROS BASE
+**Objetivo:** Implementar a arquitetura de filtros compostos e reutilizáveis
+
+**Arquivos a criar:**
+- `lib/features/task_management/filters/task_filter.dart` - Interface base
+- `lib/features/task_management/filters/basic_filters.dart` - Filtros básicos
+- `lib/features/task_management/filters/composite_filter.dart` - Filtro composto
+
+**Tarefas:**
+1. **Criar TaskFilter abstrato**
+   ```dart
+   abstract class TaskFilter {
+     String get name;           // Nome para UI
+     String get description;    // Descrição detalhada
+     IconData get icon;         // Ícone representativo
+     Color get color;           // Cor do filtro
+     
+     bool matches(Task task, TaskController controller);
+     String? getGroupKey(Task task) => null;
+     
+     Map<String, dynamic> toJson();
+     static TaskFilter fromJson(Map<String, dynamic> json);
+   }
+   
+   enum FilterOperator { and, or }
+   ```
+
+2. **Implementar filtros básicos**
+   - `TodayFilter` - Tarefas de hoje
+   - `TomorrowFilter` - Tarefas de amanhã  
+   - `WeekFilter` - Tarefas da semana
+   - `ListFilter` - Tarefas de uma lista específica
+   - `PriorityFilter` - Tarefas por prioridade
+   - `StatusFilter` - Tarefas por status (pendente/concluída)
+   - `OverdueFilter` - Tarefas atrasadas
+
+3. **Implementar CompositeFilter**
+   ```dart
+   class CompositeFilter extends TaskFilter {
+     final List<TaskFilter> filters;
+     final FilterOperator operator;
+     
+     @override
+     bool matches(Task task, TaskController controller) {
+       if (filters.isEmpty) return true;
+       
+       switch (operator) {
+         case FilterOperator.and:
+           return filters.every((f) => f.matches(task, controller));
+         case FilterOperator.or:
+           return filters.any((f) => f.matches(task, controller));
+       }
+     }
+   }
+   ```
+
+4. **Criar factory para filtros**
+   - Método para criar filtros por tipo
+   - Serialização/deserialização para persistência
+   - Validação de filtros
+
+**Resultado esperado:** Sistema de filtros funcionando e testável
+
+---
+
+### ETAPA 2: IMPLEMENTAR STANDARDTASKVIEW
+**Objetivo:** Criar a view universal que funciona com qualquer combinação de filtros
+
+**Arquivos a criar:**
+- `lib/features/task_management/widgets/tasks/views/standard_task_view.dart` - View universal
+- `lib/features/task_management/widgets/tasks/components/filter_bar.dart` - Barra de filtros ativos
+- `lib/features/task_management/widgets/tasks/components/task_stats.dart` - Estatísticas dinâmicas
+
+**Tarefas:**
+1. **Implementar StandardTaskView**
+   ```dart
+   class StandardTaskView extends StatelessWidget {
+     final TaskController controller;
+     final CompositeFilter filter;
+     final TaskCardStyle cardStyle;
+     final bool showQuickAdd;
+     
+     @override
+     Widget build(BuildContext context) {
+       // Aplicar filtros às tarefas
+       final filteredTasks = controller.tasks
+         .where((task) => filter.matches(task, controller))
+         .toList();
+       
+       // Verificar necessidade de agrupamento
+       final needsGrouping = _hasGrouping(filteredTasks);
+       
+       return Column(
+         children: [
+           // Estatísticas dinâmicas
+           TaskStats(tasks: filteredTasks),
+           
+           // Lista de tarefas (agrupada ou simples)
+           Expanded(
+             child: needsGrouping
+               ? _buildGroupedList(filteredTasks)
+               : _buildSimpleList(filteredTasks),
+           ),
+           
+           // Input de nova tarefa (opcional)
+           if (showQuickAdd) QuickAddTaskInput(controller: controller),
+         ],
+       );
+     }
+   }
+   ```
+
+2. **Implementar FilterBar component**
+   ```dart
+   class FilterBar extends StatelessWidget {
+     final List<TaskFilter> activeFilters;
+     final Function(int) onRemoveFilter;
+     final VoidCallback onAddFilter;
+     
+     @override
+     Widget build(BuildContext context) {
+       return Container(
+         height: 50,
+         child: ListView.builder(
+           scrollDirection: Axis.horizontal,
+           itemBuilder: (context, index) => FilterChip(
+             label: Text(activeFilters[index].name),
+             avatar: Icon(activeFilters[index].icon),
+             onDeleted: () => onRemoveFilter(index),
+           ),
+         ),
+       );
+     }
+   }
+   ```
+
+3. **Implementar TaskStats component**
+   - Calcular estatísticas baseadas nas tarefas filtradas
+   - Layout responsivo com chips informativos
+   - Cores dinâmicas baseadas nos dados
+
+4. **Implementar lógica de agrupamento**
+   - Detectar se algum filtro ativo requer agrupamento
+   - Agrupar tarefas por chave do filtro
+   - Usar ExpansibleGroup quando necessário
+
+5. **Integração com CardFactory**
+   - Usar o sistema existente de CardFactory
+   - Aplicar estilo de card baseado no contexto
+   - Manter compatibilidade com sistema de temas
+
+**Resultado esperado:** View universal funcionando com filtros simples e compostos
+
+---
+
+### ETAPA 3: INTEGRAR COM INTERFACE PRINCIPAL
+**Objetivo:** Substituir as views atuais pela nova arquitetura e implementar a UI de seleção de filtros
+
+**Arquivos a modificar:**
+- `lib/features/task_management/screens/task_management_screen.dart` - Tela principal
+- `lib/features/task_management/controllers/task_controller.dart` - Adicionar suporte a filtros
+
+**Arquivos a criar:**
+- `lib/features/task_management/widgets/filters/filter_selection_sheet.dart` - Modal de seleção
+- `lib/features/task_management/widgets/filters/filter_option_tile.dart` - Item de filtro
+- `lib/features/task_management/screens/filtered_task_screen.dart` - Nova tela principal
+
+**Tarefas:**
+1. **Criar FilteredTaskScreen**
+   ```dart
+   class FilteredTaskScreen extends StatefulWidget {
+     final List<TaskFilter>? initialFilters;
+     final String? initialListId;
+     
+     @override
+     _FilteredTaskScreenState createState() => _FilteredTaskScreenState();
+   }
+   
+   class _FilteredTaskScreenState extends State<FilteredTaskScreen> {
+     List<TaskFilter> _activeFilters = [];
+     FilterOperator _operator = FilterOperator.and;
+     
+     @override
+     Widget build(BuildContext context) {
+       return Scaffold(
+         appBar: AppBar(
+           title: Text(_buildDynamicTitle()),
+           actions: [
+             IconButton(
+               icon: Icon(Icons.filter_list),
+               onPressed: _showFilterSelection,
+             ),
+           ],
+         ),
+         body: Column(
+           children: [
+             // Barra de filtros ativos
+             if (_activeFilters.length > 1)
+               FilterBar(
+                 activeFilters: _activeFilters,
+                 onRemoveFilter: _removeFilter,
+                 onAddFilter: _showFilterSelection,
+               ),
+             
+             // View principal com filtros aplicados
+             Expanded(
+               child: StandardTaskView(
+                 controller: taskController,
+                 filter: CompositeFilter(_activeFilters, operator: _operator),
+                 cardStyle: _determineCardStyle(),
+               ),
+             ),
+           ],
+         ),
+       );
+     }
+   }
+   ```
+
+2. **Implementar FilterSelectionSheet**
+   ```dart
+   class FilterSelectionSheet extends StatelessWidget {
+     final TaskController controller;
+     final List<TaskFilter> currentFilters;
+     final Function(TaskFilter) onFilterSelected;
+     
+     @override
+     Widget build(BuildContext context) {
+       final availableFilters = _getAvailableFilters();
+       
+       return Container(
+         height: MediaQuery.of(context).size.height * 0.7,
+         child: Column(
+           children: [
+             // Header
+             _buildSheetHeader(context),
+             
+             // Lista de filtros disponíveis
+             Expanded(
+               child: ListView.builder(
+                 itemCount: availableFilters.length,
+                 itemBuilder: (context, index) => FilterOptionTile(
+                   filter: availableFilters[index],
+                   onTap: () => onFilterSelected(availableFilters[index]),
+                 ),
+               ),
+             ),
+           ],
+         ),
+       );
+     }
+   }
+   ```
+
+3. **Atualizar navegação no task_management_screen.dart**
+   - Substituir lógica atual de views por navegação para FilteredTaskScreen
+   - Passar filtros iniciais baseados na seleção (Today, AllTasks, Lista específica)
+   - Manter compatibilidade com sistema existente
+
+4. **Atualizar TaskController**
+   - Adicionar suporte para aplicar filtros compostos
+   - Métodos para persistir combinações de filtros favoritas
+   - Cache de resultados filtrados para performance
+
+5. **Implementar persistência de filtros**
+   - Salvar combinações frequentes como favoritas
+   - Restaurar último estado de filtros
+   - SharedPreferences para filtros salvos
+
+6. **Atualizar configurações**
+   - Integrar com sistema existente de CardStyle por view
+   - Mapear tipos de filtro para estilos apropriados
+   - Manter configurações de tema
+
+7. **Testes de integração**
+   - Verificar navegação entre sidebar e views filtradas
+   - Testar combinações de filtros
+   - Validar persistência de estado
+   - Confirmar funcionamento em mobile/tablet/desktop
+
+**Resultado esperado:** Sistema completo funcionando com interface intuitiva para filtros cumulativos
+
+---
+
+## 🧪 CRITÉRIOS DE SUCESSO
+
+### Funcionalidades obrigatórias:
+- ✅ Usuário pode navegar de uma lista para view filtrada
+- ✅ Usuário pode adicionar filtros cumulativos
+- ✅ Usuário pode remover filtros específicos
+- ✅ Título da tela muda dinamicamente baseado nos filtros
+- ✅ Sistema de cards por view continua funcionando
+- ✅ Layout responsivo (mobile/tablet/desktop)
+- ✅ Performance adequada com muitas tarefas
+
+### Casos de uso para testar:
+1. **Navegação básica:** Sidebar → Lista → View filtrada
+2. **Filtro simples:** Lista "Matemática" + Filtro "Hoje"
+3. **Filtros múltiplos:** Lista + Hoje + Prioridade Alta + Status Pendente
+4. **Remoção de filtros:** Remover filtros específicos do meio da cadeia
+5. **Persistência:** Fechar app e reabrir mantendo filtros
+6. **Performance:** 1000+ tarefas com múltiplos filtros
+
+### Compatibilidade:
+- ✅ Sistema de temas existente
+- ✅ Configurações de estilo de cards
+- ✅ CardFactory e componentes existentes
+- ✅ Sistema de navegação atual
+- ✅ Responsividade para todos os tamanhos de tela
+
+---
+
+## 📝 OBSERVAÇÕES IMPORTANTES
+
+### Decisões de design:
+- **TodayView especial:** Manter agrupamento "Hoje/Atrasadas" quando filtro Today estiver ativo
+- **Filtros inteligentes:** Não mostrar filtros incompatíveis (ex: não mostrar "Lista A" se "Lista B" já está ativa)
+- **UX fluida:** Transições suaves entre adição/remoção de filtros
+- **Performance:** Lazy loading e cache para listas grandes
+
+### Arquivos que podem ser removidos após implementação:
+- `all_tasks_view.dart` (substituída por StandardTaskView)
+- `task_panel.dart` (funcionalidade migrada)
+- Outros arquivos específicos de view que ficaram obsoletos
+
+### Backward compatibility:
+- Manter TaskPanel temporariamente como deprecated
+- Migração gradual das funcionalidades
+- Testes extensivos antes de remover código antigo
+
+---
+
+**IMPORTANTE:** Implementar uma etapa por vez, testando completamente antes de prosseguir para a próxima!

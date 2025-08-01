@@ -1,0 +1,255 @@
+# INVESTIGAÇÃO E PLANO: Criar Views Restantes
+
+## SITUAÇÃO ATUAL DESCOBERTA
+
+### 🔍 ANÁLISE DA ESTRUTURA ATUAL
+
+**O que existe hoje:**
+1. **TodayView** - `lib/features/task_management/widgets/tasks/views/today_view.dart`
+   - View específica e independente para visualização "Hoje"
+   - Renderiza tasks de hoje e atrasadas em grupos expansíveis
+   - Usa CardFactory para escolher o estilo do card
+
+2. **TaskPanel** - `lib/features/task_management/widgets/tasks/task_panel.dart` 
+   - NÃO é uma view específica
+   - É um painel genérico que serve TANTO para "Todas as Tarefas" quanto "Listas Específicas"
+   - Usa TaskList internamente
+   - Decide qual visualização mostrar baseado no `controller.selectedListId`
+
+3. **TaskList** - `lib/features/task_management/widgets/tasks/task_list.dart`
+   - Componente genérico que renderiza lista de tarefas
+   - Decide o estilo do card baseado se é "AllTasksView" ou "ListSpecificView"
+   - Lógica: `isAllTasksView = controller.selectedListId == null`
+
+### 🎯 PROBLEMA IDENTIFICADO
+
+**AS VISUALIZAÇÕES "TODAS AS TAREFAS" E "LISTAS ESPECÍFICAS" ESTÃO MISTURADAS!**
+
+- Ambas usam o mesmo `TaskPanel`
+- Ambas usam o mesmo `TaskList`
+- A diferenciação é feita apenas por condição: `selectedListId == null`
+- Não temos views específicas e independentes como o TodayView
+
+### 📊 LÓGICA ATUAL NO TASK_MANAGEMENT_SCREEN
+
+```dart
+// Na área principal, decide qual view mostrar:
+controller.showTodayView
+    ? TodayView(...)                    // ✅ View específica
+    : controller.showActivitiesView
+    ? _buildActivitiesPanel(...)        // ✅ View específica
+    : TaskPanel(...)                    // ❌ Painel genérico (mistura duas views!)
+```
+
+### 🎛️ CONTROLE DAS VISUALIZAÇÕES NO CONTROLLER
+
+```dart
+// Estados no TaskController:
+bool _showTodayView = false;           // ✅ Controla TodayView
+bool _showActivitiesView = false;      // ✅ Controla ActivitiesView
+String? _selectedListId;               // ❌ Mistura AllTasks vs ListSpecific
+
+// Funções:
+toggleTodayView()                      // ✅ Toggle específico
+toggleActivitiesView()                 // ✅ Toggle específico
+selectList(String listId)              // ❌ Não distingue views
+clearSelection()                       // ❌ Não volta para AllTasksView
+```
+
+## 🚀 PLANO DE REFATORAÇÃO
+
+### ETAPA 1: Criar Views Específicas
+
+**1.1 - AllTasksView** - `lib/features/task_management/widgets/tasks/views/all_tasks_view.dart`
+- View específica para "Todas as Tarefas"
+- Mostra todas as tarefas sem filtro de lista
+- Usa `themeProvider.allTasksViewCardStyle`
+- Pode ter layout próprio (ex: agrupamento por projeto, status, etc.)
+
+**1.2 - ListTasksView** - `lib/features/task_management/widgets/tasks/views/list_tasks_view.dart`
+- View específica para "Lista Específica"
+- Mostra tarefas de uma lista selecionada
+- Usa `themeProvider.listViewCardStyle`
+- Pode ter layout próprio (ex: progresso da lista, stats, etc.)
+
+### ETAPA 2: Atualizar Controller
+
+**2.1 - Adicionar Estados Específicos**
+```dart
+bool _showAllTasksView = true;         // Estado para AllTasksView
+bool _showListTasksView = false;       // Estado para ListTasksView
+// Manter: _showTodayView, _showActivitiesView
+```
+
+**2.2 - Adicionar Funções de Toggle**
+```dart
+void toggleAllTasksView()              // Toggle para AllTasksView
+void toggleListTasksView(String listId) // Toggle para ListTasksView específica
+void clearAllViews()                   // Limpa todas as views
+```
+
+### ETAPA 3: Atualizar task_management_screen.dart
+
+**3.1 - Lógica de Decisão de Views**
+```dart
+// Nova lógica no build:
+controller.showTodayView
+    ? TodayView(...)
+    : controller.showActivitiesView
+    ? ActivitiesView(...)
+    : controller.showAllTasksView
+    ? AllTasksView(...)
+    : controller.showListTasksView
+    ? ListTasksView(...)
+    : AllTasksView(...) // fallback
+```
+
+### ETAPA 4: Manter Compatibilidade
+
+**4.1 - Manter TaskPanel (Depreciado)**
+- Manter TaskPanel para compatibilidade temporária
+- Adicionar warning de depreciação
+- Remover após migração completa
+
+**4.2 - Migrar Gradualmente**
+- Primeiro implementar AllTasksView
+- Depois implementar ListTasksView
+- Por último remover TaskPanel
+
+## 📁 ESTRUTURA DE ARQUIVOS RESULTANTE
+
+```
+lib/features/task_management/widgets/tasks/views/
+├── today_view.dart              # ✅ Já existe
+├── all_tasks_view.dart          # 🆕 Nova - Todas as Tarefas
+├── list_tasks_view.dart         # 🆕 Nova - Lista Específica
+└── activities_view.dart         # ✅ Já existe (DailyActivitiesScreen)
+
+lib/features/task_management/widgets/tasks/
+├── task_panel.dart              # ⚠️ Manter temporariamente (depreciado)
+├── task_list.dart               # ✅ Manter como componente genérico
+├── card_factory.dart            # ✅ Manter
+└── ...
+```
+
+## 🎨 DIFERENCIAÇÃO VISUAL POR VIEW
+
+### TodayView (Já implementada)
+- Cards agrupados por "Hoje" e "Atrasadas"
+- Layout expansível
+- Usa `todayViewCardStyle`
+
+### AllTasksView (A criar)
+- Todas as tarefas sem filtro
+- Pode agrupar por: projeto, status, prioridade
+- Pode ter stats gerais no topo
+- Usa `allTasksViewCardStyle`
+
+### ListTasksView (A criar)  
+- Tarefas de uma lista específica
+- Header com nome e cor da lista
+- Progresso da lista (% concluído)
+- Stats específicas da lista
+- Usa `listViewCardStyle`
+
+### ActivitiesView (Já existe)
+- Tela específica para atividades diárias
+- Layout próprio no DailyActivitiesScreen
+
+## 🔧 IMPLEMENTAÇÃO TÉCNICA
+
+### Passo 1: AllTasksView
+```dart
+class AllTasksView extends StatelessWidget {
+  final TaskController controller;
+  
+  @override
+  Widget build(BuildContext context) {
+    return Consumer<ThemeProvider>(
+      builder: (context, themeProvider, child) {
+        return Column(
+          children: [
+            _buildAllTasksHeader(context),
+            Expanded(
+              child: _buildAllTasksList(context, themeProvider),
+            ),
+          ],
+        );
+      },
+    );
+  }
+  
+  Widget _buildAllTasksList(BuildContext context, ThemeProvider themeProvider) {
+    // Usar GenericSelectorList com allTasksViewCardStyle
+    // Mostrar TODAS as tarefas (controller.allTasks)
+  }
+}
+```
+
+### Passo 2: ListTasksView
+```dart
+class ListTasksView extends StatelessWidget {
+  final TaskController controller;
+  final String listId;
+  
+  @override
+  Widget build(BuildContext context) {
+    final list = controller.getListById(listId);
+    
+    return Consumer<ThemeProvider>(
+      builder: (context, themeProvider, child) {
+        return Column(
+          children: [
+            _buildListHeader(context, list),
+            _buildListProgress(context, list),
+            Expanded(
+              child: _buildListTasks(context, themeProvider),
+            ),
+          ],
+        );
+      },
+    );
+  }
+  
+  Widget _buildListTasks(BuildContext context, ThemeProvider themeProvider) {
+    // Usar GenericSelectorList com listViewCardStyle
+    // Mostrar tarefas da lista (controller.getTasksByList(listId))
+  }
+}
+```
+
+## 🎯 BENEFÍCIOS DESSA REFATORAÇÃO
+
+1. **Separação Clara de Responsabilidades**
+   - Cada view tem seu propósito específico
+   - Código mais organizazado e manutenível
+
+2. **Configuração Independente**
+   - Cada view pode ter seu layout único
+   - Estilos de cards específicos funcionam corretamente
+
+3. **Extensibilidade**
+   - Fácil adicionar novas views
+   - Cada view pode evoluir independentemente
+
+4. **Melhor UX**
+   - Layouts otimizados para cada contexto
+   - Informações relevantes para cada visualização
+
+5. **Consistência com Padrão Existente**
+   - Segue o padrão já estabelecido pelo TodayView
+   - Mantém arquitetura coerente
+
+## ⚡ PRÓXIMOS PASSOS
+
+1. ✅ **Investigação Completa** - CONCLUÍDA
+2. 🔄 **Implementar AllTasksView** - Próximo
+3. 🔄 **Implementar ListTasksView** - Depois
+4. 🔄 **Atualizar Controller** - Depois  
+5. 🔄 **Atualizar task_management_screen.dart** - Depois
+6. 🔄 **Testar Configurações de Cards** - Depois
+7. 🔄 **Remover TaskPanel** - Por último
+
+---
+
+**CONCLUSÃO:** As views "Todas as Tarefas" e "Listas Específicas" estão atualmente misturadas no mesmo TaskPanel, mas deveriam ser views independentes como o TodayView. A refatoração criará essa separação adequada.

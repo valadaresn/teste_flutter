@@ -14,6 +14,19 @@ enum CardStyle {
   clean, // Estilo minimalista - cor de fundo constante
 }
 
+// Enum para estilos de cards por tipo de visualização
+enum TaskCardStyle {
+  standard, // TaskItem - card detalhado
+  compact, // TodayTaskItem - card minimalista
+}
+
+// Enum para tipos de visualização
+enum ViewType {
+  today, // Visualização Hoje
+  allTasks, // Todas as Tarefas
+  list, // Lista específica
+}
+
 // Enum para temas do painel lateral (sidebar)
 enum SidebarTheme {
   defaultTheme, // Tema atual - colorido com emojis

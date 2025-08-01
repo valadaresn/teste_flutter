@@ -1,14 +1,21 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../../../components/generic_selector_list.dart';
 import '../../controllers/task_controller.dart';
 import '../../models/task_model.dart';
-import 'task_item/task_item.dart';
+import '../../themes/theme_provider.dart';
+import 'card_factory.dart';
 import '../input/quick_add_task_input.dart';
 
 class TaskList extends StatelessWidget {
   final TaskController controller;
+  final List<Task>? tasks; // 🆕 NOVO: Lista opcional pré-filtrada
 
-  const TaskList({Key? key, required this.controller}) : super(key: key);
+  const TaskList({
+    Key? key,
+    required this.controller,
+    this.tasks, // 🆕 Se não fornecida, usa controller.tasks
+  }) : super(key: key);
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -16,8 +23,8 @@ class TaskList extends StatelessWidget {
         // Lista de tarefas
         Expanded(
           child: GenericSelectorList<TaskController, Task>(
-            // Função para extrair a lista filtrada do controller
-            listSelector: (controller) => controller.tasks,
+            // 🔍 USA LISTA FORNECIDA OU LISTA COMPLETA DO CONTROLLER
+            listSelector: (controller) => tasks ?? controller.tasks,
 
             // Função para extrair um item pelo seu ID - ITEM #5 das instruções
             itemById: (controller, id) => controller.getTaskById(id),
@@ -27,16 +34,25 @@ class TaskList extends StatelessWidget {
 
             // Constrói o widget de cada item
             itemBuilder:
-                (context, task) => TaskItem(
-                  task: task,
-                  controller: controller,
-                  onToggleComplete:
-                      () => controller.toggleTaskCompletion(task.id),
-                  onToggleImportant:
-                      () => controller.toggleTaskImportant(task.id),
-                  onTap: () => _showTaskDetails(context, task),
-                  onEdit: () => _showEditTask(context, task),
-                  onDelete: () => _showDeleteConfirmation(context, task),
+                (context, task) => Consumer<ThemeProvider>(
+                  builder: (context, themeProvider, child) {
+                    // Determinar se é visualização de todas as tarefas ou lista específica
+                    final isAllTasksView = controller.selectedListId == null;
+                    final cardStyle =
+                        isAllTasksView
+                            ? themeProvider.allTasksViewCardStyle
+                            : themeProvider.listViewCardStyle;
+
+                    return CardFactory.buildCard(
+                      style: cardStyle,
+                      task: task,
+                      controller: controller,
+                      isSelected: controller.selectedTaskId == task.id,
+                      onTap: () => _showTaskDetails(context, task),
+                      onEdit: () => _showEditTask(context, task),
+                      onDelete: () => _showDeleteConfirmation(context, task),
+                    );
+                  },
                 ),
             // Configurações de layout
             padding: const EdgeInsets.all(16),

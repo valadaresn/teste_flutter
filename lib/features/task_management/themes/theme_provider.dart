@@ -21,6 +21,11 @@ class ThemeProvider extends ChangeNotifier {
   SidebarColorStyle _sidebarColorStyle =
       SidebarColorStyle.samsungLight; // Nova propriedade para cor da sidebar
 
+  // Novas propriedades para estilos de cards por visualização
+  TaskCardStyle _todayViewCardStyle = TaskCardStyle.compact;
+  TaskCardStyle _allTasksViewCardStyle = TaskCardStyle.standard;
+  TaskCardStyle _listViewCardStyle = TaskCardStyle.standard;
+
   AppTheme get currentTheme => _currentTheme;
   ThemeConfig get themeConfig => _themeConfig;
   ListPanelStyle get listPanelStyle => _listPanelStyle; // Novo getter
@@ -35,6 +40,11 @@ class ThemeProvider extends ChangeNotifier {
       _navigationBarColorStyle; // Novo getter para cor da barra de navegação
   SidebarColorStyle get sidebarColorStyle =>
       _sidebarColorStyle; // Novo getter para cor da sidebar
+
+  // Novos getters para estilos de cards por visualização
+  TaskCardStyle get todayViewCardStyle => _todayViewCardStyle;
+  TaskCardStyle get allTasksViewCardStyle => _allTasksViewCardStyle;
+  TaskCardStyle get listViewCardStyle => _listViewCardStyle;
 
   ThemeProvider() {
     _loadTheme();
@@ -64,6 +74,13 @@ class ThemeProvider extends ChangeNotifier {
       final sidebarColorStyleIndex = prefs.getInt(
         'sidebar_color_style',
       ); // Carregar preferência de cor da sidebar
+
+      // Carregar preferências dos novos estilos de cards por visualização
+      final todayViewCardStyleIndex = prefs.getInt('today_view_card_style');
+      final allTasksViewCardStyleIndex = prefs.getInt(
+        'all_tasks_view_card_style',
+      );
+      final listViewCardStyleIndex = prefs.getInt('list_view_card_style');
 
       final theme = AppTheme.values[themeIndex];
       await setTheme(theme, save: false);
@@ -112,6 +129,23 @@ class ThemeProvider extends ChangeNotifier {
         _sidebarColorStyle = SidebarColorStyle.values[sidebarColorStyleIndex];
       }
 
+      // Carregar preferências dos novos estilos de cards por visualização
+      if (todayViewCardStyleIndex != null &&
+          todayViewCardStyleIndex < TaskCardStyle.values.length) {
+        _todayViewCardStyle = TaskCardStyle.values[todayViewCardStyleIndex];
+      }
+
+      if (allTasksViewCardStyleIndex != null &&
+          allTasksViewCardStyleIndex < TaskCardStyle.values.length) {
+        _allTasksViewCardStyle =
+            TaskCardStyle.values[allTasksViewCardStyleIndex];
+      }
+
+      if (listViewCardStyleIndex != null &&
+          listViewCardStyleIndex < TaskCardStyle.values.length) {
+        _listViewCardStyle = TaskCardStyle.values[listViewCardStyleIndex];
+      }
+
       notifyListeners(); // Notificar mudanças após carregar
     } catch (e) {
       // Se der erro, usar tema padrão
@@ -125,6 +159,10 @@ class ThemeProvider extends ChangeNotifier {
       _navigationBarColorStyle =
           NavigationBarColorStyle.systemTheme; // Garantir padrão
       _sidebarColorStyle = SidebarColorStyle.samsungLight; // Garantir padrão
+      // Garantir padrões para os novos estilos de cards
+      _todayViewCardStyle = TaskCardStyle.compact;
+      _allTasksViewCardStyle = TaskCardStyle.standard;
+      _listViewCardStyle = TaskCardStyle.standard;
       notifyListeners(); // Notificar mudanças mesmo em caso de erro
     }
   }
@@ -280,6 +318,46 @@ class ThemeProvider extends ChangeNotifier {
       } catch (e) {
         // Ignorar erro de salvamento
       }
+    }
+
+    notifyListeners();
+  }
+
+  // Novos setters para estilos de cards por visualização
+  Future<void> setTodayViewCardStyle(TaskCardStyle style) async {
+    _todayViewCardStyle = style;
+
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setInt('today_view_card_style', style.index);
+    } catch (e) {
+      // Ignorar erro de salvamento
+    }
+
+    notifyListeners();
+  }
+
+  Future<void> setAllTasksViewCardStyle(TaskCardStyle style) async {
+    _allTasksViewCardStyle = style;
+
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setInt('all_tasks_view_card_style', style.index);
+    } catch (e) {
+      // Ignorar erro de salvamento
+    }
+
+    notifyListeners();
+  }
+
+  Future<void> setListViewCardStyle(TaskCardStyle style) async {
+    _listViewCardStyle = style;
+
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setInt('list_view_card_style', style.index);
+    } catch (e) {
+      // Ignorar erro de salvamento
     }
 
     notifyListeners();

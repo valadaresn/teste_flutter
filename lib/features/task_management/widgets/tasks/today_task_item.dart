@@ -7,7 +7,7 @@ import '../../themes/theme_provider.dart';
 import '../../themes/app_theme.dart';
 import '../../../log_screen/controllers/log_controller.dart';
 import '../../../log_screen/widgets/timer_display.dart';
-import 'task_group/expansible_group.dart';
+import 'expansible_group.dart';
 
 /// **TodayTaskItem** - Item de tarefa para a visualização Hoje
 ///

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../../models/diary_entry.dart';
+import '../../../../../models/diary_entry.dart';
 
 /// **TaskDiaryEntryItem** - Item individual de entrada de diário
 ///

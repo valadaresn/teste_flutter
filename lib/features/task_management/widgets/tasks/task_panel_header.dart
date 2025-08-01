@@ -1,46 +1,48 @@
 import 'package:flutter/material.dart';
 import '../../controllers/task_controller.dart';
 import '../../models/list_model.dart' as Models;
+import '../input/mobile_quick_add_task_input.dart';
 
-/// **TaskPanelHeader** - Cabeçalho da área de tarefas
+/// **TaskPanelHeader** - Header unificado para TaskPanel
 ///
-/// Este componente é responsável por:
-/// - Exibir informações da lista selecionada (nome, emoji, contador)
-/// - Mostrar informações de "Todas as Tarefas" quando nenhuma lista está selecionada
-/// - Fornecer botões de ação (busca, filtros)
-/// - Aplicar estilo visual consistente
-///
-/// **Funcionalidades:**
-/// - Exibição dinâmica baseada na lista selecionada
-/// - Contadores de tarefas pendentes contextual
-/// - Botões de ação integrados
-/// - Design responsivo e acessível
+/// Segue exatamente o mesmo layout limpo do header do TodayView:
+/// - Padding específico (horizontal: 8.0, vertical: 4.0)
+/// - Icon/Emoji + Text com estilo específico
+/// - Material + InkWell + Container para botão FAB
 class TaskPanelHeader extends StatelessWidget {
   final TaskController controller;
   final Models.TaskList? selectedList;
-  final VoidCallback onShowSearch;
-  final VoidCallback onShowFilter;
   final VoidCallback? onToggleSidebar;
+  final String? titleOverride; // Para permitir "Hoje" específico
+  final IconData? iconOverride; // Para contextos especiais como "Hoje"
 
   const TaskPanelHeader({
     Key? key,
     required this.controller,
     required this.selectedList,
-    required this.onShowSearch,
-    required this.onShowFilter,
     this.onToggleSidebar,
+    this.titleOverride,
+    this.iconOverride,
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        border: Border(
-          bottom: BorderSide(color: Theme.of(context).dividerColor, width: 1),
-        ),
-      ),
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isMobile = screenWidth < 600;
+
+    // Determinar título baseado na lista selecionada ou override
+    final String title;
+
+    if (titleOverride != null) {
+      title = titleOverride!;
+    } else if (selectedList != null) {
+      title = selectedList!.name;
+    } else {
+      title = 'Todas as Tarefas';
+    }
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
       child: Row(
         children: [
           // Botão hambúrguer para recolher/expandir sidebar (opcional)
@@ -52,132 +54,73 @@ class TaskPanelHeader extends StatelessWidget {
             ),
           if (onToggleSidebar != null) const SizedBox(width: 8),
 
-          // Informações da lista/contexto
-          ..._buildContextInfo(context),
+          // Ícone ou emoji baseado no contexto
+          if (iconOverride != null)
+            // Usar ícone específico (como para "Hoje")
+            Icon(
+              iconOverride!,
+              size: 20,
+              color: Theme.of(context).colorScheme.primary,
+            )
+          else if (selectedList != null)
+            // Mostrar emoji da lista
+            Text(selectedList!.emoji, style: const TextStyle(fontSize: 20))
+          else
+            // Ícone padrão para "Todas as Tarefas"
+            Icon(
+              Icons.inbox_outlined,
+              size: 20,
+              color: Theme.of(context).colorScheme.primary,
+            ),
 
-          // Espaçamento
-          const SizedBox(width: 16),
-
-          // Botões de ação
-          ..._buildActionButtons(context),
+          const SizedBox(width: 8),
+          Text(
+            title,
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.w600,
+              color: Theme.of(context).colorScheme.primary,
+            ),
+          ),
+          const Spacer(),
+          // FAB para adicionar tarefa - APENAS NO MOBILE
+          if (isMobile)
+            Material(
+              color: Theme.of(context).primaryColor,
+              borderRadius: BorderRadius.circular(16),
+              child: InkWell(
+                onTap: () => _showMobileAddTask(context),
+                borderRadius: BorderRadius.circular(16),
+                child: Container(
+                  padding: const EdgeInsets.all(12),
+                  child: const Icon(Icons.add, color: Colors.white, size: 20),
+                ),
+              ),
+            ),
         ],
       ),
     );
   }
 
-  /// Constrói as informações contextuais (lista selecionada ou todas as tarefas)
-  List<Widget> _buildContextInfo(BuildContext context) {
-    if (selectedList != null) {
-      // Exibir informações da lista selecionada
-      final pendingCount = controller.countPendingTasksInList(selectedList!.id);
-
-      return [
-        // Emoji da lista
-        Text(selectedList!.emoji, style: const TextStyle(fontSize: 24)),
-        const SizedBox(width: 12),
-
-        // Informações da lista
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                selectedList!.name,
-                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              Text(
-                _getPendingTasksText(pendingCount),
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Theme.of(
-                    context,
-                  ).colorScheme.onSurface.withOpacity(0.6),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ];
-    } else {
-      // Exibir informações de "Todas as Tarefas"
-      final totalPendingCount =
-          controller.tasks.where((t) => !t.isCompleted).length;
-
-      return [
-        // Ícone de inbox
-        Icon(
-          Icons.inbox,
-          size: 28,
-          color: Theme.of(context).colorScheme.primary,
-        ),
-        const SizedBox(width: 12),
-
-        // Informações gerais
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Todas as Tarefas',
-                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              Text(
-                _getPendingTasksText(totalPendingCount),
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Theme.of(
-                    context,
-                  ).colorScheme.onSurface.withOpacity(0.6),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ];
-    }
-  }
-
-  /// Constrói os botões de ação do cabeçalho
-  List<Widget> _buildActionButtons(BuildContext context) {
-    return [
-      // Botão de busca
-      IconButton(
-        icon: const Icon(Icons.search),
-        onPressed: onShowSearch,
-        tooltip: 'Buscar tarefas',
-        style: IconButton.styleFrom(
-          backgroundColor: Theme.of(context).colorScheme.surface,
-          foregroundColor: Theme.of(context).colorScheme.onSurface,
-        ),
-      ),
-
-      const SizedBox(width: 8),
-
-      // Botão de filtros
-      IconButton(
-        icon: const Icon(Icons.filter_list),
-        onPressed: onShowFilter,
-        tooltip: 'Filtrar tarefas',
-        style: IconButton.styleFrom(
-          backgroundColor: Theme.of(context).colorScheme.surface,
-          foregroundColor: Theme.of(context).colorScheme.onSurface,
-        ),
-      ),
-    ];
-  }
-
-  /// Gera o texto para contador de tarefas pendentes
-  String _getPendingTasksText(int count) {
-    if (count == 0) {
-      return 'Nenhuma tarefa pendente';
-    } else if (count == 1) {
-      return '1 tarefa pendente';
-    } else {
-      return '$count tarefas pendentes';
+  /// Mostrar modal de adicionar tarefa no mobile
+  void _showMobileAddTask(BuildContext context) {
+    debugPrint('🚀 Tentando abrir modal mobile add task');
+    try {
+      showModalBottomSheet(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: Colors.transparent,
+        builder: (BuildContext context) {
+          debugPrint('🚀 Builder do modal sendo executado');
+          return Padding(
+            padding: EdgeInsets.only(
+              bottom: MediaQuery.of(context).viewInsets.bottom,
+            ),
+            child: MobileQuickAddTaskInput(controller: controller),
+          );
+        },
+      );
+    } catch (e) {
+      debugPrint('🚨 Erro ao abrir modal: $e');
     }
   }
 }
-
-// Arquivo renomeado de task_area_header.dart para task_panel_header.dart para padronização com outros componentes do projeto.

@@ -1,10 +1,10 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
-import '../../../controllers/task_controller.dart';
-import '../../../models/task_model.dart';
-import '../../../../../models/diary_entry.dart';
-import '../../../../../screens/diary_screen/diary_controller.dart';
+import '../../../../controllers/task_controller.dart';
+import '../../../../models/task_model.dart';
+import '../../../../../../models/diary_entry.dart';
+import '../../../../../../screens/diary_screen/diary_controller.dart';
 
 /// **TaskPanelLogic** - Serviço para gerenciar toda a lógica do painel de tarefas
 ///

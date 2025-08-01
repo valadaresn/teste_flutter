@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../../controllers/task_controller.dart';
-import '../../models/task_model.dart';
+import '../../../controllers/task_controller.dart';
+import '../../../models/task_model.dart';
 import 'clean_subtask_item.dart';
 
 /// **TaskSubtasksSection** - Seção completa de subtarefas

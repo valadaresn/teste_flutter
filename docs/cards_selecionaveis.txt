@@ -1,0 +1,308 @@
+# DOCUMENTAÇÃO: CARDS SELECIONÁVEIS POR VISUALIZAÇÃO
+
+## ANÁLISE ATUAL DO PROJETO
+
+### Cards Existentes:
+1. **TaskItem** (Card Detalhado - Imagem 1)
+   - Arquivo: `lib/features/task_management/widgets/tasks/task_item/task_item.dart`
+   - Características: Card mais robusto com informações secundárias, menu de ações
+   - Usado em: "Todas as Tarefas" e visualizações de lista específicas
+
+2. **TodayTaskItem** (Card Compacto - Imagem 2)  
+   - Arquivo: `lib/features/task_management/widgets/tasks/today_task_item.dart`
+   - Características: Card minimalista, foco no essencial
+   - Usado em: Visualização "Hoje" dentro dos ExpansibleGroups
+
+### Como os cards são renderizados atualmente:
+
+#### 1. VISUALIZAÇÃO "HOJE" (TodayView):
+- **Arquivo principal**: `lib/features/task_management/widgets/tasks/views/today_view.dart`
+- **Renderização**: Usa `ExpansibleGroup` que renderiza `TodayTaskItem`
+- **Localização do código de renderização**: 
+  - `lib/features/task_management/widgets/tasks/task_group/expansible_group.dart` (linha 112)
+  - Código específico: `TodayTaskItem(task: task, controller: widget.controller, ...)`
+
+#### 2. VISUALIZAÇÃO "TODAS AS TAREFAS" e LISTAS ESPECÍFICAS:
+- **Arquivo principal**: `lib/features/task_management/widgets/tasks/task_panel.dart`
+- **Renderização**: Usa `TaskList` que renderiza `TaskItem`
+- **Localização do código de renderização**:
+  - `lib/features/task_management/widgets/tasks/task_list.dart` (linha 30)
+  - Código específico: `TaskItem(task: task, controller: controller, ...)`
+
+### Sistema de Temas Atual:
+- **ThemeProvider**: `lib/features/task_management/themes/theme_provider.dart`
+- **Enums existentes**: 
+  - `CardStyle` (dynamic, clean)
+  - `TodayCardStyle` (withEmoji, withColorBorder)
+- **Configurações**: Já existe `_todayCardStyle` mas não há configurações separadas para outras visualizações
+
+## PLANO DE IMPLEMENTAÇÃO
+
+### ETAPA 1: Expandir o Sistema de Temas
+
+#### 1.1 Adicionar novos enums ao app_theme.dart:
+```dart
+// Adicionar ao arquivo: lib/features/task_management/themes/app_theme.dart
+
+enum TaskCardStyle {
+  standard,  // TaskItem - card detalhado
+  compact,   // TodayTaskItem - card minimalista
+}
+
+enum ViewType {
+  today,     // Visualização Hoje
+  allTasks,  // Todas as Tarefas
+  list,      // Lista específica
+}
+```
+
+#### 1.2 Expandir ThemeProvider:
+```dart
+// Adicionar ao arquivo: lib/features/task_management/themes/theme_provider.dart
+
+class ThemeProvider extends ChangeNotifier {
+  // Novas propriedades para estilos por visualização
+  TaskCardStyle _todayViewCardStyle = TaskCardStyle.compact;
+  TaskCardStyle _allTasksViewCardStyle = TaskCardStyle.standard;
+  TaskCardStyle _listViewCardStyle = TaskCardStyle.standard;
+  
+  // Getters
+  TaskCardStyle get todayViewCardStyle => _todayViewCardStyle;
+  TaskCardStyle get allTasksViewCardStyle => _allTasksViewCardStyle;
+  TaskCardStyle get listViewCardStyle => _listViewCardStyle;
+  
+  // Setters com persistência
+  Future<void> setTodayViewCardStyle(TaskCardStyle style) async {
+    _todayViewCardStyle = style;
+    notifyListeners();
+    await _saveSettings();
+  }
+  
+  Future<void> setAllTasksViewCardStyle(TaskCardStyle style) async {
+    _allTasksViewCardStyle = style;
+    notifyListeners();
+    await _saveSettings();
+  }
+  
+  Future<void> setListViewCardStyle(TaskCardStyle style) async {
+    _listViewCardStyle = style;
+    notifyListeners();
+    await _saveSettings();
+  }
+}
+```
+
+### ETAPA 2: Criar Fábrica de Cards
+
+#### 2.1 Criar CardFactory:
+```dart
+// Novo arquivo: lib/features/task_management/widgets/tasks/card_factory.dart
+
+import 'package:flutter/material.dart';
+import 'task_item/task_item.dart';
+import 'today_task_item.dart';
+import '../../models/task_model.dart';
+import '../../controllers/task_controller.dart';
+import '../../themes/app_theme.dart';
+
+class CardFactory {
+  static Widget buildCard({
+    required TaskCardStyle style,
+    required Task task,
+    required TaskController controller,
+    bool isSelected = false,
+    TaskGroupType? groupType,
+  }) {
+    switch (style) {
+      case TaskCardStyle.compact:
+        return TodayTaskItem(
+          task: task,
+          controller: controller,
+          groupType: groupType,
+          isSelected: isSelected,
+        );
+      case TaskCardStyle.standard:
+      default:
+        return TaskItem(
+          task: task,
+          controller: controller,
+          onToggleComplete: () => controller.toggleTaskCompletion(task.id),
+          onToggleImportant: () => controller.toggleTaskImportant(task.id),
+          onTap: () => controller.selectTask(task.id),
+          onEdit: () {}, // Implementar conforme necessário
+          onDelete: () {}, // Implementar conforme necessário
+        );
+    }
+  }
+}
+```
+
+### ETAPA 3: Modificar os Componentes de Renderização
+
+#### 3.1 Modificar ExpansibleGroup (Para visualização Hoje):
+```dart
+// Arquivo: lib/features/task_management/widgets/tasks/task_group/expansible_group.dart
+// Linha ~112, substituir:
+
+// ANTES:
+TodayTaskItem(
+  task: task,
+  controller: widget.controller,
+  groupType: widget.taskType,
+  isSelected: widget.controller.selectedTaskId == task.id,
+),
+
+// DEPOIS:
+Consumer<ThemeProvider>(
+  builder: (context, themeProvider, child) {
+    return CardFactory.buildCard(
+      style: themeProvider.todayViewCardStyle,
+      task: task,
+      controller: widget.controller,
+      isSelected: widget.controller.selectedTaskId == task.id,
+      groupType: widget.taskType,
+    );
+  },
+),
+```
+
+#### 3.2 Modificar TaskList (Para Todas as Tarefas e Listas):
+```dart
+// Arquivo: lib/features/task_management/widgets/tasks/task_list.dart
+// Linha ~30, substituir:
+
+// ANTES:
+itemBuilder: (context, task) => TaskItem(
+  task: task,
+  controller: controller,
+  onToggleComplete: () => controller.toggleTaskCompletion(task.id),
+  onToggleImportant: () => controller.toggleTaskImportant(task.id),
+  onTap: () => _showTaskDetails(context, task),
+  onEdit: () => _showEditTask(context, task),
+  onDelete: () => _showDeleteConfirmation(context, task),
+),
+
+// DEPOIS:
+itemBuilder: (context, task) => Consumer<ThemeProvider>(
+  builder: (context, themeProvider, child) {
+    // Determinar se é visualização de todas as tarefas ou lista específica
+    final isAllTasksView = controller.selectedListId == null;
+    final cardStyle = isAllTasksView 
+        ? themeProvider.allTasksViewCardStyle 
+        : themeProvider.listViewCardStyle;
+    
+    return CardFactory.buildCard(
+      style: cardStyle,
+      task: task,
+      controller: controller,
+      isSelected: controller.selectedTaskId == task.id,
+    );
+  },
+),
+```
+
+### ETAPA 4: Interface de Configuração
+
+#### 4.1 Adicionar seletores na tela de configurações:
+```dart
+// Arquivo: lib/features/task_management/widgets/settings/settings_screen.dart
+// Adicionar novos métodos e widgets:
+
+Widget _buildCardStyleSelector({
+  required String title,
+  required String description,
+  required TaskCardStyle currentStyle,
+  required Function(TaskCardStyle) onChanged,
+}) {
+  return Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Text(title, style: TextStyle(fontWeight: FontWeight.bold)),
+      Text(description, style: TextStyle(color: Colors.grey[600], fontSize: 12)),
+      const SizedBox(height: 8),
+      Row(
+        children: [
+          _buildCardStyleOption(
+            'Padrão', 
+            'Card detalhado com mais informações',
+            TaskCardStyle.standard, 
+            currentStyle, 
+            onChanged
+          ),
+          const SizedBox(width: 12),
+          _buildCardStyleOption(
+            'Compacto', 
+            'Card minimalista e limpo',
+            TaskCardStyle.compact, 
+            currentStyle, 
+            onChanged
+          ),
+        ],
+      ),
+    ],
+  );
+}
+
+// Adicionar na seção de configurações:
+_buildCardStyleSelector(
+  title: 'Cards na visualização "Hoje"',
+  description: 'Escolha o estilo dos cards na guia Hoje',
+  currentStyle: themeProvider.todayViewCardStyle,
+  onChanged: (style) => themeProvider.setTodayViewCardStyle(style),
+),
+
+_buildCardStyleSelector(
+  title: 'Cards em "Todas as Tarefas"',
+  description: 'Escolha o estilo dos cards na visualização geral',
+  currentStyle: themeProvider.allTasksViewCardStyle,
+  onChanged: (style) => themeProvider.setAllTasksViewCardStyle(style),
+),
+
+_buildCardStyleSelector(
+  title: 'Cards em listas específicas',
+  description: 'Escolha o estilo dos cards ao visualizar uma lista',
+  currentStyle: themeProvider.listViewCardStyle,
+  onChanged: (style) => themeProvider.setListViewCardStyle(style),
+),
+```
+
+### ETAPA 5: Persistência de Dados
+
+#### 5.1 Atualizar métodos de save/load no ThemeProvider:
+```dart
+// No método _loadTheme():
+final todayCardStyleIndex = prefs.getInt('today_card_style') ?? TaskCardStyle.compact.index;
+final allTasksCardStyleIndex = prefs.getInt('all_tasks_card_style') ?? TaskCardStyle.standard.index;
+final listCardStyleIndex = prefs.getInt('list_card_style') ?? TaskCardStyle.standard.index;
+
+_todayViewCardStyle = TaskCardStyle.values[todayCardStyleIndex];
+_allTasksViewCardStyle = TaskCardStyle.values[allTasksCardStyleIndex];
+_listViewCardStyle = TaskCardStyle.values[listCardStyleIndex];
+
+// No método _saveSettings():
+await prefs.setInt('today_card_style', _todayViewCardStyle.index);
+await prefs.setInt('all_tasks_card_style', _allTasksViewCardStyle.index);
+await prefs.setInt('list_card_style', _listViewCardStyle.index);
+```
+
+## RESUMO DOS ARQUIVOS A MODIFICAR:
+
+1. **app_theme.dart** - Adicionar enum TaskCardStyle
+2. **theme_provider.dart** - Adicionar propriedades e métodos para estilos por visualização
+3. **card_factory.dart** - CRIAR novo arquivo para fábrica de cards
+4. **expansible_group.dart** - Modificar renderização para usar CardFactory
+5. **task_list.dart** - Modificar renderização para usar CardFactory
+6. **settings_screen.dart** - Adicionar interface de configuração
+
+## VANTAGENS DESTA ABORDAGEM:
+
+1. **Flexibilidade**: Usuário pode escolher estilo independentemente para cada visualização
+2. **Manutenibilidade**: Código centralizado na CardFactory
+3. **Extensibilidade**: Fácil adicionar novos estilos no futuro
+4. **Consistência**: Usa o sistema de temas já existente
+5. **Performance**: Usa Consumer do Provider para rebuilds otimizados
+
+## COMPLEXIDADE: BAIXA-MÉDIA
+- Tempo estimado: 1-2 dias
+- Risco: Baixo (não quebra funcionalidades existentes)
+- Benefício: Alto (melhora significativa na experiência do usuário)

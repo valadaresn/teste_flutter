@@ -1,0 +1,677 @@
+# PLANO DE IMPLEMENTAÇÃO: Sistema de Views Filtráveis (Abordagem CORRETA)
+
+## 🎯 OBJETIVO FINAL
+Criar um sistema elegante onde **StandardTaskView** serve como base reutilizável para todas as views, com filtros externos aplicados dinamicamente.
+
+## 🏗️ ARQUITETURA CORRETA
+
+### **StandardTaskView = Base Universal**
+- Header padrão (título, estatísticas, botões)
+- Layout customizável OU layout padrão (lista simples)
+- Footer padrão (QuickAddTaskInput)
+- Recebe filtro externo + layout customizado opcional
+
+### **Views/Filtros Específicos:**
+- **TodayView** = arquivo próprio → StandardTaskView + TodayFilter + layout customizado (ExpansibleGroups)
+- **"All Tasks"** = função inline → StandardTaskView + AllTasksFilter + layout padrão (SEM arquivo próprio)
+- **"Lista X"** = função inline → StandardTaskView + ListFilter("x") + layout padrão (SEM arquivo próprio)
+
+**IMPORTANTE:** Apenas TodayView terá arquivo próprio! Os outros são apenas filtros aplicados à StandardTaskView.
+
+---
+
+## 📋 ETAPAS DE IMPLEMENTAÇÃO
+
+### ETAPA 1: CRIAR SISTEMA DE FILTROS BÁSICOS
+**Objetivo:** Implementar filtros básicos externos (sem composição ainda)
+
+**Arquivos a criar:**
+- `lib/features/task_management/filters/task_filter.dart` - Interface base
+- `lib/features/task_management/filters/basic_filters.dart` - Filtros básicos
+
+**Tarefas:**
+1. **Criar TaskFilter abstrato**
+   ```dart
+   abstract class TaskFilter {
+     String get name;           // Nome para UI (ex: "Todas as Tarefas", "Hoje", "Matemática")
+     String get description;    // Descrição detalhada para estado vazio
+     IconData get icon;         // Ícone representativo
+     Color get color;           // Cor do filtro para UI
+     
+     // Método principal: decide se tarefa passa no filtro
+     bool matches(Task task, TaskController controller);
+     
+     // Para serialização futura (filtros compostos)
+     Map<String, dynamic> toJson();
+     static TaskFilter fromJson(Map<String, dynamic> json);
+   }
+   ```
+
+2. **Implementar filtros básicos essenciais**
+   ```dart
+   // Filtro para mostrar todas as tarefas
+   class AllTasksFilter extends TaskFilter {
+     @override
+     String get name => 'Todas as Tarefas';
+     
+     @override
+     String get description => 'Todas as suas tarefas em um só lugar';
+     
+     @override
+     IconData get icon => Icons.list_alt;
+     
+     @override
+     Color get color => Colors.blue;
+     
+     @override
+     bool matches(Task task, TaskController controller) => true;
+   }
+   
+   // Filtro para tarefas de hoje + atrasadas (igual TodayView atual)
+   class TodayFilter extends TaskFilter {
+     @override
+     String get name => 'Hoje';
+     
+     @override
+     String get description => 'Tarefas para hoje e atrasadas';
+     
+     @override
+     IconData get icon => Icons.today_outlined;
+     
+     @override
+     Color get color => Colors.orange;
+     
+     @override
+     bool matches(Task task, TaskController controller) {
+       return task.isToday || task.isOverdue;
+     }
+   }
+   
+   // Filtro para lista específica
+   class ListFilter extends TaskFilter {
+     final String listId;
+     final String listName;
+     final Color? listColor;
+     
+     const ListFilter(this.listId, this.listName, [this.listColor]);
+     
+     @override
+     String get name => listName;
+     
+     @override
+     String get description => 'Tarefas da lista $listName';
+     
+     @override
+     IconData get icon => Icons.list;
+     
+     @override
+     Color get color => listColor ?? Colors.purple;
+     
+     @override
+     bool matches(Task task, TaskController controller) {
+       return task.listId == listId;
+     }
+   }
+   ```
+
+**Resultado esperado:** Filtros básicos funcionando e testáveis externamente
+
+---
+
+### ETAPA 2: IMPLEMENTAR STANDARDTASKVIEW
+**Objetivo:** Criar a view universal reutilizável com layout customizável
+
+**Arquivos a criar:**
+- `lib/features/task_management/widgets/tasks/views/standard_task_view.dart` - View universal
+- `lib/features/task_management/widgets/tasks/components/task_header.dart` - Header reutilizável
+- `lib/features/task_management/widgets/tasks/components/task_stats.dart` - Estatísticas
+
+**Tarefas:**
+1. **Implementar StandardTaskView (BASE UNIVERSAL)**
+   ```dart
+   class StandardTaskView extends StatelessWidget {
+     final TaskController controller;
+     final TaskFilter filter;                                    // FILTRO EXTERNO
+     final TaskCardStyle cardStyle;                              // Estilo vem de fora
+     final Widget Function(List<Task>, TaskController)? customLayout;  // Layout customizado opcional
+     final VoidCallback? onToggleSidebar;
+     final bool showQuickAdd;
+     
+     const StandardTaskView({
+       Key? key,
+       required this.controller,
+       required this.filter,                   // OBRIGATÓRIO: filtro externo
+       required this.cardStyle,                // OBRIGATÓRIO: estilo externo
+       this.customLayout,                      // OPCIONAL: layout customizado
+       this.onToggleSidebar,
+       this.showQuickAdd = true,
+     }) : super(key: key);
+     
+     @override
+     Widget build(BuildContext context) {
+       return Consumer<ThemeProvider>(
+         builder: (context, themeProvider, child) {
+           // 🔍 APLICAR FILTRO ÀS TAREFAS
+           final filteredTasks = controller.tasks
+             .where((task) => filter.matches(task, controller))
+             .toList();
+           
+           return Container(
+             color: themeProvider.getBackgroundColor(
+               context,
+               listColor: filter.color,
+             ),
+             child: Column(
+               children: [
+                 // 📋 HEADER PADRÃO REUTILIZÁVEL
+                 TaskHeader(
+                   title: filter.name,        // Título vem do filtro
+                   tasks: filteredTasks,
+                   color: filter.color,       // Cor vem do filtro
+                   onToggleSidebar: onToggleSidebar,
+                 ),
+                 
+                 // 🎨 LAYOUT CUSTOMIZADO OU LAYOUT PADRÃO
+                 Expanded(
+                   child: customLayout != null
+                     ? customLayout!(filteredTasks, controller)  // Layout específico (TodayView)
+                     : _buildStandardList(context, filteredTasks), // Layout padrão (AllTasks/Lists)
+                 ),
+                 
+                 // ➕ QUICKADD PADRÃO (se habilitado)
+                 if (showQuickAdd) _buildQuickAddInput(context),
+               ],
+             ),
+           );
+         },
+       );
+     }
+     
+     // 📄 LAYOUT PADRÃO: lista simples sem agrupamento
+     Widget _buildStandardList(BuildContext context, List<Task> tasks) {
+       if (tasks.isEmpty) {
+         return _buildEmptyState(context);
+       }
+       
+       return ListView.builder(
+         padding: EdgeInsets.all(8),
+         itemCount: tasks.length,
+         itemBuilder: (context, index) => CardFactory.buildCard(
+           style: cardStyle,                    // Estilo vem de fora
+           task: tasks[index],
+           controller: controller,
+           isSelected: controller.selectedTaskId == tasks[index].id,
+           onTap: () => controller.selectTask(tasks[index].id),
+           onEdit: () => _showEditTask(context, tasks[index]),
+           onDelete: () => _showDeleteConfirmation(context, tasks[index]),
+         ),
+       );
+     }
+     
+     Widget _buildEmptyState(BuildContext context) {
+       return Center(
+         child: Column(
+           mainAxisAlignment: MainAxisAlignment.center,
+           children: [
+             Icon(
+               filter.icon,                     // Ícone vem do filtro
+               size: 48,
+               color: Theme.of(context).colorScheme.primary.withOpacity(0.6),
+             ),
+             SizedBox(height: 16),
+             Text(
+               'Nenhuma tarefa encontrada',
+               style: Theme.of(context).textTheme.titleMedium,
+             ),
+             SizedBox(height: 8),
+             Text(
+               filter.description,             // Descrição vem do filtro
+               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                 color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+               ),
+               textAlign: TextAlign.center,
+             ),
+           ],
+         ),
+       );
+     }
+     
+     Widget _buildQuickAddInput(BuildContext context) {
+       // Mesmo QuickAddTaskInput atual, mas respeitando o filtro
+       // Se é ListFilter, adiciona na lista específica
+       // Se é outro filtro, adiciona sem lista específica
+       return QuickAddTaskInput(
+         controller: controller,
+         defaultListId: filter is ListFilter ? (filter as ListFilter).listId : null,
+       );
+     }
+   }
+   ```
+
+2. **TaskHeader reutilizável (mesmo para todas as views)**
+   ```dart
+   class TaskHeader extends StatelessWidget {
+     final String title;
+     final List<Task> tasks;
+     final Color? color;
+     final VoidCallback? onToggleSidebar;
+     
+     const TaskHeader({
+       Key? key,
+       required this.title,
+       required this.tasks,
+       this.color,
+       this.onToggleSidebar,
+     }) : super(key: key);
+     
+     @override
+     Widget build(BuildContext context) {
+       final totalTasks = tasks.length;
+       final completedTasks = tasks.where((t) => t.isCompleted).length;
+       final pendingTasks = totalTasks - completedTasks;
+       
+       return Container(
+         padding: EdgeInsets.all(16),
+         decoration: BoxDecoration(
+           color: Theme.of(context).colorScheme.surface,
+           border: Border(
+             bottom: BorderSide(
+               color: Theme.of(context).dividerColor,
+               width: 1,
+             ),
+           ),
+         ),
+         child: Column(
+           crossAxisAlignment: CrossAxisAlignment.start,
+           children: [
+             // Título e botões
+             Row(
+               children: [
+                 if (onToggleSidebar != null)
+                   IconButton(
+                     icon: Icon(Icons.menu),
+                     onPressed: onToggleSidebar,
+                   ),
+                 Expanded(
+                   child: Text(
+                     title,
+                     style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                       fontWeight: FontWeight.bold,
+                       color: color ?? Theme.of(context).colorScheme.onSurface,
+                     ),
+                   ),
+                 ),
+                 IconButton(
+                   icon: Icon(Icons.search_outlined),
+                   onPressed: () {}, // TODO: implementar busca
+                 ),
+                 IconButton(
+                   icon: Icon(Icons.filter_list_outlined),
+                   onPressed: () {}, // TODO: implementar seletor de filtros (ETAPA FUTURA)
+                 ),
+               ],
+             ),
+             
+             SizedBox(height: 12),
+             
+             // Estatísticas
+             TaskStats(
+               totalTasks: totalTasks,
+               completedTasks: completedTasks,
+               pendingTasks: pendingTasks,
+               color: color,
+             ),
+           ],
+         ),
+       );
+     }
+   }
+   ```
+
+3. **TaskStats (estatísticas padronizadas)**
+   ```dart
+   class TaskStats extends StatelessWidget {
+     final int totalTasks;
+     final int completedTasks;
+     final int pendingTasks;
+     final Color? color;
+     
+     const TaskStats({
+       Key? key,
+       required this.totalTasks,
+       required this.completedTasks,
+       required this.pendingTasks,
+       this.color,
+     }) : super(key: key);
+     
+     @override
+     Widget build(BuildContext context) {
+       return Row(
+         children: [
+           _buildStatChip(
+             context,
+             'Total',
+             totalTasks.toString(),
+             Icons.task_alt,
+             color ?? Theme.of(context).colorScheme.primary,
+           ),
+           SizedBox(width: 8),
+           _buildStatChip(
+             context,
+             'Pendentes',
+             pendingTasks.toString(),
+             Icons.pending_outlined,
+             Colors.orange,
+           ),
+           SizedBox(width: 8),
+           _buildStatChip(
+             context,
+             'Concluídas',
+             completedTasks.toString(),
+             Icons.check_circle_outline,
+             Colors.green,
+           ),
+         ],
+       );
+     }
+     
+     Widget _buildStatChip(BuildContext context, String label, String value,
+         IconData icon, Color color) {
+       return Container(
+         padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+         decoration: BoxDecoration(
+           color: color.withOpacity(0.1),
+           borderRadius: BorderRadius.circular(16),
+           border: Border.all(color: color.withOpacity(0.3)),
+         ),
+         child: Row(
+           mainAxisSize: MainAxisSize.min,
+           children: [
+             Icon(icon, size: 16, color: color),
+             SizedBox(width: 6),
+             Text(value, style: TextStyle(color: color, fontWeight: FontWeight.bold)),
+             SizedBox(width: 4),
+             Text(label, style: TextStyle(color: color, fontSize: 12)),
+           ],
+         ),
+       );
+     }
+   }
+   ```
+
+**Resultado esperado:** StandardTaskView funcionando como base universal
+
+---
+
+### ETAPA 3: REFATORAR VIEWS EXISTENTES
+**Objetivo:** Usar StandardTaskView para todas as situações
+
+**Arquivos a modificar:**
+- `lib/features/task_management/widgets/tasks/views/today_view.dart` - Usar StandardTaskView
+- `lib/features/task_management/screens/task_management_screen.dart` - Criar funções inline
+
+**Tarefas:**
+1. **Refatorar TodayView (ÚNICO ARQUIVO DE VIEW)**
+   ```dart
+   class TodayView extends StatelessWidget {
+     final TaskController controller;
+     final VoidCallback? onToggleSidebar;
+
+     const TodayView({
+       Key? key,
+       required this.controller,
+       this.onToggleSidebar,
+     }) : super(key: key);
+
+     @override
+     Widget build(BuildContext context) {
+       return Consumer<ThemeProvider>(
+         builder: (context, themeProvider, child) {
+           return StandardTaskView(
+             controller: controller,
+             filter: TodayFilter(),                              // Filtro específico
+             cardStyle: themeProvider.todayViewCardStyle,        // Estilo específico
+             onToggleSidebar: onToggleSidebar,
+             customLayout: _buildTodayGroupedLayout,             // Layout customizado!
+           );
+         },
+       );
+     }
+
+     // 🎨 LAYOUT ESPECÍFICO COM AGRUPAMENTOS (igual ao atual)
+     Widget _buildTodayGroupedLayout(List<Task> tasks, TaskController controller) {
+       final context = this.context;
+       final screenWidth = MediaQuery.of(context).size.width;
+       final isCompactScreen = screenWidth < 400;
+       final isMobile = screenWidth < 600;
+
+       // Agrupar tarefas (mesmo código atual)
+       final todayTasks = tasks.where((t) => t.isToday && !t.isCompleted).toList();
+       final overdueTasks = tasks.where((t) => t.isOverdue && !t.isCompleted).toList();
+       final completedTasks = tasks.where((t) => t.isCompleted).toList();
+
+       if (todayTasks.isEmpty && overdueTasks.isEmpty) {
+         // StandardTaskView já cuida do estado vazio, mas pode personalizar aqui
+         return null; // Usa o estado vazio padrão
+       }
+
+       return SingleChildScrollView(
+         padding: EdgeInsets.all(8),
+         child: Column(
+           children: [
+             // Grupos expansíveis (mesmo código atual)
+             if (overdueTasks.isNotEmpty)
+               ExpansibleGroup(
+                 title: 'Atrasado',
+                 icon: Icons.warning_outlined,
+                 controller: controller,
+                 taskType: TaskGroupType.overdue,
+                 iconColor: Colors.red.shade600,
+               ),
+
+             if (todayTasks.isNotEmpty)
+               ExpansibleGroup(
+                 title: 'Hoje',
+                 icon: Icons.today_outlined,
+                 controller: controller,
+                 taskType: TaskGroupType.today,
+                 iconColor: Theme.of(context).colorScheme.primary,
+               ),
+
+             if (completedTasks.isNotEmpty)
+               ExpansibleGroup(
+                 title: 'Concluído',
+                 icon: Icons.check_circle_outline,
+                 controller: controller,
+                 taskType: TaskGroupType.completed,
+                 iconColor: Colors.green.shade600,
+               ),
+           ],
+         ),
+       );
+     }
+   }
+   ```
+
+2. **Criar funções inline para "All Tasks" e "Lista X" (SEM ARQUIVOS PRÓPRIOS)**
+   ```dart
+   // 📄 Em task_management_screen.dart ou arquivo helper
+
+   // 🌐 FUNÇÃO INLINE: "All Tasks" (SEM ARQUIVO PRÓPRIO!)
+   Widget buildAllTasksView(TaskController controller, VoidCallback? onToggleSidebar) {
+     return Consumer<ThemeProvider>(
+       builder: (context, themeProvider, child) {
+         return StandardTaskView(
+           controller: controller,
+           filter: AllTasksFilter(),                             // Filtro específico
+           cardStyle: themeProvider.allTasksViewCardStyle,       // Estilo específico
+           onToggleSidebar: onToggleSidebar,
+           // customLayout: null → usa layout padrão (lista simples)
+         );
+       },
+     );
+   }
+
+   // 📝 FUNÇÃO INLINE: "Lista X" (SEM ARQUIVO PRÓPRIO!)
+   Widget buildListTasksView(
+     TaskController controller,
+     String listId,
+     VoidCallback? onToggleSidebar,
+   ) {
+     final list = controller.getListById(listId);
+     
+     return Consumer<ThemeProvider>(
+       builder: (context, themeProvider, child) {
+         return StandardTaskView(
+           controller: controller,
+           filter: ListFilter(listId, list?.name ?? 'Lista', list?.color), // Filtro específico
+           cardStyle: themeProvider.listViewCardStyle,            // Estilo específico
+           onToggleSidebar: onToggleSidebar,
+           // customLayout: null → usa layout padrão (lista simples)
+         );
+       },
+     );
+   }
+   ```
+
+3. **Atualizar task_management_screen.dart (LÓGICA PRINCIPAL)**
+   ```dart
+   // 🎯 LÓGICA PRINCIPAL SIMPLIFICADA
+   Widget _buildMainContent(TaskController controller, LayoutType layoutType) {
+     final onToggleSidebar = layoutType == LayoutType.desktop ? _toggleSidebar : null;
+     
+     // 📅 TodayView (arquivo próprio)
+     if (controller.showTodayView) {
+       return TodayView(
+         controller: controller,
+         onToggleSidebar: onToggleSidebar,
+       );
+     }
+     
+     // 🎯 Activities View (mantém como está)
+     if (controller.showActivitiesView) {
+       return _buildActivitiesPanel(context, controller);
+     }
+     
+     // 📝 Lista específica (função inline)
+     if (controller.selectedListId != null) {
+       return buildListTasksView(
+         controller,
+         controller.selectedListId!,
+         onToggleSidebar,
+       );
+     } 
+     
+     // 🌐 "All Tasks" (função inline - PADRÃO)
+     else {
+       return buildAllTasksView(
+         controller,
+         onToggleSidebar,
+       );
+     }
+   }
+   ```
+
+**Resultado esperado:** Todas as views usando StandardTaskView como base, mas apenas TodayView tem arquivo próprio
+
+---
+
+## 🧪 CRITÉRIOS DE SUCESSO
+
+### Funcionalidades obrigatórias:
+- ✅ **TodayView**: Mantém agrupamentos (Atrasado/Hoje/Concluído) + arquivo próprio
+- ✅ **"All Tasks"**: Lista simples via função inline (SEM arquivo)
+- ✅ **"Lista X"**: Lista simples via função inline (SEM arquivo)
+- ✅ **Header**: Consistente em todas as views (título, estatísticas, botões)
+- ✅ **CardStyle**: Específico por view via ThemeProvider
+- ✅ **Layout responsivo**: Mobile/tablet/desktop
+- ✅ **QuickAdd**: Padrão em todas as views
+
+### Casos de teste:
+1. **TodayView**: Verificar agrupamentos funcionando com StandardTaskView
+2. **"All Tasks"**: Verificar lista simples com AllTasksFilter
+3. **"Lista X"**: Verificar filtro por lista específica
+4. **Navegação**: Alternar entre views sem problemas
+5. **Responsividade**: Testar em diferentes tamanhos de tela
+
+### Compatibilidade mantida:
+- ✅ Sistema de temas existente
+- ✅ Configurações de estilo de cards por view
+- ✅ CardFactory e componentes existentes  
+- ✅ Sistema de navegação atual
+- ✅ ExpansibleGroup para TodayView
+
+---
+
+## 📝 VANTAGENS DA ABORDAGEM CORRETA
+
+### ✅ **Código Limpo**
+- **StandardTaskView**: ~150 linhas (base universal)
+- **TodayView**: ~80 linhas (só layout customizado)
+- **"All Tasks"**: ~15 linhas (função inline)
+- **"Lista X"**: ~20 linhas (função inline)
+
+### ✅ **Arquitetura Sólida**
+- Views são apenas filtros aplicados à StandardTaskView
+- Apenas TodayView precisa de arquivo próprio (layout especial)
+- Filtros externos = fácil testar e reutilizar
+
+### ✅ **Flexibilidade**
+- Views simples: filtro + layout padrão
+- Views complexas: filtro + layout customizado  
+- Fácil adicionar novas views
+
+### ✅ **Consistência Total**
+- Header sempre igual
+- Footer sempre igual
+- Estatísticas sempre iguais
+- Só o layout do meio muda quando necessário
+
+---
+
+## 🔮 ETAPA FUTURA: FILTROS COMPOSTOS
+
+### **Base Sólida para Evolução:**
+A arquitetura atual já está preparada para filtros compostos:
+
+```dart
+// 🚀 FUTURA EVOLUÇÃO: FILTROS DINÂMICOS
+StandardTaskView(
+  filter: CompositeFilter([
+    TodayFilter(),
+    ListFilter("math-id", "Matemática"),
+    TagFilter("urgente"),
+  ]),
+  cardStyle: // Resolução inteligente automática
+)
+```
+
+### **Componentes Futuros:**
+- **CompositeFilter**: Para combinar múltiplos filtros
+- **FilterBuilder**: Para montagem dinâmica 
+- **FilterSelectorSheet**: Interface de seleção
+- **Resolução automática**: CardStyle, título, ícone baseado nos filtros ativos
+
+### **Vantagens da Base Atual:**
+- ✅ **StandardTaskView** já recebe qualquer TaskFilter
+- ✅ **Interface TaskFilter** já está preparada
+- ✅ **Sistema de cores/ícones** já está estruturado
+- ✅ **Layout customizado** já funciona condicionalmente
+
+---
+
+## 🎯 IMPLEMENTAÇÃO RECOMENDADA
+
+**FAZER AGORA (Etapas 1-3):**
+1. Criar TaskFilter e filtros básicos
+2. Implementar StandardTaskView
+3. Refatorar TodayView + criar funções inline
+
+**FAZER DEPOIS (Etapa Futura):**
+4. CompositeFilter + FilterBuilder
+5. Interface de seleção dinâmica
+6. Views avançadas (Week, Project, etc.)
+
+---
+
+**LEMBRETE:** Apenas **TodayView** terá arquivo próprio! Todos os outros são funções inline usando StandardTaskView + filtro específico.

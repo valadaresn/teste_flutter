@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../../models/task_model.dart';
-import '../../../../models/diary_entry.dart';
+import '../../../models/task_model.dart';
+import '../../../../../models/diary_entry.dart';
 import 'task_diary_entry_form.dart';
 import 'task_diary_entry_item.dart';
 

@@ -32,6 +32,9 @@ class SettingsScreen extends StatelessWidget {
               _buildSectionHeader(context, 'Estilo de Tarefas'),
               _buildCardStyleSelector(context, themeProvider),
               const SizedBox(height: 24),
+              _buildSectionHeader(context, 'Estilo dos Cards por Visualização'),
+              _buildTaskCardStyleSelector(context, themeProvider),
+              const SizedBox(height: 24),
               _buildSectionHeader(context, 'Tema do Painel Lateral'),
               _buildSidebarThemeSelector(context, themeProvider),
               const SizedBox(height: 24),
@@ -344,6 +347,223 @@ class SettingsScreen extends StatelessWidget {
                 )
                 : const Icon(Icons.radio_button_unchecked),
         onTap: () => themeProvider.setCardStyle(style),
+      ),
+    );
+  }
+
+  // Seletor de estilo de cards por tipo de visualização
+  Widget _buildTaskCardStyleSelector(
+    BuildContext context,
+    ThemeProvider themeProvider,
+  ) {
+    return Column(
+      children: [
+        // Today View Card Style
+        _buildViewCardStyleOption(
+          context,
+          themeProvider,
+          'Visualização Hoje',
+          'Escolha entre card detalhado ou compacto para a tela Hoje',
+          Icons.today,
+          themeProvider.todayViewCardStyle,
+          (style) => themeProvider.setTodayViewCardStyle(style),
+        ),
+        const SizedBox(height: 8),
+
+        // All Tasks View Card Style
+        _buildViewCardStyleOption(
+          context,
+          themeProvider,
+          'Todas as Tarefas',
+          'Escolha entre card detalhado ou compacto para a tela Todas as Tarefas',
+          Icons.task_alt,
+          themeProvider.allTasksViewCardStyle,
+          (style) => themeProvider.setAllTasksViewCardStyle(style),
+        ),
+        const SizedBox(height: 8),
+
+        // List View Card Style
+        _buildViewCardStyleOption(
+          context,
+          themeProvider,
+          'Listas Específicas',
+          'Escolha entre card detalhado ou compacto para as telas de listas específicas',
+          Icons.list,
+          themeProvider.listViewCardStyle,
+          (style) => themeProvider.setListViewCardStyle(style),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildViewCardStyleOption(
+    BuildContext context,
+    ThemeProvider themeProvider,
+    String viewTitle,
+    String description,
+    IconData icon,
+    TaskCardStyle currentStyle,
+    Function(TaskCardStyle) onStyleChanged,
+  ) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Theme.of(context).dividerColor, width: 1),
+        color: Theme.of(context).colorScheme.surface,
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  icon,
+                  color: Theme.of(context).colorScheme.primary,
+                  size: 24,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        viewTitle,
+                        style: Theme.of(
+                          context,
+                        ).textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ),
+                      ),
+                      Text(
+                        description,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.onSurface.withOpacity(0.7),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: _buildCardStyleRadioOption(
+                    context,
+                    'Detalhado',
+                    'Card completo com todas as informações',
+                    Icons.view_agenda,
+                    TaskCardStyle.standard,
+                    currentStyle,
+                    onStyleChanged,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _buildCardStyleRadioOption(
+                    context,
+                    'Compacto',
+                    'Card minimalista e limpo',
+                    Icons.view_headline,
+                    TaskCardStyle.compact,
+                    currentStyle,
+                    onStyleChanged,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCardStyleRadioOption(
+    BuildContext context,
+    String title,
+    String description,
+    IconData icon,
+    TaskCardStyle style,
+    TaskCardStyle currentStyle,
+    Function(TaskCardStyle) onStyleChanged,
+  ) {
+    final isSelected = currentStyle == style;
+
+    return InkWell(
+      onTap: () => onStyleChanged(style),
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color:
+                isSelected
+                    ? Theme.of(context).colorScheme.primary
+                    : Theme.of(context).dividerColor,
+            width: isSelected ? 2 : 1,
+          ),
+          color:
+              isSelected
+                  ? Theme.of(context).colorScheme.primary.withOpacity(0.1)
+                  : Colors.transparent,
+        ),
+        child: Column(
+          children: [
+            Icon(
+              icon,
+              color:
+                  isSelected
+                      ? Theme.of(context).colorScheme.primary
+                      : Theme.of(
+                        context,
+                      ).colorScheme.onSurface.withOpacity(0.6),
+              size: 32,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              title,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                color:
+                    isSelected
+                        ? Theme.of(context).colorScheme.primary
+                        : Theme.of(context).colorScheme.onSurface,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 4),
+            Text(
+              description,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+              ),
+              textAlign: TextAlign.center,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+            const SizedBox(height: 8),
+            Icon(
+              isSelected
+                  ? Icons.radio_button_checked
+                  : Icons.radio_button_unchecked,
+              color:
+                  isSelected
+                      ? Theme.of(context).colorScheme.primary
+                      : Theme.of(
+                        context,
+                      ).colorScheme.onSurface.withOpacity(0.6),
+              size: 20,
+            ),
+          ],
+        ),
       ),
     );
   }

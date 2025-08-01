@@ -1,0 +1,328 @@
+# FILTROS COMPOSTOS - DOCUMENTAÇÃO DE IMPLEMENTAÇÃO FUTURA
+
+## 📋 ESTADO ATUAL DA ARQUITETURA
+
+### ✅ IMPLEMENTADO:
+- **TaskFilter Interface**: `matches(Task, TaskController)` - Base sólida
+- **BasicFilters**: AllTasksFilter, TodayFilter, ListFilter
+- **TaskPanel Híbrido**: Aceita filtros externos via parâmetro `filter`
+- **TaskPanelHeader Unificado**: Layout limpo seguindo TodayView
+- **Sistema Limpo**: Sem redundâncias, 100% baseado em filtros
+
+### 🏗️ ARQUITETURA ATUAL:
+```dart
+TaskManagementScreen → TaskPanel(filter) → TaskPanelHeader(selectedList)
+                                        → TaskList(filteredTasks)
+```
+
+## 🚀 FILTROS COMPOSTOS - IMPLEMENTAÇÃO FUTURA
+
+### 1. INTERFACE EXTENDIDA
+
+```dart
+// lib/features/task_management/filters/composite_filter.dart
+abstract class CompositeFilter extends TaskFilter {
+  List<TaskFilter> get filters;
+  FilterLogic get logic; // AND, OR, NOT
+}
+
+enum FilterLogic { and, or, not }
+
+class AndFilter extends CompositeFilter {
+  @override
+  final List<TaskFilter> filters;
+  @override
+  FilterLogic get logic => FilterLogic.and;
+  @override
+  String get name => filters.map((f) => f.name).join(' E ');
+
+  AndFilter(this.filters);
+
+  @override
+  bool matches(Task task, TaskController controller) {
+    return filters.every((filter) => filter.matches(task, controller));
+  }
+}
+
+class OrFilter extends CompositeFilter {
+  @override
+  final List<TaskFilter> filters;
+  @override
+  FilterLogic get logic => FilterLogic.or;
+  @override
+  String get name => filters.map((f) => f.name).join(' OU ');
+
+  OrFilter(this.filters);
+
+  @override
+  bool matches(Task task, TaskController controller) {
+    return filters.any((filter) => filter.matches(task, controller));
+  }
+}
+```
+
+### 2. FILTROS AVANÇADOS
+
+```dart
+// lib/features/task_management/filters/advanced_filters.dart
+
+class PriorityFilter extends TaskFilter {
+  final TaskPriority priority;
+  
+  PriorityFilter(this.priority);
+  
+  @override
+  String get name => 'Prioridade ${priority.name}';
+  
+  @override
+  bool matches(Task task, TaskController controller) {
+    return task.priority == priority;
+  }
+}
+
+class DateRangeFilter extends TaskFilter {
+  final DateTime startDate;
+  final DateTime endDate;
+  
+  DateRangeFilter(this.startDate, this.endDate);
+  
+  @override
+  String get name => 'Entre ${_formatDate(startDate)} e ${_formatDate(endDate)}';
+  
+  @override
+  bool matches(Task task, TaskController controller) {
+    if (task.dueDate == null) return false;
+    return task.dueDate!.isAfter(startDate) && task.dueDate!.isBefore(endDate);
+  }
+}
+
+class TagFilter extends TaskFilter {
+  final String tag;
+  
+  TagFilter(this.tag);
+  
+  @override
+  String get name => '#$tag';
+  
+  @override
+  bool matches(Task task, TaskController controller) {
+    return task.tags?.contains(tag) ?? false;
+  }
+}
+
+class StatusFilter extends TaskFilter {
+  final bool isCompleted;
+  
+  StatusFilter({required this.isCompleted});
+  
+  @override
+  String get name => isCompleted ? 'Concluídas' : 'Pendentes';
+  
+  @override
+  bool matches(Task task, TaskController controller) {
+    return task.isCompleted == isCompleted;
+  }
+}
+```
+
+### 3. EXEMPLOS DE USO
+
+```dart
+// Filtros simples atuais (já funcionam)
+final todayFilter = TodayFilter();
+final listFilter = ListFilter('lista-id', 'Trabalho');
+
+// Filtros compostos futuros
+final workTodayFilter = AndFilter([
+  ListFilter('work-list-id', 'Trabalho'),
+  TodayFilter(),
+]);
+
+final urgentFilter = AndFilter([
+  PriorityFilter(TaskPriority.high),
+  StatusFilter(isCompleted: false),
+]);
+
+final thisWeekImportant = AndFilter([
+  DateRangeFilter(DateTime.now(), DateTime.now().add(Duration(days: 7))),
+  OrFilter([
+    PriorityFilter(TaskPriority.high),
+    TagFilter('urgente'),
+  ]),
+]);
+
+// Uso no TaskPanel (ZERO mudanças na arquitetura atual!)
+TaskPanel(
+  controller: controller,
+  filter: workTodayFilter, // ✅ Funciona automaticamente!
+  onToggleSidebar: onToggleSidebar,
+)
+```
+
+### 4. COMPATIBILIDADE COM HEADER
+
+```dart
+// TaskPanelHeader já suporta títulos compostos!
+class CompositeTaskPanelHeader extends TaskPanelHeader {
+  @override
+  String get title {
+    if (filter is CompositeFilter) {
+      return filter.name; // "Trabalho E Hoje", "Prioridade Alta OU #urgente"
+    }
+    return super.title;
+  }
+  
+  @override
+  IconData get icon {
+    if (filter is CompositeFilter) {
+      return Icons.filter_list; // Ícone genérico para filtros compostos
+    }
+    return super.icon;
+  }
+}
+```
+
+### 5. UI DE CONSTRUÇÃO DE FILTROS
+
+```dart
+// lib/features/task_management/widgets/filters/filter_builder.dart
+class FilterBuilderDialog extends StatefulWidget {
+  final TaskController controller;
+  
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text('Criar Filtro Personalizado'),
+      content: Column(
+        children: [
+          // Dropdown para selecionar tipo de filtro
+          DropdownButton<FilterType>(...),
+          
+          // Área para configurar filtros
+          if (selectedType == FilterType.list)
+            ListSelector(controller: controller),
+          
+          if (selectedType == FilterType.priority)
+            PrioritySelector(),
+            
+          if (selectedType == FilterType.dateRange)
+            DateRangePicker(),
+            
+          // Área para combinar filtros
+          if (filters.length > 1)
+            Row(
+              children: [
+                Text('Combinar com:'),
+                DropdownButton<FilterLogic>(
+                  items: [
+                    DropdownMenuItem(value: FilterLogic.and, child: Text('E')),
+                    DropdownMenuItem(value: FilterLogic.or, child: Text('OU')),
+                  ],
+                ),
+              ],
+            ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: Text('Cancelar'),
+        ),
+        ElevatedButton(
+          onPressed: () {
+            final compositeFilter = _buildCompositeFilter();
+            Navigator.pop(context, compositeFilter);
+          },
+          child: Text('Aplicar Filtro'),
+        ),
+      ],
+    );
+  }
+}
+```
+
+### 6. INTEGRAÇÃO COM TASK_MANAGEMENT_SCREEN
+
+```dart
+// Adicionar ao TaskManagementScreen
+void _showFilterBuilder(BuildContext context, TaskController controller) {
+  showDialog(
+    context: context,
+    builder: (context) => FilterBuilderDialog(controller: controller),
+  ).then((filter) {
+    if (filter != null) {
+      // Aplicar filtro composto
+      setState(() {
+        _currentFilter = filter;
+      });
+    }
+  });
+}
+
+// No layout desktop/tablet/mobile
+TaskPanel(
+  controller: controller,
+  filter: _currentFilter ?? AllTasksFilter(), // Usar filtro atual ou padrão
+  onToggleSidebar: onToggleSidebar,
+)
+```
+
+## 🎯 BENEFÍCIOS DA ARQUITETURA ATUAL
+
+### ✅ ZERO BREAKING CHANGES:
+- TaskPanel já aceita qualquer TaskFilter
+- TaskPanelHeader se adapta automaticamente
+- TaskList filtra corretamente
+
+### ✅ EXTENSIBILIDADE:
+- Novos filtros implementam apenas `matches()`
+- Filtros compostos combinam filtros existentes
+- UI de construção independente da lógica
+
+### ✅ PERFORMANCE:
+- Filtragem acontece uma vez em `_getFilteredTasks()`
+- Lista filtrada é passada diretamente para TaskList
+- Sem re-filtragem desnecessária
+
+### ✅ CONSISTÊNCIA:
+- Mesmo padrão para filtros simples e compostos
+- Header e cor de fundo sempre sincronizados
+- Layout unificado em todos os contextos
+
+## 📋 ROADMAP DE IMPLEMENTAÇÃO
+
+### FASE 1: Filtros Avançados Simples
+- [ ] PriorityFilter
+- [ ] StatusFilter  
+- [ ] DateRangeFilter
+- [ ] TagFilter
+
+### FASE 2: Filtros Compostos
+- [ ] AndFilter
+- [ ] OrFilter
+- [ ] NotFilter
+
+### FASE 3: UI de Construção
+- [ ] FilterBuilderDialog
+- [ ] Salvamento de filtros personalizados
+- [ ] Filtros favoritos na sidebar
+
+### FASE 4: Recursos Avançados
+- [ ] Filtros salvos no banco
+- [ ] Compartilhamento de filtros
+- [ ] Filtros inteligentes (sugestões automáticas)
+
+## 🔧 NOTAS TÉCNICAS
+
+### COMPATIBILIDADE TOTAL:
+A arquitetura atual suporta filtros compostos SEM MODIFICAÇÕES na TaskPanel, TaskList ou TaskPanelHeader!
+
+### PERFORMANCE:
+Filtros compostos executam em O(n) onde n = número de tarefas, independente da complexidade do filtro.
+
+### FLEXIBILIDADE:
+Qualquer combinação de filtros é possível: AND, OR, NOT, aninhamento ilimitado.
+
+---
+
+**CONCLUSÃO**: A arquitetura atual está perfeitamente preparada para filtros compostos. A implementação será apenas ADIÇÃO de novos filtros, sem modificar código existente! 🚀

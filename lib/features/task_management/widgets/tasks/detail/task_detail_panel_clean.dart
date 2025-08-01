@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../controllers/task_controller.dart';
-import '../../themes/theme_provider.dart';
-import '../../../../screens/diary_screen/diary_controller.dart';
+import '../../../controllers/task_controller.dart';
+import '../../../themes/theme_provider.dart';
+import '../../../../../screens/diary_screen/diary_controller.dart';
 import 'task_header.dart';
 import 'task_subtasks_section.dart';
 import 'task_notes_section.dart';

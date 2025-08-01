@@ -3,9 +3,9 @@ import 'package:provider/provider.dart';
 import '../../../controllers/task_controller.dart';
 import '../../../themes/theme_provider.dart';
 import '../../input/quick_add_task_input.dart';
-import '../task_group/expansible_group.dart';
+import '../expansible_group.dart';
+import '../task_panel_header.dart';
 //import '../tasks/quick_add_task_input.dart';
-import '../../input/mobile_quick_add_task_input.dart';
 
 /// **TodayView** - Painel principal da guia Hoje (renomeado de TodayPanel)
 ///
@@ -22,7 +22,6 @@ class TodayView extends StatelessWidget {
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
     final isCompactScreen = screenWidth < 400;
-    final isMobile = screenWidth < 600; // Detectar se é mobile
 
     // 🚀 OTIMIZAÇÃO: Usar Selector para rebuilds mais granulares
     return Selector<ThemeProvider, Color>(
@@ -41,56 +40,14 @@ class TodayView extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Header da seção Hoje
-              Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 8.0,
-                  vertical: 4.0,
-                ),
-                child: Row(
-                  children: [
-                    // Botão hambúrguer para recolher/expandir sidebar (opcional)
-                    if (onToggleSidebar != null)
-                      IconButton(
-                        icon: const Icon(Icons.menu),
-                        onPressed: onToggleSidebar,
-                        tooltip: 'Recolher/Expandir painel lateral',
-                      ),
-                    if (onToggleSidebar != null) const SizedBox(width: 8),
-                    Icon(
-                      Icons.wb_sunny_outlined,
-                      size: 20,
-                      color: Theme.of(context).colorScheme.primary,
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      'Hoje',
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                        color: Theme.of(context).colorScheme.primary,
-                      ),
-                    ),
-                    const Spacer(),
-                    // FAB para adicionar tarefa - APENAS NO MOBILE
-                    if (isMobile)
-                      Material(
-                        color: Theme.of(context).primaryColor,
-                        borderRadius: BorderRadius.circular(16),
-                        child: InkWell(
-                          onTap: () => _showMobileAddTask(context),
-                          borderRadius: BorderRadius.circular(16),
-                          child: Container(
-                            padding: const EdgeInsets.all(12),
-                            child: const Icon(
-                              Icons.add,
-                              color: Colors.white,
-                              size: 20,
-                            ),
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
+              // Header unificado seguindo layout padrão
+              TaskPanelHeader(
+                controller: controller,
+                selectedList: null, // TodayView não tem lista específica
+                onToggleSidebar: onToggleSidebar,
+                titleOverride: 'Hoje', // Título específico para TodayView
+                iconOverride:
+                    Icons.wb_sunny_outlined, // Ícone específico para TodayView
               ),
               const SizedBox(height: 8),
 
@@ -98,35 +55,12 @@ class TodayView extends StatelessWidget {
               Expanded(child: _buildTaskGroups(context)),
 
               // Campo de entrada rápida de tarefas - APENAS NO DESKTOP
-              if (!isMobile) QuickAddTaskInput(controller: controller),
+              if (screenWidth >= 600) QuickAddTaskInput(controller: controller),
             ],
           ),
         );
       },
     );
-  }
-
-  /// Mostrar modal de adicionar tarefa no mobile
-  void _showMobileAddTask(BuildContext context) {
-    debugPrint('🚀 Tentando abrir modal mobile add task');
-    try {
-      showModalBottomSheet(
-        context: context,
-        isScrollControlled: true,
-        backgroundColor: Colors.transparent,
-        builder: (BuildContext context) {
-          debugPrint('🚀 Builder do modal sendo executado');
-          return Padding(
-            padding: EdgeInsets.only(
-              bottom: MediaQuery.of(context).viewInsets.bottom,
-            ),
-            child: MobileQuickAddTaskInput(controller: controller),
-          );
-        },
-      );
-    } catch (e) {
-      debugPrint('🚨 Erro ao abrir modal: $e');
-    }
   }
 
   /// Construir grupos de tarefas ou estado vazio

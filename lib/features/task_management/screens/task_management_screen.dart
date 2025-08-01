@@ -4,11 +4,12 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../controllers/task_controller.dart';
 import '../themes/theme_provider.dart';
 import '../themes/app_theme.dart';
+import '../filters/basic_filters.dart';
 import '../widgets/common/app_state_handler.dart'; // Novo componente extraído
 import '../widgets/lists/list_panel.dart'; // Novo componente extraído
 import '../widgets/projects/project_panel.dart'; // Novo componente extraído
 import '../widgets/tasks/task_panel.dart'; // Novo componente extraído
-import '../widgets/detail/task_detail_panel_clean.dart';
+import '../widgets/tasks/detail/task_detail_panel_clean.dart';
 import '../widgets/tasks/views/today_view.dart';
 import '../widgets/settings/samsung_style/index.dart'; // Novo import para Samsung sidebar
 import '../../log_screen/controllers/log_controller.dart';
@@ -186,12 +187,22 @@ class _TaskManagementScreenState extends State<TaskManagementScreen>
                         )
                         : controller.showActivitiesView
                         ? _buildActivitiesPanel(context, controller)
+                        : controller.selectedListId != null
+                        ? TaskPanel(
+                          controller: controller,
+                          filter: ListFilter(
+                            controller.selectedListId!,
+                            controller
+                                    .getListById(controller.selectedListId!)
+                                    ?.name ??
+                                'Lista',
+                          ), // 🎯 Filtro externo para lista específica
+                          onToggleSidebar: _toggleSidebar,
+                        )
                         : TaskPanel(
                           controller: controller,
-                          onShowSearch:
-                              () => _showSearchDialog(context, controller),
-                          onShowFilter:
-                              () => _showFilterDialog(context, controller),
+                          filter:
+                              AllTasksFilter(), // 🎯 Filtro externo para todas as tarefas
                           onToggleSidebar: _toggleSidebar,
                         ),
               ),
@@ -253,12 +264,23 @@ class _TaskManagementScreenState extends State<TaskManagementScreen>
                         )
                         : controller.showActivitiesView
                         ? _buildActivitiesPanel(context, controller)
+                        : controller.selectedListId != null
+                        ? TaskPanel(
+                          controller: controller,
+                          filter: ListFilter(
+                            controller.selectedListId!,
+                            controller
+                                    .getListById(controller.selectedListId!)
+                                    ?.name ??
+                                'Lista',
+                          ), // 🎯 Filtro externo para lista específica
+                          onToggleSidebar:
+                              () => Scaffold.of(context).openDrawer(),
+                        )
                         : TaskPanel(
                           controller: controller,
-                          onShowSearch:
-                              () => _showSearchDialog(context, controller),
-                          onShowFilter:
-                              () => _showFilterDialog(context, controller),
+                          filter:
+                              AllTasksFilter(), // 🎯 Filtro externo para todas as tarefas
                           onToggleSidebar:
                               () => Scaffold.of(context).openDrawer(),
                         ),
@@ -316,10 +338,22 @@ class _TaskManagementScreenState extends State<TaskManagementScreen>
                   )
                   : controller.showActivitiesView
                   ? _buildActivitiesPanel(context, controller)
+                  : controller.selectedListId != null
+                  ? TaskPanel(
+                    controller: controller,
+                    filter: ListFilter(
+                      controller.selectedListId!,
+                      controller
+                              .getListById(controller.selectedListId!)
+                              ?.name ??
+                          'Lista',
+                    ), // 🎯 Filtro externo para lista específica
+                    onToggleSidebar: () => Scaffold.of(context).openDrawer(),
+                  )
                   : TaskPanel(
                     controller: controller,
-                    onShowSearch: () => _showSearchDialog(context, controller),
-                    onShowFilter: () => _showFilterDialog(context, controller),
+                    filter:
+                        AllTasksFilter(), // 🎯 Filtro externo para todas as tarefas
                     onToggleSidebar: () => Scaffold.of(context).openDrawer(),
                   ),
 
@@ -438,16 +472,6 @@ class _TaskManagementScreenState extends State<TaskManagementScreen>
         ],
       ),
     );
-  }
-
-  void _showSearchDialog(BuildContext context, TaskController controller) {
-    // TODO: Implementar diálogo de busca
-    print('🔍 Mostrar diálogo de busca');
-  }
-
-  void _showFilterDialog(BuildContext context, TaskController controller) {
-    // TODO: Implementar diálogo de filtros
-    print('🔽 Mostrar diálogo de filtros');
   }
 
   /// Constrói a seção "Hoje" na sidebar
