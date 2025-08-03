@@ -6,6 +6,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
 import 'package:teste_flutter/features/habit_screen/habit_screen.dart';
 import 'package:teste_flutter/features/note_screen/notes_screen.dart';
+import 'package:teste_flutter/features/diary_screen/diary_screen.dart';
 import 'package:teste_flutter/features/task_management/screens/task_management_screen.dart';
 import 'package:teste_flutter/features/task_management/controllers/task_controller.dart';
 import 'package:teste_flutter/features/task_management/themes/theme_provider.dart';
@@ -67,13 +68,10 @@ class _HomeScreenState extends State<HomeScreen> {
 
   final List<Widget> _screens = const [
     TaskScreen(),
-    //DiaryScreen(),
-    // DiaryScreenOptimized(), // Nova tela otimizada
-    // NotesScreen(),
+    DiaryScreen(), // Nova tela de diário
     NotesScreen(),
     HabitsScreen(),
     TaskManagementScreen(),
-    //HelloWorldScreen(),
   ];
 
   @override
@@ -145,21 +143,15 @@ class _HomeScreenState extends State<HomeScreen> {
                   icon: Icon(Icons.task_alt),
                   label: 'Tarefas',
                 ),
-                NavigationDestination(
-                  icon: Icon(Icons.note),
-                  label: 'NotasSele',
-                ),
+                NavigationDestination(icon: Icon(Icons.book), label: 'Diário'),
+                NavigationDestination(icon: Icon(Icons.note), label: 'Notas'),
                 NavigationDestination(
                   icon: Icon(Icons.fitness_center),
-                  label: 'Habitos',
-                ),
-                NavigationDestination(
-                  icon: Icon(Icons.task_alt),
-                  label: 'Tarefas+',
+                  label: 'Hábitos',
                 ),
                 NavigationDestination(
                   icon: Icon(Icons.dashboard_customize),
-                  label: 'TaskNew',
+                  label: 'Tarefas+',
                 ),
               ],
             );

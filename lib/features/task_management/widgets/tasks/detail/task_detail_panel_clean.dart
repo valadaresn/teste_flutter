@@ -6,7 +6,7 @@ import '../../../../../screens/diary_screen/diary_controller.dart';
 import 'task_header.dart';
 import 'task_subtasks_section.dart';
 import 'task_notes_section.dart';
-import 'task_diary_section.dart';
+import 'diary/task_diary_section.dart';
 import 'task_footer.dart';
 import 'services/task_panel_logic.dart';
 

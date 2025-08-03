@@ -255,18 +255,62 @@ class DiaryController extends ChangeNotifier {
     _setLoading(true);
 
     try {
+      // 🔥 DEBUG: LOG DETALHADO DO QUE ESTÁ SENDO ATUALIZADO
+      debugPrint('🔄 DiaryController.updateEntry()');
+      debugPrint('📝 Entrada original: ${entry.content}');
+      debugPrint('🎭 Mood original: ${entry.mood}');
+      debugPrint('⭐ Favorito original: ${entry.isFavorite}');
+      debugPrint('📊 Dados recebidos: $data');
+
       // Usar factory para atualização
       final updatedEntry = DiaryEntry.updateFromForm(entry, data);
 
-      _log("Atualizando entrada...");
+      debugPrint('📝 Entrada atualizada: ${updatedEntry.content}');
+      debugPrint('🎭 Mood atualizado: ${updatedEntry.mood}');
+      debugPrint('⭐ Favorito atualizado: ${updatedEntry.isFavorite}');
+
+      _log("Atualizando entrada no Firebase...");
       await _firestore
           .collection(_collectionPath)
           .doc(entry.id)
           .update(_toFirestoreMap(updatedEntry));
 
+      // 🔥 ATUALIZAR ESTADO LOCAL
+      final index = _entries.indexWhere((e) => e.id == entry.id);
+      debugPrint('📍 Índice na lista: $index');
+      debugPrint('📋 Total de entradas antes: ${_entries.length}');
+
+      if (index != -1) {
+        final oldEntry = _entries[index];
+        debugPrint('🔄 Substituindo entrada no índice $index');
+        debugPrint('   Anterior: ${oldEntry.content} (${oldEntry.mood})');
+
+        _entries[index] = updatedEntry;
+
+        debugPrint(
+          '   Nova: ${_entries[index].content} (${_entries[index].mood})',
+        );
+
+        // Atualizar favoritos se necessário
+        if (data.containsKey('isFavorite')) {
+          _favorites[entry.id] = data['isFavorite'] as bool;
+          debugPrint('💝 Favorito atualizado: ${_favorites[entry.id]}');
+        }
+
+        // Notificar mudanças
+        debugPrint('🔔 Notificando listeners...');
+        notifyListeners();
+        debugPrint('🌊 Adicionando ao stream...');
+        _entriesStreamController.add(_entries);
+        debugPrint('✅ Estado local atualizado com sucesso!');
+      } else {
+        debugPrint('❌ ERRO: Entrada não encontrada na lista local!');
+      }
+
       _log("Entrada atualizada com sucesso");
       return true;
     } catch (e) {
+      debugPrint('❌ ERRO no updateEntry: $e');
       _log("Erro ao atualizar entrada: $e");
       _setError('Erro ao atualizar entrada');
       return false;

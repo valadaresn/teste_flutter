@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../../../screens/diary_screen/diary_styles.dart';
+import '../../../../../../screens/diary_screen/diary_styles.dart';
 
 /// **TaskDiaryEntryForm** - Formulário para nova entrada de diário
 ///
@@ -23,11 +23,11 @@ class _TaskDiaryEntryFormState extends State<TaskDiaryEntryForm> {
   // Lista de emojis de humor disponíveis
   final List<String> _availableMoods = [
     '😊', // Feliz
-    '�', // Neutro
-    '�', // Triste
-    '�', // Raiva
+    '😐', // Neutro
+    '😢', // Triste
+    '😡', // Raiva
     '🤔', // Pensativo
-    '�', // Cansado/Relaxado
+    '😴', // Cansado/Relaxado
   ];
 
   @override

@@ -43,4 +43,30 @@ class DiaryStyles {
       ),
     ],
   );
+
+  /// Retorna nome descritivo do humor
+  static String getMoodName(String mood) {
+    switch (mood) {
+      case '😊':
+        return 'Feliz';
+      case '😐':
+        return 'Neutro';
+      case '😢':
+        return 'Triste';
+      case '😡':
+        return 'Raiva';
+      case '🤔':
+        return 'Pensativo';
+      case '😴':
+        return 'Cansado';
+      case '😍':
+        return 'Apaixonado';
+      case '🤯':
+        return 'Impressionado';
+      case '🥳':
+        return 'Celebrando';
+      default:
+        return 'Humor';
+    }
+  }
 }

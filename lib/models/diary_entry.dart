@@ -82,7 +82,9 @@ class DiaryEntry {
       dateTime: original.dateTime, // Mantém a data original
       mood: formData['mood'] ?? original.mood,
       tags: List<String>.from(formData['tags'] ?? original.tags),
-      isFavorite: original.isFavorite, // Mantém status de favorito
+      isFavorite:
+          formData['isFavorite'] ??
+          original.isFavorite, // Agora atualiza corretamente
       taskId: formData['taskId'] ?? original.taskId,
       taskName: formData['taskName'] ?? original.taskName,
       projectId: formData['projectId'] ?? original.projectId,

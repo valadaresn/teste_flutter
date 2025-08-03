@@ -55,12 +55,20 @@ class VerticalNavigationBar extends StatelessWidget {
                 index: 0,
               ),
               const SizedBox(height: 20),
-              // NotasSele
+              // Diário
+              _buildNavItem(
+                context: context,
+                icon: Icons.book,
+                label: 'Diário',
+                index: 1,
+              ),
+              const SizedBox(height: 20),
+              // Notas
               _buildNavItem(
                 context: context,
                 icon: Icons.note,
-                label: 'NotasSele',
-                index: 1,
+                label: 'Notas',
+                index: 2,
               ),
               const SizedBox(height: 20),
               // Hábitos
@@ -68,22 +76,14 @@ class VerticalNavigationBar extends StatelessWidget {
                 context: context,
                 icon: Icons.fitness_center,
                 label: 'Hábitos',
-                index: 2,
+                index: 3,
               ),
               const SizedBox(height: 20),
               // Tarefas+
               _buildNavItem(
                 context: context,
-                icon: Icons.task_alt,
-                label: 'Tarefas+',
-                index: 3,
-              ),
-              const SizedBox(height: 20),
-              // TaskNew
-              _buildNavItem(
-                context: context,
                 icon: Icons.dashboard_customize,
-                label: 'TaskNew',
+                label: 'Tarefas+',
                 index: 4,
               ),
             ],
