@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../../models/diary_entry.dart';
-import '../../../../../screens/diary_screen/diary_controller.dart';
+import '../../../diary_controller.dart' as NewDiary;
 import '../utils/detail_panel_constants.dart';
 import '../utils/detail_panel_helpers.dart';
 
@@ -30,7 +30,7 @@ mixin DetailPanelStateMixin<T extends StatefulWidget> on State<T> {
 
   // 📝 Entry e Controller (devem ser fornecidos pela implementação)
   DiaryEntry get entry;
-  DiaryController get controller;
+  NewDiary.DiaryController get controller;
 
   // 🎯 Callbacks (devem ser fornecidos pela implementação)
   VoidCallback? get onDeleted;
@@ -41,7 +41,7 @@ mixin DetailPanelStateMixin<T extends StatefulWidget> on State<T> {
     contentController = TextEditingController(text: entry.content);
     contentFocusNode = FocusNode();
     selectedMood = entry.mood;
-    isFavorite = controller.favorites[entry.id] ?? entry.isFavorite;
+    isFavorite = entry.isFavorite; // Usando diretamente do entry
     originalContent = entry.content;
 
     // Listener para mudanças de foco
@@ -98,31 +98,33 @@ mixin DetailPanelStateMixin<T extends StatefulWidget> on State<T> {
     setState(() => isSaving = true);
 
     try {
-      final updateData = DetailPanelHelpers.createUpdateData(
-        content: contentController.text,
-        mood: selectedMood,
-        isFavorite: isFavorite,
+      final formData = {
+        'content': contentController.text,
+        'mood': selectedMood,
+        'isFavorite': isFavorite,
+        'tags': entry.tags,
+        'title': entry.title,
+        'taskId': entry.taskId,
+        'taskName': entry.taskName,
+        'projectId': entry.projectId,
+        'projectName': entry.projectName,
+      };
+
+      final updatedEntry = DiaryEntry.updateFromForm(entry, formData);
+
+      debugPrint('💾 Entry para atualizar: $updatedEntry');
+
+      await controller.updateEntry(updatedEntry);
+
+      setState(() {
+        hasUnsavedChanges = false;
+        isSaving = false;
+        originalContent = contentController.text.trim();
+      });
+      onUpdated?.call();
+      debugPrint(
+        '✅ Alterações salvas com sucesso. Novo conteúdo original: "$originalContent"',
       );
-
-      debugPrint('💾 Dados para atualizar: $updateData');
-
-      final success = await controller.updateEntry(entry, updateData);
-
-      if (success) {
-        setState(() {
-          hasUnsavedChanges = false;
-          isSaving = false;
-          originalContent = contentController.text.trim();
-        });
-        onUpdated?.call();
-        debugPrint(
-          '✅ Alterações salvas com sucesso. Novo conteúdo original: "$originalContent"',
-        );
-      } else {
-        setState(() => isSaving = false);
-        debugPrint('❌ Falha ao salvar alterações');
-        _showErrorMessage('❌ Erro ao salvar alterações');
-      }
     } catch (e) {
       setState(() => isSaving = false);
       debugPrint('❌ Erro ao salvar entrada: $e');
@@ -154,14 +156,10 @@ mixin DetailPanelStateMixin<T extends StatefulWidget> on State<T> {
 
     if (shouldDelete == true) {
       try {
-        final success = await controller.deleteEntry(entry.id);
-        if (success) {
-          onDeleted?.call();
-          _closePanel();
-          _showSuccessMessage('🗑️ Entrada excluída');
-        } else {
-          _showErrorMessage('❌ Erro ao excluir entrada');
-        }
+        await controller.deleteEntry(entry.id);
+        onDeleted?.call();
+        _closePanel();
+        _showSuccessMessage('🗑️ Entrada excluída');
       } catch (e) {
         debugPrint('❌ Erro ao excluir entrada: $e');
         _showErrorMessage('❌ Erro ao excluir entrada');

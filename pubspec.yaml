@@ -48,6 +48,7 @@ dependencies:
   connectivity_plus: ^6.1.4
   get: ^4.6.6
   provider: ^6.1.5
+  flutter_riverpod: ^2.6.1
 
 dev_dependencies:
   flutter_test:

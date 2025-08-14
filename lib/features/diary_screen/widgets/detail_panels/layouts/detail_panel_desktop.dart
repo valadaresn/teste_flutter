@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../../models/diary_entry.dart';
-import '../../../../../screens/diary_screen/diary_controller.dart';
+import '../../../diary_controller.dart' as NewDiary;
 import '../core/detail_panel_base.dart';
 import '../core/detail_panel_state.dart';
 import '../core/detail_panel_logic.dart';
@@ -22,7 +22,7 @@ class DetailPanelDesktop extends DetailPanelBase {
   const DetailPanelDesktop({
     Key? key,
     required DiaryEntry entry,
-    required DiaryController controller,
+    required NewDiary.DiaryController controller,
     VoidCallback? onDeleted,
     VoidCallback? onUpdated,
     VoidCallback? onClose,
@@ -88,7 +88,7 @@ class _DetailPanelDesktopState extends State<DetailPanelDesktop>
   DiaryEntry get entry => widget.entry;
 
   @override
-  DiaryController get controller => widget.controller;
+  NewDiary.DiaryController get controller => widget.controller;
 
   @override
   VoidCallback? get onDeleted => widget.onDeleted;

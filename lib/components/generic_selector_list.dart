@@ -36,30 +36,32 @@ class GenericSelectorList<C extends ChangeNotifier, T> extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Obtém o controller sem ouvir rebuilds globais
-    final controller = context.read<C>();
-    final items = listSelector(controller);
+    return Consumer<C>(
+      builder: (context, controller, child) {
+        final items = listSelector(controller);
 
-    if (items.isEmpty) {
-      return Center(child: Text('Nenhum item encontrado'));
-    }
+        if (items.isEmpty) {
+          return Center(child: Text('Nenhum item encontrado'));
+        }
 
-    return ListView.builder(
-      padding: padding,
-      itemCount: items.length,
-      itemBuilder: (context, index) {
-        final id = idExtractor(items[index]);
-        return Padding(
-          padding: EdgeInsets.only(bottom: spacing),
-          // Cada card só rebuilda quando muda THIS ID
-          child: Selector<C, T?>(
-            selector: (_, ctrl) => itemById(ctrl, id),
-            shouldRebuild: (prev, next) => prev != next,
-            builder: (context, entry, _) {
-              if (entry == null) return const SizedBox.shrink();
-              return itemBuilder(context, entry);
-            },
-          ),
+        return ListView.builder(
+          padding: padding,
+          itemCount: items.length,
+          itemBuilder: (context, index) {
+            final id = idExtractor(items[index]);
+            return Padding(
+              padding: EdgeInsets.only(bottom: spacing),
+              // Cada card só rebuilda quando muda THIS ID
+              child: Selector<C, T?>(
+                selector: (_, ctrl) => itemById(ctrl, id),
+                shouldRebuild: (prev, next) => prev != next,
+                builder: (context, entry, _) {
+                  if (entry == null) return const SizedBox.shrink();
+                  return itemBuilder(context, entry);
+                },
+              ),
+            );
+          },
         );
       },
     );

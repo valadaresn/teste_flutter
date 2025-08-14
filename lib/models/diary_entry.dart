@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 
 class DiaryEntry {
   final String id;
@@ -51,14 +52,54 @@ class DiaryEntry {
 
   /// Cria uma entrada a partir de dados do Firestore
   factory DiaryEntry.fromMap(Map<String, dynamic> map, String id) {
+    // 🐛 DEBUG: Log para verificar conversão de DateTime
+    debugPrint('🔍 DEBUG DiaryEntry.fromMap - ID: $id');
+    debugPrint(
+      '🔍 DEBUG DiaryEntry.fromMap - DateTime no map: ${map['dateTime']} (tipo: ${map['dateTime'].runtimeType})',
+    );
+
+    DateTime parsedDateTime;
+    final dateTimeData = map['dateTime'];
+
+    if (dateTimeData is String) {
+      parsedDateTime = DateTime.parse(dateTimeData);
+      debugPrint(
+        '🔍 DEBUG DiaryEntry.fromMap - Parsed from String: $parsedDateTime',
+      );
+    } else if (dateTimeData != null) {
+      // Pode ser Timestamp do Firebase
+      try {
+        if (dateTimeData.runtimeType.toString().contains('Timestamp')) {
+          // É um Timestamp do Firebase
+          parsedDateTime = dateTimeData.toDate();
+          debugPrint(
+            '🔍 DEBUG DiaryEntry.fromMap - Converted from Timestamp: $parsedDateTime',
+          );
+        } else {
+          // Tentar converter para DateTime
+          parsedDateTime = DateTime.fromMillisecondsSinceEpoch(dateTimeData);
+          debugPrint(
+            '🔍 DEBUG DiaryEntry.fromMap - Converted from milliseconds: $parsedDateTime',
+          );
+        }
+      } catch (e) {
+        debugPrint(
+          '🔍 DEBUG DiaryEntry.fromMap - Erro na conversão, usando DateTime.now(): $e',
+        );
+        parsedDateTime = DateTime.now();
+      }
+    } else {
+      parsedDateTime = DateTime.now();
+      debugPrint(
+        '🔍 DEBUG DiaryEntry.fromMap - dateTime era null, usando DateTime.now(): $parsedDateTime',
+      );
+    }
+
     return DiaryEntry(
       id: id,
       title: map['title'],
       content: map['content'] ?? '',
-      dateTime:
-          map['dateTime'] is String
-              ? DateTime.parse(map['dateTime'])
-              : DateTime.now(),
+      dateTime: parsedDateTime,
       mood: map['mood'] ?? '😊',
       tags: List<String>.from(map['tags'] ?? []),
       isFavorite: map['isFavorite'] ?? false,

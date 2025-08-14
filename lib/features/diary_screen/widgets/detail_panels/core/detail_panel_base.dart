@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../../models/diary_entry.dart';
-import '../../../../../screens/diary_screen/diary_controller.dart';
+import '../../../diary_controller.dart' as NewDiary;
 
 /// **DetailPanelBase** - Classe base abstrata para painéis de detalhes
 ///
@@ -11,7 +11,7 @@ abstract class DetailPanelBase extends StatefulWidget {
   final DiaryEntry entry;
 
   /// Controlador para operações CRUD
-  final DiaryController controller;
+  final NewDiary.DiaryController controller;
 
   /// Callback chamado quando entrada é excluída
   final VoidCallback? onDeleted;

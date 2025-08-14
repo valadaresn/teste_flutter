@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../models/diary_entry.dart';
 import '../../../screens/diary_screen/diary_styles.dart';
-import '../../../screens/diary_screen/diary_controller.dart';
+import '../diary_controller.dart' as NewDiary;
 import 'detail_panels/layouts/detail_panel_mobile.dart';
 import 'detail_panels/layouts/detail_panel_desktop.dart';
 
@@ -19,7 +19,7 @@ class DiaryEntryCard extends StatefulWidget {
   final VoidCallback onDelete;
   final Function(bool) onToggleFavorite;
   final bool isFavorite;
-  final DiaryController? controller;
+  final NewDiary.DiaryController? controller;
 
   const DiaryEntryCard({
     Key? key,
@@ -103,11 +103,11 @@ class _DiaryEntryCardState extends State<DiaryEntryCard> {
                       ),
                     ),
 
-                    // Hora
+                    // Hora - usando diretamente widget.entry.dateTime
                     Padding(
                       padding: const EdgeInsets.only(bottom: 2.0),
                       child: Text(
-                        _formatTime(widget.entry.dateTime),
+                        _formatTimeDirectly(widget.entry.dateTime),
                         style: TextStyle(
                           fontSize: 12,
                           color: Colors.grey.shade600,
@@ -291,11 +291,42 @@ class _DiaryEntryCardState extends State<DiaryEntryCard> {
     );
   }
 
-  /// Formata apenas a hora (HH:MM)
+  /// Formata apenas a hora (HH:MM) - Versão robusta
   String _formatTime(DateTime dateTime) {
-    final hour = dateTime.hour.toString().padLeft(2, '0');
-    final minute = dateTime.minute.toString().padLeft(2, '0');
-    return '$hour:$minute';
+    // 🐛 DEBUG: Log para verificar a data recebida
+    debugPrint('🔍 DEBUG DiaryEntryCard - formatTime recebeu: $dateTime');
+    debugPrint('🔍 DEBUG DiaryEntryCard - Entry ID: ${widget.entry.id}');
+    debugPrint(
+      '🔍 DEBUG DiaryEntryCard - Entry DateTime original: ${widget.entry.dateTime}',
+    );
+
+    // 🔧 FIX: Garantir que estamos usando exatamente a data da entrada
+    final originalDateTime = widget.entry.dateTime;
+    final hour = originalDateTime.hour.toString().padLeft(2, '0');
+    final minute = originalDateTime.minute.toString().padLeft(2, '0');
+    final formatted = '$hour:$minute';
+
+    debugPrint('🔍 DEBUG DiaryEntryCard - Hora formatada: $formatted');
+    debugPrint(
+      '🔍 DEBUG DiaryEntryCard - Data completa original: ${originalDateTime.toString()}',
+    );
+
+    return formatted;
+  }
+
+  /// Formata a hora diretamente da entrada (sem parâmetros extras)
+  String _formatTimeDirectly(DateTime entryDateTime) {
+    debugPrint('🔍 DEBUG _formatTimeDirectly - DateTime: $entryDateTime');
+    debugPrint(
+      '🔍 DEBUG _formatTimeDirectly - Entry content: ${widget.entry.content.substring(0, 30)}...',
+    );
+
+    final hour = entryDateTime.hour.toString().padLeft(2, '0');
+    final minute = entryDateTime.minute.toString().padLeft(2, '0');
+    final result = '$hour:$minute';
+
+    debugPrint('🔍 DEBUG _formatTimeDirectly - Resultado: $result');
+    return result;
   }
 
   /// Mostra confirmação antes de excluir

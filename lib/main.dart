@@ -6,7 +6,10 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
 import 'package:teste_flutter/features/habit_screen/habit_screen.dart';
 import 'package:teste_flutter/features/note_screen/notes_screen.dart';
-import 'package:teste_flutter/features/diary_screen/diary_screen.dart';
+import 'package:teste_flutter/features/diary_screen/diary_screen.dart'
+    as DiaryFeature;
+import 'package:teste_flutter/features/diary_screen/diary_controller.dart'
+    as DiaryController;
 import 'package:teste_flutter/features/task_management/screens/task_management_screen.dart';
 import 'package:teste_flutter/features/task_management/controllers/task_controller.dart';
 import 'package:teste_flutter/features/task_management/themes/theme_provider.dart';
@@ -36,6 +39,9 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (context) => TaskController()),
         ChangeNotifierProvider(create: (context) => ThemeProvider()),
         ChangeNotifierProvider(create: (context) => LogController()),
+        ChangeNotifierProvider(
+          create: (context) => DiaryController.DiaryController(),
+        ),
       ],
       child: MaterialApp(
         title: 'Teste Flutter',
@@ -66,12 +72,12 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
 
-  final List<Widget> _screens = const [
-    TaskScreen(),
-    DiaryScreen(), // Nova tela de diário
-    NotesScreen(),
-    HabitsScreen(),
-    TaskManagementScreen(),
+  final List<Widget> _screens = [
+    const TaskScreen(),
+    DiaryFeature.DiaryScreen(), // Nova tela de diário - removido const pois usa Provider
+    const NotesScreen(),
+    const HabitsScreen(),
+    const TaskManagementScreen(),
   ];
 
   @override
