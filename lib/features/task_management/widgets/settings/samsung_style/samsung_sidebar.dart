@@ -22,21 +22,23 @@ class SamsungSidebar extends StatelessWidget {
   Widget build(BuildContext context) {
     return Consumer<ThemeProvider>(
       builder: (context, themeProvider, child) {
-        return Container(
-          width: 280,
-          color: themeProvider.getSidebarColor(context),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Seção principal (Hoje, Importantes, etc.)
-              _buildMainSection(context),
+        return SafeArea(
+          child: Container(
+            width: 280,
+            color: themeProvider.getSidebarColor(context),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Seção principal (Hoje, Importantes, etc.)
+                _buildMainSection(context),
 
-              // Seção de projetos
-              _buildProjectsSection(context),
+                // Seção de projetos
+                _buildProjectsSection(context),
 
-              // Seção de configurações
-              _buildConfigSection(context),
-            ],
+                // Seção de configurações
+                _buildConfigSection(context),
+              ],
+            ),
           ),
         );
       },

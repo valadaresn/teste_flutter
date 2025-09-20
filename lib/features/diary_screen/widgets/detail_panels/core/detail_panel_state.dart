@@ -19,6 +19,7 @@ mixin DetailPanelStateMixin<T extends StatefulWidget> on State<T> {
   // 📊 Estados da entrada
   late String selectedMood;
   late bool isFavorite;
+  late DateTime selectedDateTime;
 
   // 🔄 Estados de operação
   bool isSaving = false;
@@ -42,6 +43,7 @@ mixin DetailPanelStateMixin<T extends StatefulWidget> on State<T> {
     contentFocusNode = FocusNode();
     selectedMood = entry.mood;
     isFavorite = entry.isFavorite; // Usando diretamente do entry
+    selectedDateTime = entry.dateTime;
     originalContent = entry.content;
 
     // Listener para mudanças de foco
@@ -102,6 +104,7 @@ mixin DetailPanelStateMixin<T extends StatefulWidget> on State<T> {
         'content': contentController.text,
         'mood': selectedMood,
         'isFavorite': isFavorite,
+        'dateTime': selectedDateTime.toIso8601String(),
         'tags': entry.tags,
         'title': entry.title,
         'taskId': entry.taskId,
@@ -145,6 +148,15 @@ mixin DetailPanelStateMixin<T extends StatefulWidget> on State<T> {
   void toggleFavorite() {
     setState(() {
       isFavorite = !isFavorite;
+      hasUnsavedChanges = true;
+    });
+    saveChanges();
+  }
+
+  /// 📅 Altera a data/hora e salva imediatamente
+  void changeDateTime(DateTime newDateTime) {
+    setState(() {
+      selectedDateTime = newDateTime;
       hasUnsavedChanges = true;
     });
     saveChanges();

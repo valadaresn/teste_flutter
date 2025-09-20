@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import '../../controllers/task_controller.dart';
 import '../../models/task_model.dart';
-import '../common/quick_date_selector.dart';
-import '../common/quick_list_selector.dart';
-import '../common/quick_pomodoro_selector.dart';
+import 'quick_date_selector.dart';
+import 'quick_list_selector.dart';
+import 'quick_pomodoro_selector.dart';
 
 /// **MobileQuickAddTaskInput** - Campo de adicionar tarefa otimizado para mobile
 ///

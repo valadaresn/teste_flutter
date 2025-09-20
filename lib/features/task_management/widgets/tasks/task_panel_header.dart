@@ -28,7 +28,7 @@ class TaskPanelHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
-    final isMobile = screenWidth < 600;
+    final isMobile = screenWidth < 600; // Mantém critério mobile original
 
     // Determinar título baseado na lista selecionada ou override
     final String title;

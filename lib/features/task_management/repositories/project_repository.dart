@@ -6,7 +6,7 @@ import '../models/project_model.dart';
 class ProjectRepository {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final String _projectsCollection = 'projects';
-  bool _debugMode = true;
+  bool _debugMode = false;
 
   void _debugPrint(String message) {
     if (_debugMode) {

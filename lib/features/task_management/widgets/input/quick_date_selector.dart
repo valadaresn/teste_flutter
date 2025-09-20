@@ -98,9 +98,9 @@ class QuickDateSelector extends StatelessWidget {
 
       // Se for do mesmo ano, não mostrar o ano
       if (selectedDate!.year == now.year) {
-        return '${selectedDate!.day} de ${months[selectedDate!.month]}';
+        return '${selectedDate!.day} ${months[selectedDate!.month]}';
       } else {
-        return '${selectedDate!.day} de ${months[selectedDate!.month]}, ${selectedDate!.year}';
+        return '${selectedDate!.day} ${months[selectedDate!.month]} ${selectedDate!.year}';
       }
     }
   }

@@ -1,5 +1,4 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter/material.dart';
 import '../../models/diary_entry.dart';
 
 /// 🔥 Repository simples SEM ChangeNotifier - previne piscar da tela
@@ -14,29 +13,20 @@ class FirebaseDiaryRepository {
   /// 🌊 Stream principal - fonte única da verdade
   /// Retorna Stream diretamente do Firestore
   Stream<List<DiaryEntry>> getEntriesStream() {
-    debugPrint(
-      '🔥 FirebaseDiaryRepository - Conectando à coleção: $_collection',
-    );
-
     return _firestore
         .collection(_collection)
-        .orderBy('dateTime', descending: true)
+        .orderBy(
+          'dateTime',
+          descending: false,
+        ) // ✅ ORDEM CRESCENTE (mais antigos primeiro)
         .snapshots()
         .map((snapshot) {
-          debugPrint(
-            '📦 Firebase snapshot recebido: ${snapshot.docs.length} documentos',
-          );
-
           final entries =
               snapshot.docs.map((doc) {
                 final data = doc.data();
-                debugPrint(
-                  '📄 Doc ${doc.id}: ${data['title'] ?? 'Sem título'} - ${data['content']?.toString().substring(0, 30) ?? ''}...',
-                );
                 return DiaryEntry.fromMap(data, doc.id);
               }).toList();
 
-          debugPrint('✅ Processadas ${entries.length} entradas do Firebase');
           return entries;
         });
   }

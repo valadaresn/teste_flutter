@@ -4,12 +4,13 @@ import '../utils/detail_panel_constants.dart';
 /// **DetailHeader** - Header do painel com título e indicadores de status
 ///
 /// Componente reutilizável que mostra:
-/// - Título do painel
+/// - Título do painel ou widget customizado
 /// - Botão de fechar (opcional)
 /// - Indicadores de salvamento/alterações pendentes
 /// - Suporte para AppBar (mobile) ou Container (desktop)
 class DetailHeader extends StatelessWidget {
-  final String title;
+  final String? title;
+  final Widget? customContent;
   final bool isSaving;
   final bool hasUnsavedChanges;
   final VoidCallback? onClose;
@@ -20,7 +21,8 @@ class DetailHeader extends StatelessWidget {
 
   const DetailHeader({
     Key? key,
-    required this.title,
+    this.title,
+    this.customContent,
     this.isSaving = false,
     this.hasUnsavedChanges = false,
     this.onClose,
@@ -42,7 +44,7 @@ class DetailHeader extends StatelessWidget {
   /// 📱 Constrói AppBar para mobile
   Widget _buildAppBar(BuildContext context) {
     return AppBar(
-      title: Text(title),
+      title: customContent ?? Text(title ?? ''),
       backgroundColor:
           backgroundColor ?? DetailPanelConstants.backgroundColorMobile,
       foregroundColor: foregroundColor,
@@ -84,16 +86,18 @@ class DetailHeader extends StatelessWidget {
               color: Colors.grey.shade700,
             ),
 
-          // Título
+          // Conteúdo principal (título ou widget customizado)
           Expanded(
-            child: Text(
-              title,
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-                color: foregroundColor ?? Colors.black87,
-              ),
-            ),
+            child:
+                customContent ??
+                Text(
+                  title ?? '',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                    color: foregroundColor ?? Colors.black87,
+                  ),
+                ),
           ),
 
           // Indicador de status

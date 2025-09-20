@@ -127,9 +127,11 @@ class _TaskManagementScreenState extends State<TaskManagementScreen>
                       layoutType == LayoutType.tablet)
                   ? _buildSidebarDrawer(context, controller)
                   : null,
-          body: AppStateHandler(
-            controller: controller,
-            child: _buildResponsiveLayout(context, controller, layoutType),
+          body: SafeArea(
+            child: AppStateHandler(
+              controller: controller,
+              child: _buildResponsiveLayout(context, controller, layoutType),
+            ),
           ),
           // FAB removido completamente
         );

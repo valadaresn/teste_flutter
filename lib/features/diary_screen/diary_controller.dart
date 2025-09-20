@@ -40,25 +40,14 @@ class DiaryController extends ChangeNotifier {
 
   /// 🌊 Inicializa a subscrição ao Stream do Repository
   void _initializeStream() {
-    debugPrint('📱 DiaryController - Inicializando Stream...');
     _entriesSubscription = _repository.getEntriesStream().listen(
       (entries) {
-        debugPrint('📱 DiaryController - Recebidas ${entries.length} entradas');
-
-        // 🐛 DEBUG: Log detalhado das entradas recebidas
-        for (final entry in entries) {
-          debugPrint(
-            '🔍 Entry ${entry.id}: ${entry.content.substring(0, 30)}... - DateTime: ${entry.dateTime}',
-          );
-        }
-
         _entries = entries;
         _isLoading = false;
         _error = null;
         notifyListeners();
       },
       onError: (error) {
-        debugPrint('❌ DiaryController - Erro no Stream: $error');
         _error = error.toString();
         _isLoading = false;
         notifyListeners();
@@ -100,10 +89,6 @@ class DiaryController extends ChangeNotifier {
         59,
       );
 
-      debugPrint('🔍 DEBUG Filtro - Data selecionada: $_selectedDate');
-      debugPrint('🔍 DEBUG Filtro - Início do dia: $startOfDay');
-      debugPrint('🔍 DEBUG Filtro - Fim do dia: $endOfDay');
-
       filtered =
           filtered.where((entry) {
             final isInRange =
@@ -112,18 +97,8 @@ class DiaryController extends ChangeNotifier {
                   endOfDay.add(Duration(milliseconds: 1)),
                 );
 
-            if (isInRange) {
-              debugPrint(
-                '🔍 DEBUG Filtro - Entry ${entry.id} incluída: ${entry.dateTime}',
-              );
-            }
-
             return isInRange;
           }).toList();
-
-      debugPrint(
-        '🔍 DEBUG Filtro - ${filtered.length} entradas após filtro de data',
-      );
     }
 
     // Filtro por humor
@@ -235,7 +210,6 @@ class DiaryController extends ChangeNotifier {
   /// 🧹 Dispose - Cancela o StreamSubscription
   @override
   void dispose() {
-    debugPrint('📱 DiaryController - Cancelando Stream subscription...');
     _entriesSubscription?.cancel();
     super.dispose();
   }

@@ -1,69 +1,34 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'notes_controller.dart';
+import 'notes_provider.dart';
 import 'note_model.dart';
-import 'widgets/note_dialog.dart';
 import 'widgets/note_list.dart';
 import 'widgets/search_widget.dart';
 import 'widgets/tag_filter_widget.dart';
+import 'widgets/tag_management_dialog.dart';
+import 'widgets/note_edit_panel.dart';
 
-class NotesScreen extends StatefulWidget {
+class NotesScreen extends ConsumerStatefulWidget {
   const NotesScreen({Key? key}) : super(key: key);
 
   @override
-  State<NotesScreen> createState() => _NotesScreenState();
+  ConsumerState<NotesScreen> createState() => _NotesScreenState();
 }
 
-class _NotesScreenState extends State<NotesScreen> {
-  int _rebuildCount = 0;
-  late NotesController _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = NotesController();
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
+class _NotesScreenState extends ConsumerState<NotesScreen> {
+  bool _isSearchExpanded = false; // ✅ Estado inicial: busca oculta
+  Note? _selectedNote; // ✅ NOVO: Nota selecionada para edição no painel lateral
+  bool _isPanelOpen = false; // ✅ NOVO: Controla se o painel está aberto
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider.value(
-      value: _controller,
-      child: Consumer<NotesController>(
-        builder: (context, controller, _) {
-          return Scaffold(
-            appBar: _buildAppBar(),
-            body: _buildBody(controller),
-            floatingActionButton: _buildFAB(),
-          );
-        },
-      ),
-    );
-  }
+    // Watch do controller via provider
+    final controller = ref.watch(notesControllerProvider);
 
-  AppBar _buildAppBar() {
-    return AppBar(
-      title: const Text('Notas com Selector'),
-      actions: [
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8),
-          alignment: Alignment.center,
-          child: Text(
-            'Rebuilds: $_rebuildCount',
-            style: const TextStyle(fontSize: 12),
-          ),
-        ),
-        IconButton(
-          icon: const Icon(Icons.refresh),
-          tooltip: 'Forçar rebuild',
-          onPressed: () => setState(() => _rebuildCount++),
-        ),
-      ],
+    return Scaffold(
+      body: SafeArea(child: _buildBody(controller)),
+      floatingActionButton: _buildFAB(),
     );
   }
 
@@ -76,29 +41,161 @@ class _NotesScreenState extends State<NotesScreen> {
       return Center(child: Text('Erro: ${controller.error}'));
     }
 
+    // ✅ CORREÇÃO: Detectar se é mobile para usar layout adequado
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isMobile = screenWidth < 600;
+
+    // ✅ NOVO: Layout com painel lateral quando há nota selecionada OU criando nova nota
+    if (_isPanelOpen) {
+      if (isMobile) {
+        // 📱 Mobile: Navegação para tela cheia
+        return NoteEditPanel(
+          key: ValueKey(
+            _selectedNote?.id ??
+                'new_note_${DateTime.now().millisecondsSinceEpoch}',
+          ),
+          note: _selectedNote,
+          controller: controller,
+          initialTags:
+              _selectedNote == null ? controller.selectedFilterTags : null,
+          onClose:
+              () => setState(() {
+                _selectedNote = null;
+                _isPanelOpen = false;
+              }),
+          onNoteUpdated: () {
+            setState(() {});
+          },
+          onNoteCreated: (Note createdNote) {
+            setState(() {
+              _selectedNote = createdNote;
+            });
+          },
+        );
+      } else {
+        // 🖥️ Desktop: Layout Row com painel lateral
+        return Row(
+          children: [
+            // Lista de notas (lado esquerdo)
+            Expanded(flex: 1, child: _buildMainContent()),
+            // Painel de edição (lado direito)
+            NoteEditPanel(
+              key: ValueKey(
+                _selectedNote?.id ??
+                    'new_note_${DateTime.now().millisecondsSinceEpoch}',
+              ),
+              note: _selectedNote,
+              controller: controller,
+              initialTags:
+                  _selectedNote == null ? controller.selectedFilterTags : null,
+              onClose:
+                  () => setState(() {
+                    _selectedNote = null;
+                    _isPanelOpen = false;
+                  }),
+              onNoteUpdated: () {
+                setState(() {});
+              },
+              onNoteCreated: (Note createdNote) {
+                setState(() {
+                  _selectedNote = createdNote;
+                });
+              },
+            ),
+          ],
+        );
+      }
+    }
+
+    // Layout normal sem painel lateral
+    return _buildMainContent();
+  }
+
+  /// ✅ NOVO: Conteúdo principal da tela (lista + filtros)
+  Widget _buildMainContent() {
     return Column(
       children: [
-        _buildHeader(),
-        TagFilterWidget(controller: controller), // ✅ ADICIONAR ESTA LINHA
-        SearchWidget(controller: controller), // ✅ NOVO: Widget de busca
+        _buildNotesHeader(), // ✅ Linha 1 - Título "Notas" + Toggle busca
+        TagFilterWidget(
+          onTagSelected: _onTagSelected, // ✅ NOVO: Callback para seleção de tag
+        ), // ✅ Linha 2 - Tags sempre visíveis
+        if (_isSearchExpanded)
+          _buildSearchSection(), // ✅ Linha 3 - Busca condicional
         Expanded(
-          child: NotesList(controller: controller, onNoteTap: _editNote),
-        ),
+          child: NotesList(
+            onNoteTap: _openNoteInPanel,
+            selectedNoteId:
+                _selectedNote?.id, // ✅ NOVO: Passa ID da nota selecionada
+          ),
+        ), // ✅ Linha 4+ - Lista de notas
       ],
     );
   }
 
-  Widget _buildHeader() {
+  /// Linha 1: "Notas" + ícone para expandir/colapsar busca
+  Widget _buildNotesHeader() {
     return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(12),
-      color: Colors.green.withOpacity(0.1),
-      child: const Text(
-        'Notas usando GenericSelectorList para isolamento.\n'
-        'Clique em qualquer nota para editar.',
-        textAlign: TextAlign.center,
-        style: TextStyle(fontSize: 14),
+      padding: const EdgeInsets.only(
+        left: 16,
+        right: 16,
+        top: 8,
+        bottom: 0,
+      ), // ✅ ZERO padding bottom
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          const Text(
+            'Notas',
+            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+          ),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // ✅ NOVO: Ícone de configurações para gerenciar tags
+              GestureDetector(
+                onTap: _openTagManagement,
+                child: Icon(Icons.settings, color: Colors.grey[600], size: 20),
+              ),
+              const SizedBox(width: 12),
+              GestureDetector(
+                onTap:
+                    () =>
+                        setState(() => _isSearchExpanded = !_isSearchExpanded),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      _isSearchExpanded
+                          ? Icons.keyboard_arrow_up
+                          : Icons.keyboard_arrow_down,
+                      color: Colors.grey[600],
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      'Busca',
+                      style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
+    );
+  }
+
+  /// Linha 3: Seção de busca - só aparece quando expandida
+  Widget _buildSearchSection() {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.grey[50],
+        border: Border(
+          top: BorderSide(color: Colors.grey[300]!, width: 1),
+          bottom: BorderSide(color: Colors.grey[300]!, width: 1),
+        ),
+      ),
+      child: SearchWidget(), // ✅ Só o widget de busca
     );
   }
 
@@ -110,64 +207,69 @@ class _NotesScreenState extends State<NotesScreen> {
     );
   }
 
-  Future<void> _editNote(Note note) async {
-    final result = await showGeneralDialog<Map<String, dynamic>>(
-      context: context,
-      barrierDismissible: true,
-      barrierLabel: '',
-      transitionDuration: Duration.zero,
-      pageBuilder: (context, animation, secondaryAnimation) {
-        return NoteDialog(
-          title: 'Editar Nota',
-          initialTitle: note.title,
-          initialContent: note.content,
-          initialTags: note.tags,
-          availableTags: _controller.suggestedTags,
-          getTagColor: _controller.getTagColor,
-        );
-      },
-    );
-
-    if (result == null) return;
-
-    try {
-      await _controller.updateNoteFromDialog(note, result);
-      _showSnackBar('Nota atualizada com sucesso!');
-    } catch (e) {
-      _showSnackBar('Erro ao atualizar: $e');
-    }
+  /// ✅ NOVO: Abre nota no painel lateral
+  void _openNoteInPanel(Note note) {
+    setState(() {
+      _selectedNote = note;
+      _isPanelOpen = true;
+    });
   }
 
+  /// ✅ MUDANÇA: Cria nota instantaneamente como no OneNote
   Future<void> _addNewNote() async {
-    final result = await showGeneralDialog<Map<String, dynamic>>(
-      context: context,
-      barrierDismissible: true,
-      barrierLabel: '',
-      transitionDuration: Duration.zero,
-      pageBuilder: (context, animation, secondaryAnimation) {
-        return NoteDialog(
-          title: 'Nova Nota',
-          availableTags: _controller.suggestedTags,
-          getTagColor: _controller.getTagColor,
-        );
-      },
-    );
+    final controller = ref.read(notesControllerProvider);
 
-    if (result == null) return;
+    // Criar nota vazia instantaneamente
+    final success = await controller.addNoteFromDialog({
+      'title': '',
+      'content': '',
+      'tags': controller.selectedFilterTags,
+    });
 
-    try {
-      await _controller.addNoteFromDialog(result);
-      _showSnackBar('Nota adicionada com sucesso!');
-    } catch (e) {
-      _showSnackBar('Erro ao adicionar nota: $e');
+    if (success) {
+      // Buscar a nota recém-criada (a mais recente)
+      final notes = controller.notes;
+      if (notes.isNotEmpty) {
+        final newNote = notes.first; // A mais recente fica no topo
+        setState(() {
+          _selectedNote = newNote;
+          _isPanelOpen = true;
+        });
+      }
     }
   }
 
-  void _showSnackBar(String message) {
-    if (mounted) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(message)));
-    }
+  /// ✅ NOVO: Callback quando uma tag é selecionada
+  void _onTagSelected(String tag) {
+    final controller = ref.read(notesControllerProvider);
+
+    // Após mudança da tag, busca a primeira nota da lista filtrada
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final filteredNotes = controller.notes;
+
+      if (filteredNotes.isNotEmpty) {
+        // Seleciona a primeira nota da lista filtrada
+        final firstNote = filteredNotes.first;
+        setState(() {
+          _selectedNote = firstNote;
+          _isPanelOpen = true;
+        });
+      }
+    });
+  }
+
+  /// ✅ NOVO: Abre o diálogo de gerenciamento de tags
+  Future<void> _openTagManagement() async {
+    await showDialog(
+      context: context,
+      builder:
+          (context) => TagManagementDialog(
+            controller: ref.read(notesControllerProvider),
+            onTagUpdated: () {
+              // Força atualização da UI quando tags são modificadas
+              setState(() {});
+            },
+          ),
+    );
   }
 }

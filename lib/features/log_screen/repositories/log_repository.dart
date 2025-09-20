@@ -5,7 +5,7 @@ import '../log_model.dart';
 class LogRepository {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final String _logsCollection = 'logs';
-  bool _debugMode = true;
+  bool _debugMode = false;
 
   void _debugPrint(String message) {
     if (_debugMode) {

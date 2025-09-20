@@ -5,6 +5,8 @@ import 'diary_controller.dart' as NewDiary;
 import '../../models/diary_entry.dart';
 import 'widgets/diary_entries_list.dart';
 import 'widgets/diary_detail_panel.dart';
+import 'widgets/detail_panels/layouts/detail_panel_desktop.dart';
+import 'widgets/detail_panels/utils/detail_panel_helpers.dart';
 import '../task_management/widgets/tasks/detail/diary/task_diary_entry_form.dart';
 
 /// **DiaryScreen** - Tela dedicada do diário
@@ -15,6 +17,7 @@ import '../task_management/widgets/tasks/detail/diary/task_diary_entry_form.dart
 /// Agora usando o novo sistema:
 /// - NewDiary.DiaryController com Provider
 /// - DiaryEntriesList com GenericSelectorList
+/// - Split-screen layout igual ao NotesScreen
 /// - Evita piscar da tela conforme instrucoes_lista.txt
 class DiaryScreen extends StatefulWidget {
   const DiaryScreen({Key? key}) : super(key: key);
@@ -25,6 +28,11 @@ class DiaryScreen extends StatefulWidget {
 
 class _DiaryScreenState extends State<DiaryScreen> {
   DateTime _selectedDate = DateTime.now();
+  DiaryEntry?
+  _selectedEntry; // ✅ NOVO: Entrada selecionada para edição no painel lateral
+  bool _isPanelOpen = false; // ✅ NOVO: Controla se o painel está aberto
+  bool _showInputForm =
+      false; // ✅ NOVO: Controla se o formulário de input está visível
 
   @override
   Widget build(BuildContext context) {
@@ -45,23 +53,11 @@ class _DiaryScreenState extends State<DiaryScreen> {
   /// Constrói a AppBar com navegação de datas
   PreferredSizeWidget _buildAppBar(NewDiary.DiaryController controller) {
     return AppBar(
-      backgroundColor: const Color(0xFFF8E8E8),
+      backgroundColor: const Color(0xFFFCF0F0), // ✅ MESMA COR DO CORPO
       elevation: 0,
       title: Row(
         children: [
-          const Icon(Icons.book, color: Colors.pinkAccent, size: 24),
-          const SizedBox(width: 8),
-          const Text(
-            'Diário',
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.w600,
-              color: Colors.black87,
-            ),
-          ),
-          const Spacer(),
-
-          // Navegação de data
+          // ✅ NOVO: Navegação de data PRIMEIRO (lado esquerdo)
           Row(
             children: [
               // Seta para dia anterior
@@ -106,12 +102,26 @@ class _DiaryScreenState extends State<DiaryScreen> {
               ),
             ],
           ),
+
+          const Spacer(),
+
+          // Título "Diário" no centro
+          const Icon(Icons.book, color: Colors.pinkAccent, size: 24),
+          const SizedBox(width: 8),
+          const Text(
+            'Diário',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.w600,
+              color: Colors.black87,
+            ),
+          ),
         ],
       ),
       actions: [
-        // Contador de entradas
+        // Contador de entradas (mantido)
         Container(
-          margin: const EdgeInsets.only(right: 16),
+          margin: const EdgeInsets.only(right: 8),
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           decoration: BoxDecoration(
             color: Colors.white.withOpacity(0.8),
@@ -126,17 +136,78 @@ class _DiaryScreenState extends State<DiaryScreen> {
             ),
           ),
         ),
+
+        // ✅ NOVO: Ícone de adicionar (apenas mobile)
+        if (DetailPanelHelpers.isMobile(context))
+          IconButton(
+            onPressed: () => setState(() => _showInputForm = !_showInputForm),
+            icon: Icon(
+              _showInputForm ? Icons.close : Icons.add,
+              color: Colors.grey.shade700,
+              size: 20,
+            ),
+            constraints: const BoxConstraints(),
+            padding: const EdgeInsets.all(8),
+          ),
       ],
     );
   }
 
-  /// Constrói o corpo da tela
+  /// Constrói o corpo da tela com split-screen quando há entrada selecionada
   Widget _buildBody(NewDiary.DiaryController controller) {
     // 🔥 APLICAR FILTRO DE DATA APÓS O BUILD
     WidgetsBinding.instance.addPostFrameCallback((_) {
       controller.setDateFilter(_selectedDate);
     });
 
+    // ✅ NOVO: Layout com painel lateral quando há entrada selecionada no desktop
+    if (_isPanelOpen && !DetailPanelHelpers.isMobile(context)) {
+      return Row(
+        children: [
+          // Lista de entradas (lado esquerdo) - 75% da tela
+          Expanded(flex: 3, child: _buildMainContent(controller)),
+          // Painel de edição (lado direito) - 25% da tela
+          Expanded(
+            flex: 1,
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                border: Border(
+                  left: BorderSide(color: Colors.grey.shade300, width: 1),
+                ),
+              ),
+              child: DetailPanelDesktop(
+                key: ValueKey(_selectedEntry?.id ?? 'new_entry'),
+                entry: _selectedEntry!,
+                controller: controller,
+                onClose:
+                    () => setState(() {
+                      _selectedEntry = null;
+                      _isPanelOpen = false;
+                    }),
+                onDeleted: () {
+                  setState(() {
+                    _selectedEntry = null;
+                    _isPanelOpen = false;
+                  });
+                  _showSnackBar('🗑️ Entrada excluída!', isError: false);
+                },
+                onUpdated: () {
+                  _showSnackBar('✅ Entrada atualizada!', isError: false);
+                },
+              ),
+            ),
+          ),
+        ],
+      );
+    }
+
+    // Layout normal sem painel lateral
+    return _buildMainContent(controller);
+  }
+
+  /// ✅ NOVO: Conteúdo principal da tela (lista + formulário condicional)
+  Widget _buildMainContent(NewDiary.DiaryController controller) {
     return Column(
       children: [
         // Lista de entradas (ocupa a maior parte da tela)
@@ -147,22 +218,23 @@ class _DiaryScreenState extends State<DiaryScreen> {
                   : _buildEntriesList(),
         ),
 
-        // Formulário fixo no bottom para nova entrada
-        Container(
-          color: const Color(0xFFFCF0F0), // Fundo mais rosado
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            children: [
-              // Linha divisória sutil
-              Container(
-                height: 1,
-                color: Colors.grey.shade300,
-                margin: const EdgeInsets.only(bottom: 12),
-              ),
-              TaskDiaryEntryForm(onSubmit: _addDiaryEntry),
-            ],
+        // ✅ NOVO: Formulário condicional (desktop sempre visível, mobile só quando _showInputForm = true)
+        if (!DetailPanelHelpers.isMobile(context) || _showInputForm)
+          Container(
+            color: const Color(0xFFFCF0F0), // Fundo mais rosado
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              children: [
+                // Linha divisória sutil
+                Container(
+                  height: 1,
+                  color: Colors.grey.shade300,
+                  margin: const EdgeInsets.only(bottom: 12),
+                ),
+                TaskDiaryEntryForm(onSubmit: _addDiaryEntry),
+              ],
+            ),
           ),
-        ),
       ],
     );
   }
@@ -239,6 +311,14 @@ class _DiaryScreenState extends State<DiaryScreen> {
 
       // Salvar via novo controller
       await controller.addEntry(newEntry);
+
+      // ✅ NOVO: Esconder formulário no mobile após criar entrada
+      if (DetailPanelHelpers.isMobile(context)) {
+        setState(() {
+          _showInputForm = false;
+        });
+      }
+
       _showSnackBar('📝 Entrada adicionada com sucesso!', isError: false);
     } catch (e) {
       debugPrint('❌ Erro ao adicionar entrada: $e');
@@ -246,25 +326,31 @@ class _DiaryScreenState extends State<DiaryScreen> {
     }
   }
 
-  /// Edita entrada existente
+  /// ✅ NOVO: Abre entrada no painel lateral (desktop) ou navegação (mobile)
   Future<void> _editDiaryEntry(DiaryEntry entry) async {
-    final controller = Provider.of<NewDiary.DiaryController>(
-      context,
-      listen: false,
-    );
-
-    // 🎯 USAR O NOVO PAINEL DE DETALHES
-    await DiaryDetailPanel.showAuto(
-      context: context,
-      entry: entry,
-      controller: controller,
-      onDeleted: () {
-        _showSnackBar('🗑️ Entrada excluída!', isError: false);
-      },
-      onUpdated: () {
-        _showSnackBar('✅ Entrada atualizada!', isError: false);
-      },
-    );
+    if (DetailPanelHelpers.isMobile(context)) {
+      // Mobile: Navegação normal
+      await DiaryDetailPanel.showMobile(
+        context: context,
+        entry: entry,
+        controller: Provider.of<NewDiary.DiaryController>(
+          context,
+          listen: false,
+        ),
+        onDeleted: () {
+          _showSnackBar('🗑️ Entrada excluída!', isError: false);
+        },
+        onUpdated: () {
+          _showSnackBar('✅ Entrada atualizada!', isError: false);
+        },
+      );
+    } else {
+      // Desktop: Split-screen
+      setState(() {
+        _selectedEntry = entry;
+        _isPanelOpen = true;
+      });
+    }
   }
 
   /// Exclui entrada de diário

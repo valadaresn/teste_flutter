@@ -7,6 +7,7 @@ import 'note_model.dart';
 class NotesRepository {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final String _collectionPath = 'notes';
+  final String _settingsPath = 'notes_settings';
 
   // Stream de todas as notas
   Stream<List<Note>> getNotesStream() {
@@ -16,6 +17,33 @@ class NotesRepository {
           .toList()
         ..sort((a, b) => b.dateTime.compareTo(a.dateTime));
     });
+  }
+
+  // Stream das configurações (tags personalizadas)
+  Stream<Map<String, dynamic>?> getSettingsStream() {
+    return _firestore
+        .collection(_settingsPath)
+        .doc('user_tags')
+        .snapshots()
+        .map((snapshot) {
+          if (snapshot.exists) {
+            return snapshot.data();
+          }
+          return null;
+        });
+  }
+
+  // Salvar tags personalizadas
+  Future<void> saveUserTags({
+    required List<String> customTags,
+    required Map<String, int>
+    tagColors, // Salvamos como int para facilitar serialização
+  }) async {
+    await _firestore.collection(_settingsPath).doc('user_tags').set({
+      'customTags': customTags,
+      'tagColors': tagColors,
+      'lastUpdate': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
   }
 
   // CRUD Operations

@@ -108,7 +108,11 @@ class _DetailPanelMobileState extends State<DetailPanelMobile>
       appBar: PreferredSize(
         preferredSize: const Size.fromHeight(kToolbarHeight),
         child: DetailHeader(
-          title: 'Editar Entrada',
+          customContent: DetailDateDivider(
+            dateTime: selectedDateTime,
+            onDateTimeChanged: changeDateTime,
+            isEditable: true,
+          ),
           isSaving: isSaving,
           hasUnsavedChanges: hasUnsavedChanges,
           onClose: () => Navigator.of(context).pop(),
@@ -118,18 +122,25 @@ class _DetailPanelMobileState extends State<DetailPanelMobile>
         ),
       ),
       body: _buildMobileBody(),
+      // Comportamento padrão do Flutter - permite que o teclado ajuste a tela
     );
   }
 
   /// 📱 Constrói o corpo do layout mobile
   Widget _buildMobileBody() {
     return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.all(DetailPanelConstants.contentPadding),
-        child: Column(
-          children: [
-            // Área de conteúdo principal (expansível)
-            Expanded(
+      bottom: true, // Mantém SafeArea apenas no bottom
+      child: Column(
+        children: [
+          // Área de conteúdo principal (expansível)
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(
+                DetailPanelConstants.contentPadding,
+                DetailPanelConstants.contentPadding,
+                DetailPanelConstants.contentPadding,
+                2, // Reduzida distância para o footer
+              ),
               child: DetailContentEditor(
                 controller: contentController,
                 focusNode: contentFocusNode,
@@ -137,25 +148,26 @@ class _DetailPanelMobileState extends State<DetailPanelMobile>
                 autofocus: false,
               ),
             ),
+          ),
 
-            const SizedBox(height: 16),
-
-            // Divider com data
-            DetailDateDivider(dateTime: entry.dateTime),
-
-            const SizedBox(height: 16),
-
-            // Footer com ações
-            DetailFooterActions(
+          // Footer com ações
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
+              DetailPanelConstants.contentPadding,
+              0, // Sem distância do conteúdo
+              DetailPanelConstants.contentPadding,
+              12, // Distância do bottom aumentada
+            ),
+            child: DetailFooterActions(
               selectedMood: selectedMood,
               isFavorite: isFavorite,
               onEmojiTap: showEmojiPopup,
               onFavoriteTap: toggleFavorite,
               onDeleteTap: confirmDelete,
-              showLabels: true, // Mostrar labels no mobile
+              showLabels: false, // Labels removidas
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

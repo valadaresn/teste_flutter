@@ -36,8 +36,6 @@ class DiaryEntryCard extends StatefulWidget {
 }
 
 class _DiaryEntryCardState extends State<DiaryEntryCard> {
-  bool _isExpanded = false;
-
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
@@ -84,16 +82,13 @@ class _DiaryEntryCardState extends State<DiaryEntryCard> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Título/Conteúdo
+                    // Título/Conteúdo - limitado a 2 linhas
                     Padding(
                       padding: const EdgeInsets.only(top: 2.0),
                       child: Text(
                         widget.entry.title ?? widget.entry.content,
-                        maxLines: _isExpanded ? null : 2,
-                        overflow:
-                            _isExpanded
-                                ? TextOverflow.visible
-                                : TextOverflow.ellipsis,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w500,
@@ -117,104 +112,6 @@ class _DiaryEntryCardState extends State<DiaryEntryCard> {
                     ),
                   ],
                 ),
-              ),
-
-              // Ações - Favorito + Menu
-              Column(
-                mainAxisAlignment: MainAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      // Botão de favorito
-                      GestureDetector(
-                        onTap:
-                            () => widget.onToggleFavorite(!widget.isFavorite),
-                        child: Container(
-                          padding: const EdgeInsets.all(4),
-                          child: Icon(
-                            widget.isFavorite
-                                ? Icons.favorite
-                                : Icons.favorite_border,
-                            size: 16,
-                            color:
-                                widget.isFavorite
-                                    ? Colors.red.shade400
-                                    : Colors.grey.shade500,
-                          ),
-                        ),
-                      ),
-
-                      const SizedBox(width: 4),
-
-                      // Botão de expansão para textos longos
-                      if ((widget.entry.title ?? widget.entry.content).length >
-                          80)
-                        GestureDetector(
-                          onTap:
-                              () => setState(() => _isExpanded = !_isExpanded),
-                          child: Container(
-                            padding: const EdgeInsets.all(4),
-                            child: Icon(
-                              _isExpanded
-                                  ? Icons.keyboard_arrow_up
-                                  : Icons.keyboard_arrow_down,
-                              size: 14,
-                              color: Colors.grey.shade600,
-                            ),
-                          ),
-                        ),
-
-                      // Menu de ações
-                      PopupMenuButton<String>(
-                        icon: Icon(
-                          Icons.more_horiz,
-                          size: 16,
-                          color: Colors.grey.shade500,
-                        ),
-                        padding: EdgeInsets.zero,
-                        iconSize: 16,
-                        onSelected: (value) {
-                          if (value == 'edit') {
-                            widget.onEdit(widget.entry);
-                          } else if (value == 'delete') {
-                            _showDeleteConfirmation(context);
-                          }
-                        },
-                        itemBuilder:
-                            (context) => [
-                              const PopupMenuItem(
-                                value: 'edit',
-                                child: Row(
-                                  children: [
-                                    Icon(Icons.edit, size: 16),
-                                    SizedBox(width: 8),
-                                    Text('Editar'),
-                                  ],
-                                ),
-                              ),
-                              const PopupMenuItem(
-                                value: 'delete',
-                                child: Row(
-                                  children: [
-                                    Icon(
-                                      Icons.delete,
-                                      size: 16,
-                                      color: Colors.red,
-                                    ),
-                                    SizedBox(width: 8),
-                                    Text(
-                                      'Excluir',
-                                      style: TextStyle(color: Colors.red),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                      ),
-                    ],
-                  ),
-                ],
               ),
             ],
           ),
@@ -291,70 +188,12 @@ class _DiaryEntryCardState extends State<DiaryEntryCard> {
     );
   }
 
-  /// Formata apenas a hora (HH:MM) - Versão robusta
-  String _formatTime(DateTime dateTime) {
-    // 🐛 DEBUG: Log para verificar a data recebida
-    debugPrint('🔍 DEBUG DiaryEntryCard - formatTime recebeu: $dateTime');
-    debugPrint('🔍 DEBUG DiaryEntryCard - Entry ID: ${widget.entry.id}');
-    debugPrint(
-      '🔍 DEBUG DiaryEntryCard - Entry DateTime original: ${widget.entry.dateTime}',
-    );
-
-    // 🔧 FIX: Garantir que estamos usando exatamente a data da entrada
-    final originalDateTime = widget.entry.dateTime;
-    final hour = originalDateTime.hour.toString().padLeft(2, '0');
-    final minute = originalDateTime.minute.toString().padLeft(2, '0');
-    final formatted = '$hour:$minute';
-
-    debugPrint('🔍 DEBUG DiaryEntryCard - Hora formatada: $formatted');
-    debugPrint(
-      '🔍 DEBUG DiaryEntryCard - Data completa original: ${originalDateTime.toString()}',
-    );
-
-    return formatted;
-  }
-
   /// Formata a hora diretamente da entrada (sem parâmetros extras)
   String _formatTimeDirectly(DateTime entryDateTime) {
-    debugPrint('🔍 DEBUG _formatTimeDirectly - DateTime: $entryDateTime');
-    debugPrint(
-      '🔍 DEBUG _formatTimeDirectly - Entry content: ${widget.entry.content.substring(0, 30)}...',
-    );
-
     final hour = entryDateTime.hour.toString().padLeft(2, '0');
     final minute = entryDateTime.minute.toString().padLeft(2, '0');
     final result = '$hour:$minute';
 
-    debugPrint('🔍 DEBUG _formatTimeDirectly - Resultado: $result');
     return result;
-  }
-
-  /// Mostra confirmação antes de excluir
-  void _showDeleteConfirmation(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Excluir entrada'),
-          content: const Text(
-            'Tem certeza que deseja excluir esta entrada do diário?',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Cancelar'),
-            ),
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-                widget.onDelete();
-              },
-              style: TextButton.styleFrom(foregroundColor: Colors.red),
-              child: const Text('Excluir'),
-            ),
-          ],
-        );
-      },
-    );
   }
 }

@@ -36,8 +36,7 @@ class DetailFooterActions extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding:
-          padding ?? const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
       decoration: BoxDecoration(
         color: backgroundColor ?? DetailPanelConstants.contentBackgroundColor,
         borderRadius: BorderRadius.circular(DetailPanelConstants.borderRadius),
@@ -58,29 +57,20 @@ class DetailFooterActions extends StatelessWidget {
   Widget _buildEmojiButton() {
     return GestureDetector(
       onTap: onEmojiTap,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: DiaryStyles.getMoodColor(selectedMood),
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: Colors.grey.shade300, width: 1),
-            ),
-            child: Text(
-              selectedMood,
-              style: const TextStyle(fontSize: DetailPanelConstants.emojiSize),
-            ),
+      child: Container(
+        width: 48,
+        height: 48,
+        decoration: BoxDecoration(
+          color: DiaryStyles.getMoodColor(selectedMood),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: Colors.grey.shade300, width: 1),
+        ),
+        child: Center(
+          child: Text(
+            selectedMood,
+            style: const TextStyle(fontSize: DetailPanelConstants.emojiSize),
           ),
-          if (showLabels) ...[
-            const SizedBox(height: 4),
-            Text(
-              'Humor',
-              style: TextStyle(fontSize: 10, color: Colors.grey.shade600),
-            ),
-          ],
-        ],
+        ),
       ),
     );
   }
@@ -89,34 +79,24 @@ class DetailFooterActions extends StatelessWidget {
   Widget _buildFavoriteButton() {
     return GestureDetector(
       onTap: onFavoriteTap,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: isFavorite ? Colors.yellow.shade100 : Colors.transparent,
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(
-                color:
-                    isFavorite ? Colors.yellow.shade400 : Colors.grey.shade300,
-                width: 1,
-              ),
-            ),
-            child: Icon(
-              isFavorite ? Icons.star : Icons.star_border,
-              color: isFavorite ? Colors.yellow.shade700 : Colors.grey.shade600,
-              size: DetailPanelConstants.iconSize,
-            ),
+      child: Container(
+        width: 48,
+        height: 48,
+        decoration: BoxDecoration(
+          color: isFavorite ? Colors.yellow.shade100 : Colors.transparent,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: isFavorite ? Colors.yellow.shade400 : Colors.grey.shade300,
+            width: 1,
           ),
-          if (showLabels) ...[
-            const SizedBox(height: 4),
-            Text(
-              'Favorito',
-              style: TextStyle(fontSize: 10, color: Colors.grey.shade600),
-            ),
-          ],
-        ],
+        ),
+        child: Center(
+          child: Icon(
+            isFavorite ? Icons.star : Icons.star_border,
+            color: isFavorite ? Colors.yellow.shade700 : Colors.grey.shade600,
+            size: DetailPanelConstants.iconSize,
+          ),
+        ),
       ),
     );
   }
@@ -125,30 +105,21 @@ class DetailFooterActions extends StatelessWidget {
   Widget _buildDeleteButton() {
     return GestureDetector(
       onTap: onDeleteTap,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Colors.transparent,
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: Colors.grey.shade300, width: 1),
-            ),
-            child: Icon(
-              Icons.delete_outline,
-              color: Colors.red.shade600,
-              size: DetailPanelConstants.iconSize,
-            ),
+      child: Container(
+        width: 48,
+        height: 48,
+        decoration: BoxDecoration(
+          color: Colors.transparent,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: Colors.grey.shade300, width: 1),
+        ),
+        child: Center(
+          child: Icon(
+            Icons.delete_outline,
+            color: Colors.red.shade600,
+            size: DetailPanelConstants.iconSize,
           ),
-          if (showLabels) ...[
-            const SizedBox(height: 4),
-            Text(
-              'Excluir',
-              style: TextStyle(fontSize: 10, color: Colors.grey.shade600),
-            ),
-          ],
-        ],
+        ),
       ),
     );
   }

@@ -60,8 +60,9 @@ class TaskList extends StatelessWidget {
           ),
         ),
 
-        // Campo de entrada rápida no bottom
-        QuickAddTaskInput(controller: controller),
+        // Campo de entrada rápida no bottom - APENAS NO DESKTOP (>= 1024px)
+        if (MediaQuery.of(context).size.width >= 1024)
+          QuickAddTaskInput(controller: controller),
       ],
     );
   }

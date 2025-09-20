@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart'; // Adicionar import do Provider
 import '../../controllers/task_controller.dart';
 import '../../models/list_model.dart' as Models;
-import '../../themes/theme_provider.dart'; // Adicionar import do ThemeProvider
-import '../../themes/app_theme.dart'; // Adicionar import para ListPanelStyle
 import 'list_form_dialog.dart';
 import 'list_item.dart';
 
@@ -110,26 +107,20 @@ class ListPanel extends StatelessWidget {
 
   /// Constrói a lista de listas
   Widget _buildListsList(BuildContext context, List<Models.TaskList> lists) {
-    return Consumer<ThemeProvider>(
-      builder: (context, themeProvider, child) {
-        return ListView.builder(
-          padding: const EdgeInsets.symmetric(vertical: 4),
-          itemCount: lists.length,
-          itemBuilder: (context, index) {
-            final list = lists[index];
-            final isSelected =
-                controller.selectedListId == list.id &&
-                !controller.showTodayView;
+    return ListView.builder(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      itemCount: lists.length,
+      itemBuilder: (context, index) {
+        final list = lists[index];
+        final isSelected =
+            controller.selectedListId == list.id && !controller.showTodayView;
 
-            return ListItem(
-              list: list,
-              controller: controller,
-              isSelected: isSelected,
-              onTap: () => _selectList(list),
-              useDecoratedStyle:
-                  themeProvider.listPanelStyle == ListPanelStyle.decorated,
-            );
-          },
+        return ListItem(
+          list: list,
+          controller: controller,
+          isSelected: isSelected,
+          onTap: () => _selectList(list),
+          useDecoratedStyle: false, // Usar estilo padrão
         );
       },
     );

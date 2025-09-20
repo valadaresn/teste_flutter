@@ -1,11 +1,8 @@
 // Arquivo renomeado de task_card.dart para task_item.dart para padronização com outros componentes do projeto.
 
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import '../../../controllers/task_controller.dart';
 import '../../../models/task_model.dart';
-import '../../../themes/theme_provider.dart';
-import '../../../themes/app_theme.dart';
 
 class TaskItem extends StatefulWidget {
   final Task task;
@@ -49,18 +46,9 @@ class _TaskItemState extends State<TaskItem> {
     // Cor baseada na lista selecionada ou cor padrão
     final listColor = selectedList?.color ?? Theme.of(context).primaryColor;
 
-    // Usar o ThemeProvider para obter configurações
-    final themeProvider = Provider.of<ThemeProvider>(context);
-
-    // Determinar cor da borda e propriedades quando selecionado
-    Color borderColor;
-    if (isSelected && themeProvider.cardStyle == CardStyle.clean) {
-      // Clean style: usar cor primary do tema quando selecionado
-      borderColor = Theme.of(context).colorScheme.primary;
-    } else {
-      // Dynamic style: comportamento original
-      borderColor = themeProvider.getCardBorderColor(isSelected, listColor);
-    }
+    // Determinar cor da borda com base na seleção
+    Color borderColor =
+        isSelected ? listColor.withOpacity(0.8) : Colors.grey.withOpacity(0.2);
 
     return MouseRegion(
       onEnter: (_) => setState(() => _isHovered = true),
@@ -71,24 +59,14 @@ class _TaskItemState extends State<TaskItem> {
         child: Container(
           margin: const EdgeInsets.symmetric(vertical: 0.2),
           decoration: BoxDecoration(
-            // 🚀 COR INSTANTÂNEA baseada no estado local primeiro
             color:
                 isSelected
-                    ? Theme.of(context).colorScheme.onSurface.withOpacity(0.08)
+                    ? Theme.of(context).colorScheme.primary.withOpacity(0.1)
                     : _isHovered
                     ? Theme.of(context).colorScheme.onSurface.withOpacity(0.04)
-                    : themeProvider.getCardGradient(false) == null
-                    ? themeProvider.getCardColor(false)
-                    : null,
-            gradient: themeProvider.getCardGradient(isSelected),
-            borderRadius: BorderRadius.circular(
-              themeProvider.getBorderRadius(),
-            ),
-            border: Border.all(
-              color: borderColor,
-              width: themeProvider.getCardBorderWidth(isSelected),
-            ),
-            boxShadow: themeProvider.getCardShadow(isSelected),
+                    : Theme.of(context).colorScheme.surface,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: borderColor, width: isSelected ? 2 : 1),
           ),
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),

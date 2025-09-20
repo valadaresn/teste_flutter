@@ -8,7 +8,7 @@ class TaskRepository {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final String _listsCollection = 'task_lists';
   final String _tasksCollection = 'tasks';
-  bool _debugMode = true;
+  bool _debugMode = false;
 
   void _debugPrint(String message) {
     if (_debugMode) {
@@ -27,21 +27,23 @@ class TaskRepository {
         .orderBy('createdAt')
         .snapshots()
         .map((snapshot) {
-      final lists = snapshot.docs
-          .map((doc) => TaskList.fromMap(doc.data(), doc.id))
-          .toList();
-      
-      // Ordenação no cliente para evitar índices compostos
-      lists.sort((a, b) {
-        final sortOrderComparison = a.sortOrder.compareTo(b.sortOrder);
-        if (sortOrderComparison != 0) return sortOrderComparison;
-        return a.createdAt.compareTo(b.createdAt);
-      });
-      
-      _debugPrint('📊 Stream listas: ${lists.length} itens');
-      return lists;
-    });
+          final lists =
+              snapshot.docs
+                  .map((doc) => TaskList.fromMap(doc.data(), doc.id))
+                  .toList();
+
+          // Ordenação no cliente para evitar índices compostos
+          lists.sort((a, b) {
+            final sortOrderComparison = a.sortOrder.compareTo(b.sortOrder);
+            if (sortOrderComparison != 0) return sortOrderComparison;
+            return a.createdAt.compareTo(b.createdAt);
+          });
+
+          _debugPrint('📊 Stream listas: ${lists.length} itens');
+          return lists;
+        });
   }
+
   /// Stream de todas as tarefas
   Stream<List<Task>> getTasksStream() {
     _debugPrint('📋 Iniciando stream de tarefas');
@@ -50,21 +52,23 @@ class TaskRepository {
         .orderBy('createdAt')
         .snapshots()
         .map((snapshot) {
-      final tasks = snapshot.docs
-          .map((doc) => Task.fromMap(doc.data(), doc.id))
-          .toList();
-      
-      // Ordenação no cliente para evitar índices compostos
-      tasks.sort((a, b) {
-        final sortOrderComparison = a.sortOrder.compareTo(b.sortOrder);
-        if (sortOrderComparison != 0) return sortOrderComparison;
-        return a.createdAt.compareTo(b.createdAt);
-      });
-      
-      _debugPrint('📋 Stream tarefas: ${tasks.length} itens');
-      return tasks;
-    });
+          final tasks =
+              snapshot.docs
+                  .map((doc) => Task.fromMap(doc.data(), doc.id))
+                  .toList();
+
+          // Ordenação no cliente para evitar índices compostos
+          tasks.sort((a, b) {
+            final sortOrderComparison = a.sortOrder.compareTo(b.sortOrder);
+            if (sortOrderComparison != 0) return sortOrderComparison;
+            return a.createdAt.compareTo(b.createdAt);
+          });
+
+          _debugPrint('📋 Stream tarefas: ${tasks.length} itens');
+          return tasks;
+        });
   }
+
   /// Stream de tarefas de uma lista específica
   Stream<List<Task>> getTasksByListStream(String listId) {
     _debugPrint('📋 Iniciando stream de tarefas da lista: $listId');
@@ -74,21 +78,25 @@ class TaskRepository {
         .orderBy('createdAt')
         .snapshots()
         .map((snapshot) {
-      final tasks = snapshot.docs
-          .map((doc) => Task.fromMap(doc.data(), doc.id))
-          .toList();
-      
-      // Ordenação no cliente para evitar índices compostos
-      tasks.sort((a, b) {
-        final sortOrderComparison = a.sortOrder.compareTo(b.sortOrder);
-        if (sortOrderComparison != 0) return sortOrderComparison;
-        return a.createdAt.compareTo(b.createdAt);
-      });
-      
-      _debugPrint('📋 Stream tarefas da lista $listId: ${tasks.length} itens');
-      return tasks;
-    });
+          final tasks =
+              snapshot.docs
+                  .map((doc) => Task.fromMap(doc.data(), doc.id))
+                  .toList();
+
+          // Ordenação no cliente para evitar índices compostos
+          tasks.sort((a, b) {
+            final sortOrderComparison = a.sortOrder.compareTo(b.sortOrder);
+            if (sortOrderComparison != 0) return sortOrderComparison;
+            return a.createdAt.compareTo(b.createdAt);
+          });
+
+          _debugPrint(
+            '📋 Stream tarefas da lista $listId: ${tasks.length} itens',
+          );
+          return tasks;
+        });
   }
+
   /// Stream de subtarefas de uma tarefa específica
   Stream<List<Task>> getSubtasksByParentStream(String parentTaskId) {
     _debugPrint('📋 Iniciando stream de subtarefas da tarefa: $parentTaskId');
@@ -98,20 +106,23 @@ class TaskRepository {
         .orderBy('createdAt')
         .snapshots()
         .map((snapshot) {
-      final subtasks = snapshot.docs
-          .map((doc) => Task.fromMap(doc.data(), doc.id))
-          .toList();
-      
-      // Ordenação no cliente para evitar índices compostos
-      subtasks.sort((a, b) {
-        final sortOrderComparison = a.sortOrder.compareTo(b.sortOrder);
-        if (sortOrderComparison != 0) return sortOrderComparison;
-        return a.createdAt.compareTo(b.createdAt);
-      });
-      
-      _debugPrint('📋 Stream subtarefas da tarefa $parentTaskId: ${subtasks.length} itens');
-      return subtasks;
-    });
+          final subtasks =
+              snapshot.docs
+                  .map((doc) => Task.fromMap(doc.data(), doc.id))
+                  .toList();
+
+          // Ordenação no cliente para evitar índices compostos
+          subtasks.sort((a, b) {
+            final sortOrderComparison = a.sortOrder.compareTo(b.sortOrder);
+            if (sortOrderComparison != 0) return sortOrderComparison;
+            return a.createdAt.compareTo(b.createdAt);
+          });
+
+          _debugPrint(
+            '📋 Stream subtarefas da tarefa $parentTaskId: ${subtasks.length} itens',
+          );
+          return subtasks;
+        });
   }
 
   // ============================================================================
@@ -152,27 +163,30 @@ class TaskRepository {
   Future<void> deleteList(String listId) async {
     try {
       _debugPrint('🗑️ Deletando lista: $listId');
-      
+
       // Primeiro, deletar todas as tarefas da lista
-      final tasksQuery = await _firestore
-          .collection(_tasksCollection)
-          .where('listId', isEqualTo: listId)
-          .get();
-      
+      final tasksQuery =
+          await _firestore
+              .collection(_tasksCollection)
+              .where('listId', isEqualTo: listId)
+              .get();
+
       final batch = _firestore.batch();
-      
+
       // Adicionar todas as tarefas ao batch para deletar
       for (final doc in tasksQuery.docs) {
         batch.delete(doc.reference);
       }
-      
+
       // Adicionar a lista ao batch para deletar
       batch.delete(_firestore.collection(_listsCollection).doc(listId));
-      
+
       // Executar o batch
       await batch.commit();
-      
-      _debugPrint('✅ Lista e ${tasksQuery.docs.length} tarefas deletadas: $listId');
+
+      _debugPrint(
+        '✅ Lista e ${tasksQuery.docs.length} tarefas deletadas: $listId',
+      );
     } catch (e) {
       _debugPrint('❌ Erro ao deletar lista: $e');
       rethrow;
@@ -217,27 +231,30 @@ class TaskRepository {
   Future<void> deleteTask(String taskId) async {
     try {
       _debugPrint('🗑️ Deletando tarefa: $taskId');
-      
+
       // Primeiro, deletar todas as subtarefas
-      final subtasksQuery = await _firestore
-          .collection(_tasksCollection)
-          .where('parentTaskId', isEqualTo: taskId)
-          .get();
-      
+      final subtasksQuery =
+          await _firestore
+              .collection(_tasksCollection)
+              .where('parentTaskId', isEqualTo: taskId)
+              .get();
+
       final batch = _firestore.batch();
-      
+
       // Adicionar todas as subtarefas ao batch para deletar
       for (final doc in subtasksQuery.docs) {
         batch.delete(doc.reference);
       }
-      
+
       // Adicionar a tarefa principal ao batch para deletar
       batch.delete(_firestore.collection(_tasksCollection).doc(taskId));
-      
+
       // Executar o batch
       await batch.commit();
-      
-      _debugPrint('✅ Tarefa e ${subtasksQuery.docs.length} subtarefas deletadas: $taskId');
+
+      _debugPrint(
+        '✅ Tarefa e ${subtasksQuery.docs.length} subtarefas deletadas: $taskId',
+      );
     } catch (e) {
       _debugPrint('❌ Erro ao deletar tarefa: $e');
       rethrow;
@@ -253,7 +270,7 @@ class TaskRepository {
         'completedAt': isCompleted ? Timestamp.fromDate(DateTime.now()) : null,
         'updatedAt': Timestamp.fromDate(DateTime.now()),
       };
-      
+
       await _firestore
           .collection(_tasksCollection)
           .doc(taskId)
@@ -273,7 +290,7 @@ class TaskRepository {
         'isImportant': isImportant,
         'updatedAt': Timestamp.fromDate(DateTime.now()),
       };
-      
+
       await _firestore
           .collection(_tasksCollection)
           .doc(taskId)
@@ -293,7 +310,7 @@ class TaskRepository {
         'listId': newListId,
         'updatedAt': Timestamp.fromDate(DateTime.now()),
       };
-      
+
       await _firestore
           .collection(_tasksCollection)
           .doc(taskId)
@@ -312,12 +329,13 @@ class TaskRepository {
   /// Criar lista padrão se não existir
   Future<void> createDefaultListIfNeeded() async {
     try {
-      final listsSnapshot = await _firestore
-          .collection(_listsCollection)
-          .where('isDefault', isEqualTo: true)
-          .limit(1)
-          .get();
-      
+      final listsSnapshot =
+          await _firestore
+              .collection(_listsCollection)
+              .where('isDefault', isEqualTo: true)
+              .limit(1)
+              .get();
+
       if (listsSnapshot.docs.isEmpty) {
         _debugPrint('📋 Criando lista padrão');
         final defaultList = TaskList.create(
@@ -338,13 +356,14 @@ class TaskRepository {
   /// Contar tarefas pendentes em uma lista
   Future<int> countPendingTasksInList(String listId) async {
     try {
-      final snapshot = await _firestore
-          .collection(_tasksCollection)
-          .where('listId', isEqualTo: listId)
-          .where('isCompleted', isEqualTo: false)
-          .where('parentTaskId', isNull: true) // Apenas tarefas principais
-          .get();
-      
+      final snapshot =
+          await _firestore
+              .collection(_tasksCollection)
+              .where('listId', isEqualTo: listId)
+              .where('isCompleted', isEqualTo: false)
+              .where('parentTaskId', isNull: true) // Apenas tarefas principais
+              .get();
+
       return snapshot.docs.length;
     } catch (e) {
       _debugPrint('❌ Erro ao contar tarefas pendentes: $e');
@@ -357,7 +376,7 @@ class TaskRepository {
     if (searchQuery.isEmpty) {
       return const Stream.empty();
     }
-    
+
     _debugPrint('🔍 Buscando tarefas: "$searchQuery"');
     return _firestore
         .collection(_tasksCollection)
@@ -365,11 +384,14 @@ class TaskRepository {
         .where('title', isLessThan: searchQuery + '\uf8ff')
         .snapshots()
         .map((snapshot) {
-      final tasks = snapshot.docs
-          .map((doc) => Task.fromMap(doc.data(), doc.id))
-          .toList();
-      _debugPrint('🔍 Encontradas ${tasks.length} tarefas para "$searchQuery"');
-      return tasks;
-    });
+          final tasks =
+              snapshot.docs
+                  .map((doc) => Task.fromMap(doc.data(), doc.id))
+                  .toList();
+          _debugPrint(
+            '🔍 Encontradas ${tasks.length} tarefas para "$searchQuery"',
+          );
+          return tasks;
+        });
   }
 }

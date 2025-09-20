@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import '../../controllers/task_controller.dart';
 import '../../models/task_model.dart';
-import '../../themes/theme_provider.dart';
-import '../common/quick_date_selector.dart';
-import '../common/quick_pomodoro_selector.dart';
-import '../common/quick_list_selector.dart';
+import 'quick_date_selector.dart';
+import 'quick_pomodoro_selector.dart';
+import 'quick_list_selector.dart';
 
 class QuickAddTaskInput extends StatefulWidget {
   final TaskController controller;
@@ -131,24 +129,19 @@ class _QuickAddTaskInputState extends State<QuickAddTaskInput> {
 
   @override
   Widget build(BuildContext context) {
-    final themeProvider = Provider.of<ThemeProvider>(context);
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 16, 16, 8),
       decoration: BoxDecoration(
-        color:
-            themeProvider.getCardGradient(false) == null
-                ? themeProvider.getCardColor(false)
-                : null,
-        gradient: themeProvider.getCardGradient(false),
-        borderRadius: BorderRadius.circular(themeProvider.getBorderRadius()),
-        border: Border.all(
-          color: themeProvider.getCardBorderColor(
-            false,
-            Theme.of(context).primaryColor,
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.grey.withOpacity(0.3), width: 1),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
           ),
-          width: themeProvider.getCardBorderWidth(false),
-        ),
-        boxShadow: themeProvider.getCardShadow(false),
+        ],
       ),
       child: Row(
         children: [

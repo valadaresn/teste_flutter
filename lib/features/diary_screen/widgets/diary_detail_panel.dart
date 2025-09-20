@@ -77,7 +77,7 @@ class DiaryDetailPanel extends StatelessWidget {
     );
   }
 
-  /// 🖥️ Método estático para exibição desktop (dialog)
+  /// 🖥️ Método estático para exibição desktop (split-screen)
   static Future<void> showDesktop({
     required BuildContext context,
     required DiaryEntry entry,
@@ -85,21 +85,31 @@ class DiaryDetailPanel extends StatelessWidget {
     VoidCallback? onDeleted,
     VoidCallback? onUpdated,
   }) {
-    return showDialog(
-      context: context,
-      barrierDismissible: true,
-      barrierColor: Colors.black.withOpacity(0.3),
-      builder:
-          (context) => Align(
-            alignment: Alignment.centerRight,
-            child: DiaryDetailPanel(
+    return Navigator.of(context).push(
+      PageRouteBuilder(
+        pageBuilder:
+            (context, animation, secondaryAnimation) => _DesktopSplitScreen(
               entry: entry,
               controller: controller,
               onDeleted: onDeleted,
               onUpdated: onUpdated,
-              onClose: () => Navigator.of(context).pop(),
             ),
-          ),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          return SlideTransition(
+            position: animation.drive(
+              Tween(
+                begin: const Offset(1.0, 0.0),
+                end: Offset.zero,
+              ).chain(CurveTween(curve: Curves.easeInOut)),
+            ),
+            child: child,
+          );
+        },
+        transitionDuration: const Duration(milliseconds: 300),
+        barrierColor: Colors.black.withOpacity(0.1),
+        opaque: false,
+        maintainState: true,
+      ),
     );
   }
 
@@ -128,5 +138,85 @@ class DiaryDetailPanel extends StatelessWidget {
         onUpdated: onUpdated,
       );
     }
+  }
+}
+
+/// 🖥️ Layout split-screen para desktop (painel à direita + conteúdo à esquerda)
+class _DesktopSplitScreen extends StatelessWidget {
+  final DiaryEntry entry;
+  final NewDiary.DiaryController controller;
+  final VoidCallback? onDeleted;
+  final VoidCallback? onUpdated;
+
+  const _DesktopSplitScreen({
+    Key? key,
+    required this.entry,
+    required this.controller,
+    this.onDeleted,
+    this.onUpdated,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black.withOpacity(0.1),
+      body: SafeArea(
+        child: Row(
+          children: [
+            // 📱 Área esquerda (tela original, semi-transparente)
+            Expanded(
+              flex: 7,
+              child: GestureDetector(
+                onTap: () => Navigator.of(context).pop(),
+                child: Container(
+                  color: Colors.transparent,
+                  child: Center(
+                    child: Text(
+                      'Toque para voltar',
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.7),
+                        fontSize: 16,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+
+            // 🖥️ Painel direito (detail panel)
+            Expanded(
+              flex: 5,
+              child: Container(
+                margin: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.2),
+                      blurRadius: 20,
+                      offset: const Offset(0, 8),
+                    ),
+                  ],
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: DetailPanelDesktop(
+                    entry: entry,
+                    controller: controller,
+                    onDeleted: () {
+                      onDeleted?.call();
+                      Navigator.of(context).pop();
+                    },
+                    onUpdated: onUpdated,
+                    onClose: () => Navigator.of(context).pop(),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }

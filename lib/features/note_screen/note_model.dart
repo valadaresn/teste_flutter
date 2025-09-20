@@ -62,4 +62,21 @@ class Note {
       'tags': tags,
     };
   }
+
+  // ✅ NOVO: Método copyWith para criar cópias modificadas
+  Note copyWith({
+    String? id,
+    String? title,
+    String? content,
+    DateTime? dateTime,
+    List<String>? tags,
+  }) {
+    return Note(
+      id: id ?? this.id,
+      title: title ?? this.title,
+      content: content ?? this.content,
+      dateTime: dateTime ?? this.dateTime,
+      tags: tags ?? this.tags,
+    );
+  }
 }

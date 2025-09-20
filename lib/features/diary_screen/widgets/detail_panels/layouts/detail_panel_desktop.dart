@@ -9,7 +9,6 @@ import '../components/detail_content_editor.dart';
 import '../components/detail_date_divider.dart';
 import '../components/detail_footer_actions.dart';
 import '../utils/detail_panel_constants.dart';
-import '../utils/detail_panel_helpers.dart';
 
 /// **DetailPanelDesktop** - Layout para desktop (painel lateral)
 ///
@@ -77,13 +76,7 @@ class DetailPanelDesktop extends DetailPanelBase {
 
 /// State para o painel desktop
 class _DetailPanelDesktopState extends State<DetailPanelDesktop>
-    with
-        DetailPanelStateMixin,
-        DetailPanelLogicMixin,
-        SingleTickerProviderStateMixin {
-  late AnimationController _animationController;
-  late Animation<Offset> _slideAnimation;
-
+    with DetailPanelStateMixin, DetailPanelLogicMixin {
   @override
   DiaryEntry get entry => widget.entry;
 
@@ -100,36 +93,27 @@ class _DetailPanelDesktopState extends State<DetailPanelDesktop>
   void initState() {
     super.initState();
     initializePanelState();
-    _initializeAnimation();
+  }
+
+  @override
+  void didUpdateWidget(DetailPanelDesktop oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Se a entrada mudou, reinicializa o estado
+    if (oldWidget.entry.id != widget.entry.id) {
+      disposePanelState();
+      initializePanelState();
+    }
   }
 
   @override
   void dispose() {
     disposePanelState();
-    _animationController.dispose();
     super.dispose();
-  }
-
-  /// 🎭 Inicializa a animação de slide
-  void _initializeAnimation() {
-    _animationController = DetailPanelHelpers.createAnimationController(this);
-    _slideAnimation = DetailPanelHelpers.createSlideAnimation(
-      _animationController,
-    );
-
-    // Inicia a animação de entrada
-    _animationController.forward();
   }
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: SlideTransition(
-        position: _slideAnimation,
-        child: _buildDesktopPanel(),
-      ),
-    );
+    return Material(color: Colors.transparent, child: _buildDesktopPanel());
   }
 
   /// 🖥️ Constrói o painel desktop
@@ -149,9 +133,13 @@ class _DetailPanelDesktopState extends State<DetailPanelDesktop>
       ),
       child: Column(
         children: [
-          // Header
+          // Header com data/hora
           DetailHeader(
-            title: 'Editar Entrada',
+            customContent: DetailDateDivider(
+              dateTime: selectedDateTime,
+              onDateTimeChanged: changeDateTime,
+              isEditable: true,
+            ),
             isSaving: isSaving,
             hasUnsavedChanges: hasUnsavedChanges,
             onClose: _closePanel,
@@ -169,12 +157,12 @@ class _DetailPanelDesktopState extends State<DetailPanelDesktop>
 
   /// 📝 Constrói o corpo do painel desktop
   Widget _buildDesktopBody() {
-    return Padding(
-      padding: const EdgeInsets.all(DetailPanelConstants.contentPadding),
-      child: Column(
-        children: [
-          // Área de conteúdo principal (expansível)
-          Expanded(
+    return Column(
+      children: [
+        // Área de conteúdo principal (expansível)
+        Expanded(
+          child: Padding(
+            padding: const EdgeInsets.all(DetailPanelConstants.contentPadding),
             child: DetailContentEditor(
               controller: contentController,
               focusNode: contentFocusNode,
@@ -182,16 +170,17 @@ class _DetailPanelDesktopState extends State<DetailPanelDesktop>
               autofocus: false,
             ),
           ),
+        ),
 
-          const SizedBox(height: 16),
-
-          // Divider com data
-          DetailDateDivider(dateTime: entry.dateTime),
-
-          const SizedBox(height: 16),
-
-          // Footer com ações
-          DetailFooterActions(
+        // Footer com ações (otimizado)
+        Padding(
+          padding: const EdgeInsets.fromLTRB(
+            DetailPanelConstants.contentPadding,
+            4, // Distância mínima do conteúdo
+            DetailPanelConstants.contentPadding,
+            8, // Pequena margem do bottom
+          ),
+          child: DetailFooterActions(
             selectedMood: selectedMood,
             isFavorite: isFavorite,
             onEmojiTap: showEmojiPopup,
@@ -199,16 +188,14 @@ class _DetailPanelDesktopState extends State<DetailPanelDesktop>
             onDeleteTap: confirmDelete,
             showLabels: false, // Sem labels no desktop (mais compacto)
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
-  /// 🚪 Fecha o painel com animação
+  /// 🚪 Fecha o painel instantaneamente
   void _closePanel() {
-    _animationController.reverse().then((_) {
-      widget.onClose?.call();
-    });
+    widget.onClose?.call();
   }
 }
 

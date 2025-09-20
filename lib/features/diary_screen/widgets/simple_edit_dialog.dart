@@ -53,10 +53,7 @@ class _SimpleEditDialogState extends State<SimpleEditDialog> {
           SizedBox(height: 16),
           DropdownButtonFormField<String>(
             value: _selectedMood,
-            decoration: InputDecoration(
-              labelText: 'Humor',
-              border: OutlineInputBorder(),
-            ),
+            decoration: InputDecoration(border: OutlineInputBorder()),
             items:
                 ['😊', '😐', '😢', '😡', '😴', '🤔']
                     .map(
@@ -74,7 +71,6 @@ class _SimpleEditDialogState extends State<SimpleEditDialog> {
           ),
           SizedBox(height: 16),
           CheckboxListTile(
-            title: Text('Favorito'),
             value: _isFavorite,
             onChanged: (value) {
               setState(() {

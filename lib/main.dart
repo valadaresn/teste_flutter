@@ -3,7 +3,8 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:provider/provider.dart';
+import 'package:provider/provider.dart' as provider;
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:teste_flutter/features/habit_screen/habit_screen.dart';
 import 'package:teste_flutter/features/note_screen/notes_screen.dart';
 import 'package:teste_flutter/features/diary_screen/diary_screen.dart'
@@ -18,6 +19,7 @@ import 'package:teste_flutter/widgets/navigation/vertical_navigation_bar.dart';
 import 'screens/task_screen/task_screen.dart';
 import 'firebase_options.dart';
 import 'services/notification_service.dart';
+import 'services/tag_initialization_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -27,6 +29,10 @@ void main() async {
   // Inicializa o Firebase
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
+  // Inicializa as tags padrão
+  final tagService = TagInitializationService();
+  await tagService.initializeDefaultTags();
+
   runApp(const MyApp());
 }
 
@@ -34,29 +40,31 @@ class MyApp extends StatelessWidget {
   const MyApp({super.key});
   @override
   Widget build(BuildContext context) {
-    return MultiProvider(
+    return provider.MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (context) => TaskController()),
-        ChangeNotifierProvider(create: (context) => ThemeProvider()),
-        ChangeNotifierProvider(create: (context) => LogController()),
-        ChangeNotifierProvider(
+        provider.ChangeNotifierProvider(create: (context) => TaskController()),
+        provider.ChangeNotifierProvider(create: (context) => ThemeProvider()),
+        provider.ChangeNotifierProvider(create: (context) => LogController()),
+        provider.ChangeNotifierProvider(
           create: (context) => DiaryController.DiaryController(),
         ),
       ],
-      child: MaterialApp(
-        title: 'Teste Flutter',
-        localizationsDelegates: const [
-          GlobalMaterialLocalizations.delegate,
-          GlobalWidgetsLocalizations.delegate,
-          GlobalCupertinoLocalizations.delegate,
-        ],
-        supportedLocales: const [Locale('pt', 'BR'), Locale('en', 'US')],
-        locale: const Locale('pt', 'BR'),
-        theme: ThemeData(
-          colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-          useMaterial3: true,
+      child: ProviderScope(
+        child: MaterialApp(
+          title: 'Teste Flutter',
+          localizationsDelegates: const [
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          supportedLocales: const [Locale('pt', 'BR'), Locale('en', 'US')],
+          locale: const Locale('pt', 'BR'),
+          theme: ThemeData(
+            colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+            useMaterial3: true,
+          ),
+          home: const HomeScreen(),
         ),
-        home: const HomeScreen(),
       ),
     );
   }
@@ -86,11 +94,14 @@ class _HomeScreenState extends State<HomeScreen> {
     // Configurar integração entre controllers após o build
     WidgetsBinding.instance.addPostFrameCallback((_) {
       debugPrint('🔵 Main.dart - addPostFrameCallback executado');
-      final taskController = Provider.of<TaskController>(
+      final taskController = provider.Provider.of<TaskController>(
         context,
         listen: false,
       );
-      final logController = Provider.of<LogController>(context, listen: false);
+      final logController = provider.Provider.of<LogController>(
+        context,
+        listen: false,
+      );
 
       debugPrint('🔵 Main.dart - taskController: $taskController');
       debugPrint('🔵 Main.dart - logController: $logController');
@@ -131,7 +142,7 @@ class _HomeScreenState extends State<HomeScreen> {
       // Layout para tela pequena com navegação inferior
       return Scaffold(
         body: IndexedStack(index: _selectedIndex, children: _screens),
-        bottomNavigationBar: Consumer<ThemeProvider>(
+        bottomNavigationBar: provider.Consumer<ThemeProvider>(
           builder: (context, themeProvider, child) {
             return NavigationBar(
               selectedIndex: _selectedIndex,

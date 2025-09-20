@@ -54,8 +54,9 @@ class TodayView extends StatelessWidget {
               // Verificar se há tarefas para exibir
               Expanded(child: _buildTaskGroups(context)),
 
-              // Campo de entrada rápida de tarefas - APENAS NO DESKTOP
-              if (screenWidth >= 600) QuickAddTaskInput(controller: controller),
+              // Campo de entrada rápida de tarefas - APENAS NO DESKTOP (>= 1024px)
+              if (screenWidth >= 1024)
+                QuickAddTaskInput(controller: controller),
             ],
           ),
         );

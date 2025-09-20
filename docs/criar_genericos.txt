@@ -1,0 +1,268 @@
+# Documentação dos Componentes Genéricos
+
+## Objetivo
+Este documento define os componentes genéricos que serão criados para substituir widgets específicos do app, 
+eliminando duplicação de código, garantindo consistência visual e facilitando manutenção.
+
+## Benefícios Esperados
+- Redução de 70-80% dos widgets específicos
+- Consistência visual em todo o app
+- Desenvolvimento mais rápido de novas features
+- Manutenção centralizada
+- Criação de um design system próprio
+
+---
+
+## 1. AppCard
+**Finalidade:** Componente genérico para exibir informações em formato de card
+**Propriedades:**
+- title, subtitle, content, customContent
+- leading, trailing, actions
+- tags, status, dateText
+- backgroundColor, borderColor, borderRadius
+- padding, margin, elevation
+- selected, enabled
+- onTap, onLongPress, onDoubleTap
+
+**Substitui:**
+- note_card.dart
+- habit_card.dart
+- project_item.dart
+- list_item.dart
+- log_list_item.dart
+- today_log_item.dart
+- day_summary_card.dart
+- daily_activity_item.dart
+
+---
+
+## 2. AppList
+**Finalidade:** Lista genérica com estado vazio, separadores e builders customizáveis
+**Propriedades:**
+- items, itemBuilder, separatorBuilder
+- emptyWidget, header, footer
+- padding, spacing
+- controller, physics, shrinkWrap
+- onItemTap, onItemLongPress
+
+**Substitui:**
+- note_list.dart
+- habit_list.dart
+- Listas específicas de projetos, logs, etc.
+
+---
+
+## 3. SidebarItem
+**Finalidade:** Item genérico para navegação lateral
+**Propriedades:**
+- title, icon, selected, count
+- badgeColor, onTap, onLongPress
+- trailing, dense, indentLevel
+- textStyle, selectedTextStyle
+
+**Substitui:**
+- sidebar_item.dart (atual será refatorado)
+
+---
+
+## 4. SidebarSection
+**Finalidade:** Seção genérica da sidebar com header e children
+**Propriedades:**
+- title, header, children
+- expanded, onToggle
+- padding, childrenPadding
+- showDivider
+
+**Substitui:**
+- sidebar_main_section.dart
+- sidebar_projects_section.dart
+- sidebar_config_section.dart
+
+---
+
+## 5. AppFormDialog
+**Finalidade:** Dialog genérico para formulários com validação e ações
+**Propriedades:**
+- title, fields, initialValues
+- onSubmit, submitText, cancelText
+- onCancel, validate, autovalidateMode
+- scrollable, width, height
+
+**Substitui:**
+- project_form_dialog.dart
+- project_creation_dialog.dart
+- project_delete_dialog.dart
+- list_form_dialog.dart
+- list_delete_dialog.dart
+- habit_dialog.dart
+- note_dialog.dart
+- edit_activity_dialog.dart
+
+---
+
+## 6. FilterChips
+**Finalidade:** Chips de filtro com seleção simples ou múltipla
+**Propriedades:**
+- items, selectedItems, labelBuilder
+- onSelected, multiSelect
+- showClearAll, onClearAll
+- colorBuilder, spacing, runSpacing
+
+**Substitui:**
+- tag_filter_widget.dart
+- habit_filter_widget.dart
+- log_filter_bar.dart
+- log_filter_bar_simple.dart
+- filter_modal.dart (parcialmente)
+
+---
+
+## 7. QuickSelector
+**Finalidade:** Seletor rápido para diferentes tipos de dados
+**Propriedades:**
+- items, selected, labelBuilder
+- iconBuilder, onSelected, multiSelect
+- prefix, suffix, searchable
+- searchHint, maxMenuHeight, dense
+
+**Substitui:**
+- quick_date_selector.dart
+- quick_list_selector.dart
+- quick_pomodoro_selector.dart
+- tag_quick_selector.dart
+- day_selector.dart
+- date_selector.dart
+
+---
+
+## 8. AppSearchBar
+**Finalidade:** Barra de busca padronizada
+**Propriedades:**
+- hintText, initialValue
+- onChanged, onSubmitted, onClear
+- controller, leading, trailing
+- padding, autofocus
+
+**Substitui:**
+- search_widget.dart
+- habit_search_widget.dart
+
+---
+
+## 9. ContentEditor
+**Finalidade:** Editor de conteúdo texto expansível (já existe como DetailContentEditor)
+**Ação:** Renomear e generalizar o existente
+**Propriedades:**
+- controller, focusNode, onChanged
+- autofocus, hintText, textStyle
+- backgroundColor, padding, borderRadius
+- expands, maxLines, readOnly
+
+**Substitui:**
+- detail_content_editor.dart (renomear)
+- note_edit_panel.dart
+- habit_edit_panel.dart
+
+---
+
+## 10. DateDivider
+**Finalidade:** Divisor com data editável
+**Propriedades:**
+- dateTime, onChanged, editable
+- layout, dividerColor, textStyle
+- padding, thickness
+
+**Substitui:**
+- detail_date_divider.dart
+
+---
+
+## 11. SectionHeader
+**Finalidade:** Cabeçalho de seção genérico
+**Propriedades:**
+- title, icon, trailing
+- backgroundColor, textColor
+- padding, showDivider
+
+**Substitui:**
+- samsung_section_header.dart
+
+---
+
+## 12. DetailPanel
+**Finalidade:** Painel de detalhes genérico com header/footer customizáveis
+**Propriedades:**
+- header, title, footer, child
+- padding, backgroundColor
+- actions, onBack
+
+**Substitui:**
+- Múltiplos painéis de detalhes específicos
+
+---
+
+## Componentes de Menor Prioridade (criar conforme necessidade):
+
+### TimerDisplay
+- Exibição de tempo formatado
+- Substitui: timer_display.dart
+
+### MetricTile
+- Tile para métricas/estatísticas
+- Substitui: metric_tile.dart
+
+### ProgressBar
+- Barra de progresso com label
+- Substitui: progress_bar.dart
+
+---
+
+## Estratégia de Implementação
+
+1. **Fase 1 (Prioridade Alta):**
+   - AppCard, AppList, SidebarItem, SidebarSection
+   - AppFormDialog, FilterChips, QuickSelector
+
+2. **Fase 2 (Prioridade Média):**
+   - AppSearchBar, ContentEditor, DateDivider
+   - SectionHeader, DetailPanel
+
+3. **Fase 3 (Conforme Necessidade):**
+   - TimerDisplay, MetricTile, ProgressBar
+
+## Organização dos Arquivos
+
+```
+lib/widgets/common/
+├── cards/
+│   └── app_card.dart
+├── lists/
+│   └── app_list.dart
+├── navigation/
+│   ├── sidebar_item.dart
+│   └── sidebar_section.dart
+├── dialogs/
+│   └── app_form_dialog.dart
+├── forms/
+│   └── app_form.dart
+├── filters/
+│   └── filter_chips.dart
+├── selectors/
+│   └── quick_selector.dart
+├── input/
+│   ├── app_search_bar.dart
+│   └── content_editor.dart
+├── dividers/
+│   └── date_divider.dart
+├── headers/
+│   └── section_header.dart
+└── panels/
+    └── detail_panel.dart
+```
+
+## Resultado Esperado
+- Eliminação de ~40+ arquivos específicos
+- Redução de código duplicado em 70-80%
+- Consistência visual e comportamental
+- Base sólida para futuras features
+- Criação de um "mini-FlutterFlow" interno

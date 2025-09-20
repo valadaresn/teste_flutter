@@ -34,7 +34,9 @@ class QuickListSelector extends StatelessWidget {
             if (selectedList != null) ...[
               const SizedBox(width: 6),
               Text(
-                selectedList.name,
+                selectedList.name.length > 4
+                    ? selectedList.name.substring(0, 4)
+                    : selectedList.name,
                 style: TextStyle(
                   fontSize: 13,
                   color: Colors.grey.shade600,

@@ -30,7 +30,7 @@ class QuickPomodoroSelector extends StatelessWidget {
             if (!isDefault) ...[
               const SizedBox(width: 6),
               Text(
-                '${pomodoroTime}min',
+                '${pomodoroTime}m',
                 style: TextStyle(
                   fontSize: 13,
                   color: Colors.grey.shade600,
@@ -80,7 +80,7 @@ class QuickPomodoroSelector extends StatelessWidget {
                           min: 5,
                           max: 90,
                           divisions: 17,
-                          label: '${currentTime.round()}min',
+                          label: '${currentTime.round()}m',
                           onChanged: (value) {
                             setDialogState(() {
                               currentTime = value;
@@ -93,14 +93,14 @@ class QuickPomodoroSelector extends StatelessWidget {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text(
-                            '5min',
+                            '5m',
                             style: TextStyle(
                               fontSize: 12,
                               color: Colors.grey.shade600,
                             ),
                           ),
                           Text(
-                            '90min',
+                            '90m',
                             style: TextStyle(
                               fontSize: 12,
                               color: Colors.grey.shade600,

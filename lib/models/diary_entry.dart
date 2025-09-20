@@ -120,7 +120,10 @@ class DiaryEntry {
       id: original.id,
       title: formData['title']?.isEmpty ?? true ? null : formData['title'],
       content: formData['content'] ?? original.content,
-      dateTime: original.dateTime, // Mantém a data original
+      dateTime:
+          formData['dateTime'] != null
+              ? DateTime.parse(formData['dateTime'])
+              : original.dateTime, // Permite atualizar a data
       mood: formData['mood'] ?? original.mood,
       tags: List<String>.from(formData['tags'] ?? original.tags),
       isFavorite:

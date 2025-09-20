@@ -6,6 +6,7 @@ class NoteCard extends StatelessWidget {
   final VoidCallback onTap;
   final Color Function(String) getTagColor;
   final bool hasActiveFilters; // ✅ NOVO: Indica se há filtros ativos
+  final bool isSelected; // ✅ NOVO: Indica se o card está selecionado
 
   const NoteCard({
     Key? key,
@@ -13,24 +14,25 @@ class NoteCard extends StatelessWidget {
     required this.onTap,
     required this.getTagColor,
     this.hasActiveFilters = false, // ✅ NOVO: Default false
+    this.isSelected = false, // ✅ NOVO: Default false
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    const cardColor = Colors.white;
-    const textColor = Colors.black;
+    // ✅ MUDANÇA: Cor de fundo baseada na seleção
+    final cardColor = isSelected ? Colors.grey[200] : Colors.white;
 
     return Card(
-      margin: const EdgeInsets.only(bottom: 12, left: 8, right: 8),
+      margin: const EdgeInsets.only(bottom: 8, left: 8, right: 8),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-      color: cardColor,
+      color: cardColor, // ✅ MUDANÇA: Usa cor baseada na seleção
       elevation: 2,
       child: InkWell(
         onTap: onTap,
-        splashColor:
-            note.tags.isNotEmpty
-                ? getTagColor(note.tags.first).withOpacity(0.3)
-                : null,
+        // ✅ MUDANÇA: Remove splashColor (sem animação)
+        splashColor: Colors.transparent,
+        highlightColor: Colors.transparent,
+        hoverColor: Colors.grey[100], // ✅ NOVO: Apenas hover sutil
         borderRadius: BorderRadius.circular(8),
         child: Container(
           decoration:
@@ -45,12 +47,12 @@ class NoteCard extends StatelessWidget {
                   )
                   : null,
           child: Padding(
-            padding: const EdgeInsets.all(16.0),
+            padding: const EdgeInsets.all(12.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _buildHeader(),
-                const SizedBox(height: 12),
+                const SizedBox(height: 6),
                 _buildContent(),
                 // ✅ MUDANÇA: Só mostra tags se NÃO houver filtros ativos
                 if (note.tags.isNotEmpty && !hasActiveFilters) _buildTags(),
@@ -70,8 +72,7 @@ class NoteCard extends StatelessWidget {
           child: Text(
             note.title.isEmpty ? 'Sem título' : note.title,
             style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
+              fontSize: 16,
               color:
                   note.tags.contains('Importante')
                       ? Colors.red.shade700
@@ -90,7 +91,7 @@ class NoteCard extends StatelessWidget {
   Widget _buildContent() {
     return Text(
       note.content,
-      maxLines: 3,
+      maxLines: 1,
       overflow: TextOverflow.ellipsis,
       style: const TextStyle(color: Colors.black87),
     );
