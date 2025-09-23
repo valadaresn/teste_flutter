@@ -4,5 +4,12 @@
         "plaintext": false,
         "markdown": false,
         "scminput": false
+    },
+    "editor.formatOnSave": false,
+    "dart.lineLength": 120,
+    "[dart]": {
+        "editor.formatOnSave": false,
+        "editor.formatOnType": false,
+        "editor.formatOnPaste": false
     }
 }

@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../notes_provider.dart';
 import '../note_model.dart';
-import 'note_card.dart';
+import '../../../widgets/common/cards/note_card.dart';
 
 class NotesList extends ConsumerWidget {
   final void Function(Note) onNoteTap;
@@ -55,12 +55,13 @@ class NotesList extends ConsumerWidget {
           padding: const EdgeInsets.only(bottom: 8),
           child: NoteCard(
             key: ValueKey(id),
-            note: note,
+            title: note.title.isNotEmpty ? note.title : null,
+            content: note.content,
+            tags: note.tags.isNotEmpty ? note.tags : null,
+            createdAt: note.dateTime,
             onTap: () => onNoteTap(note),
             getTagColor: getTagColor,
-            hasActiveFilters: data.hasFilters,
-            isSelected:
-                note.id == selectedNoteId, // ✅ NOVO: Indica se está selecionado
+            isSelected: note.id == selectedNoteId,
           ),
         );
       },

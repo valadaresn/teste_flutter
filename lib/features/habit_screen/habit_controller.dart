@@ -18,58 +18,13 @@ class HabitController extends ChangeNotifier {
   String _searchQuery = '';
 
   // Opções para formulários
-  final List<String> emojiOptions = [
-    '💪',
-    '🏃',
-    '🥗',
-    '💧',
-    '📚',
-    '🧘',
-    '😴',
-    '🎯',
-    '🚫',
-    '🎵',
-    '🎨',
-    '🔥',
-    '⭐',
-    '🌱',
-    '🏆',
-    '💡',
-  ];
+  final List<String> emojiOptions = ['💪', '🏃', '🥗', '💧', '📚', '🧘', '😴', '🎯', '🚫', '🎵', '🎨', '🔥', '⭐', '🌱', '🏆', '💡'];
 
-  final List<Color> colorOptions = [
-    Colors.blue,
-    Colors.green,
-    Colors.orange,
-    Colors.red,
-    Colors.purple,
-    Colors.pink,
-    Colors.teal,
-    Colors.amber,
-    Colors.indigo,
-    Colors.cyan,
-    Colors.lime,
-    Colors.brown,
-  ];
+  final List<Color> colorOptions = [Colors.blue, Colors.green, Colors.orange, Colors.red, Colors.purple, Colors.pink, Colors.teal, Colors.amber, Colors.indigo, Colors.cyan, Colors.lime, Colors.brown];
 
-  final List<String> dayNames = [
-    'mon',
-    'tue',
-    'wed',
-    'thu',
-    'fri',
-    'sat',
-    'sun',
-  ];
-  final List<String> dayLabels = [
-    'Seg',
-    'Ter',
-    'Qua',
-    'Qui',
-    'Sex',
-    'Sáb',
-    'Dom',
-  ];
+  final List<String> dayNames = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
+  
+  final List<String> dayLabels = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
 
   // Getters
   bool get isLoading => _isLoading;

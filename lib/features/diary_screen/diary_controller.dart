@@ -21,6 +21,9 @@ class DiaryController extends ChangeNotifier {
   String? _searchQuery;
   bool _showOnlyFavorites = false;
 
+  // Seleção de entry
+  String? _selectedDiaryId;
+
   /// 📋 Getters para o estado atual
   List<DiaryEntry> get entries => _entries;
   bool get isLoading => _isLoading;
@@ -29,6 +32,7 @@ class DiaryController extends ChangeNotifier {
   String? get selectedMood => _selectedMood;
   String? get searchQuery => _searchQuery;
   bool get showOnlyFavorites => _showOnlyFavorites;
+  String? get selectedDiaryId => _selectedDiaryId;
 
   /// 📅 Getter para entradas filtradas
   List<DiaryEntry> get filteredEntries => _getFilteredEntries();
@@ -205,6 +209,12 @@ class DiaryController extends ChangeNotifier {
       notifyListeners();
       rethrow;
     }
+  }
+
+  /// 🎯 Selecionar diary entry
+  void selectDiaryEntry(String? entryId) {
+    _selectedDiaryId = entryId;
+    notifyListeners();
   }
 
   /// 🧹 Dispose - Cancela o StreamSubscription

@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 import '../../controllers/task_controller.dart';
 import '../../models/task_model.dart';
 import '../../themes/theme_provider.dart';
-import 'card_factory.dart';
+import '../../../../../widgets/common/cards/task_card.dart';
 
 /// Enum para identificar os tipos de grupos de tarefas
 enum TaskGroupType {
@@ -113,13 +113,30 @@ class _ExpansibleGroupState extends State<ExpansibleGroup> {
                     children: [
                       Consumer<ThemeProvider>(
                         builder: (context, themeProvider, child) {
-                          return CardFactory.buildCard(
-                            style: themeProvider.todayViewCardStyle,
-                            task: task,
-                            controller: widget.controller,
+                          // Obter cor da lista selecionada
+                          final selectedList =
+                              widget.controller.selectedListId != null
+                                  ? widget.controller.getListById(
+                                    widget.controller.selectedListId!,
+                                  )
+                                  : null;
+                          final listColor = selectedList?.color ?? Colors.blue;
+
+                          return TaskCard(
+                            title: task.title,
+                            description:
+                                task.description.isNotEmpty
+                                    ? task.description
+                                    : null,
+                            listColor: listColor,
                             isSelected:
                                 widget.controller.selectedTaskId == task.id,
-                            groupType: widget.taskType,
+                            onTap: () => widget.controller.selectTask(task.id),
+                            // TODO: Implementar timer quando necessário
+                            timerLabel: null,
+                            isRunning: false,
+                            onPlay: null,
+                            onStop: null,
                           );
                         },
                       ),

@@ -4,7 +4,7 @@ import '../../../../components/generic_selector_list.dart';
 import '../../controllers/task_controller.dart';
 import '../../models/task_model.dart';
 import '../../themes/theme_provider.dart';
-import 'card_factory.dart';
+import '../../../../../widgets/common/cards/task_card.dart';
 import '../input/quick_add_task_input.dart';
 
 class TaskList extends StatelessWidget {
@@ -36,21 +36,25 @@ class TaskList extends StatelessWidget {
             itemBuilder:
                 (context, task) => Consumer<ThemeProvider>(
                   builder: (context, themeProvider, child) {
-                    // Determinar se é visualização de todas as tarefas ou lista específica
-                    final isAllTasksView = controller.selectedListId == null;
-                    final cardStyle =
-                        isAllTasksView
-                            ? themeProvider.allTasksViewCardStyle
-                            : themeProvider.listViewCardStyle;
+                    // Obter cor da lista selecionada
+                    final selectedList =
+                        controller.selectedListId != null
+                            ? controller.getListById(controller.selectedListId!)
+                            : null;
+                    final listColor = selectedList?.color ?? Colors.blue;
 
-                    return CardFactory.buildCard(
-                      style: cardStyle,
-                      task: task,
-                      controller: controller,
+                    return TaskCard(
+                      title: task.title,
+                      description:
+                          task.description.isNotEmpty ? task.description : null,
+                      listColor: listColor,
                       isSelected: controller.selectedTaskId == task.id,
                       onTap: () => _showTaskDetails(context, task),
-                      onEdit: () => _showEditTask(context, task),
-                      onDelete: () => _showDeleteConfirmation(context, task),
+                      // TODO: Implementar timer quando necessário
+                      timerLabel: null,
+                      isRunning: false,
+                      onPlay: null,
+                      onStop: null,
                     );
                   },
                 ),
@@ -70,43 +74,5 @@ class TaskList extends StatelessWidget {
   void _showTaskDetails(BuildContext context, Task task) {
     // Selecionar a tarefa no controller
     controller.selectTask(task.id);
-  }
-
-  void _showEditTask(BuildContext context, Task task) {
-    // TODO: Implementar formulário de edição
-    print('✏️ Editar tarefa: ${task.title}');
-  }
-
-  void _showDeleteConfirmation(BuildContext context, Task task) {
-    showDialog(
-      context: context,
-      builder:
-          (context) => AlertDialog(
-            title: const Text('Confirmar Exclusão'),
-            content: Text(
-              'Tem certeza que deseja excluir a tarefa "${task.title}"?',
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('Cancelar'),
-              ),
-              ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.red,
-                  foregroundColor: Colors.white,
-                ),
-                onPressed: () {
-                  Navigator.pop(context);
-                  controller.deleteTask(task.id);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Tarefa "${task.title}" excluída')),
-                  );
-                },
-                child: const Text('Excluir'),
-              ),
-            ],
-          ),
-    );
   }
 }

@@ -5,6 +5,7 @@ import '../../models/task_model.dart';
 import '../../controllers/task_controller.dart';
 import '../../themes/app_theme.dart';
 import 'expansible_group.dart';
+import '../../../../../widgets/common/cards/task_card.dart';
 
 /// **CardFactory** - Fábrica de cards de tarefas
 ///
@@ -38,6 +39,25 @@ class CardFactory {
           onTap: onTap ?? (() => controller.selectTask(task.id)),
           onEdit: onEdit ?? (() {}), // Implementar conforme necessário
           onDelete: onDelete ?? (() {}), // Implementar conforme necessário
+        );
+      case TaskCardStyle.modular:
+        final selectedList =
+            controller.selectedListId != null
+                ? controller.getListById(controller.selectedListId!)
+                : null;
+        final listColor = selectedList?.color ?? Colors.blue;
+
+        return TaskCard(
+          title: task.title,
+          description: task.description.isNotEmpty ? task.description : null,
+          listColor: listColor,
+          isSelected: isSelected,
+          onTap: onTap ?? (() => controller.selectTask(task.id)),
+          // TODO: Implementar timer quando necessário
+          timerLabel: null,
+          isRunning: false,
+          onPlay: null,
+          onStop: null,
         );
     }
   }

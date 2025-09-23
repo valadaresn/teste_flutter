@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 enum TaskCardStyle {
   standard, // TaskItem - card detalhado
   compact, // TodayTaskItem - card minimalista
+  modular, // TaskCard - card usando padrão slot simplificado
 }
 
 // Enum para tipos de visualização

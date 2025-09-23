@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 import '../../../components/generic_selector_list.dart';
 import '../../../models/diary_entry.dart';
 import '../diary_controller.dart' as NewDiary;
-import 'diary_entry_card.dart';
+import '../../../widgets/common/cards/diary_card.dart';
 
 /// 📝 Lista de entradas de diário usando GenericSelectorList
 ///
@@ -77,14 +77,24 @@ class DiaryEntriesList extends StatelessWidget {
 
           // Constrói o widget de cada item
           itemBuilder: (context, entry) {
-            return DiaryEntryCard(
-              entry: entry,
-              onEdit: onEditEntry ?? (_) {},
-              onDelete: () => onDeleteEntry?.call(entry.id),
-              onToggleFavorite:
-                  (isFavorite) => onToggleFavorite?.call(entry, isFavorite),
-              isFavorite: entry.isFavorite,
-              controller: null, // Deixar null por enquanto para evitar conflito
+            return Consumer<NewDiary.DiaryController>(
+              builder: (context, controller, child) {
+                return DiaryCard(
+                  title: entry.title,
+                  content: entry.content,
+                  mood: entry.mood,
+                  dateTime: entry.dateTime,
+                  isFavorite: entry.isFavorite,
+                  showFavorite: true,
+                  isSelected: controller.selectedDiaryId == entry.id,
+                  onTap: () {
+                    controller.selectDiaryEntry(entry.id);
+                    onEditEntry?.call(entry);
+                  },
+                  onToggleFavorite:
+                      (isFavorite) => onToggleFavorite?.call(entry, isFavorite),
+                );
+              },
             );
           },
 

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../components/generic_selector_list.dart';
 import '../habit_controller.dart';
 import '../habit_model.dart';
-import 'habit_card.dart';
+import '../../../widgets/common/cards/habit_card.dart';
 
 class HabitList extends StatelessWidget {
   final HabitController controller;
