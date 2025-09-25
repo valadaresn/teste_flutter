@@ -1,8 +1,5 @@
 import 'package:flutter/material.dart';
 import 'modular_card.dart';
-import '../modules/pomodoro_timer_module.dart';
-import '../../../features/task_management/models/task_model.dart';
-import '../../../features/task_management/models/list_model.dart';
 
 class TaskCard extends StatelessWidget {
   const TaskCard({
@@ -10,27 +7,23 @@ class TaskCard extends StatelessWidget {
     required this.title,
     this.description,
     required this.listColor,
+    this.isRunning = false,
+    this.onPlay,
+    this.onStop,
     this.onTap,
     this.isSelected = false,
-    this.pomodoroTargetSeconds = 25 * 60, // 25 minutos por padrão  
-    this.onPomodoroComplete,
-    this.onToggleCompletion,
-    this.task, // 🆕 Objeto Task completo (para log)
-    this.taskList, // 🆕 Objeto TaskList completo (para log)
-    this.shouldLog = true, // 🆕 Se deve registrar log ou não
+    this.timerLabel,
   });
 
   final String title;
   final String? description;
   final Color listColor; // cor da lista (borda esquerda)
+  final bool isRunning; // se o timer está rodando
+  final VoidCallback? onPlay;
+  final VoidCallback? onStop;
   final VoidCallback? onTap;
   final bool isSelected;
-  final int pomodoroTargetSeconds; // duração do pomodoro em segundos
-  final VoidCallback? onPomodoroComplete; // callback quando pomodoro completa
-  final VoidCallback? onToggleCompletion; // callback para marcar como feito
-  final Task? task; // 🆕 Objeto Task para logs
-  final TaskList? taskList; // 🆕 Objeto TaskList para logs  
-  final bool shouldLog; // 🆕 Controla se deve registrar log
+  final String? timerLabel; // label do timer (ex: "25:00")
 
   @override
   Widget build(BuildContext context) {
@@ -61,15 +54,36 @@ class TaskCard extends StatelessWidget {
                 style: TextStyle(fontSize: 14, color: Colors.grey.shade800),
               )
               : null,
-      // Actions: timer + play/stop usando PomodoroTimerModule
-      actions: PomodoroTimerModule(
-        task: task,                    // ✅ Passa objeto Task diretamente
-        listTitle: taskList?.name,     // ✅ Contexto da lista
-        targetSeconds: pomodoroTargetSeconds,
-        color: listColor,
-        shouldLog: shouldLog,
-        onComplete: onPomodoroComplete,
-        onToggleCompletion: onToggleCompletion,
+      // Actions: timer + play/stop
+      actions: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (timerLabel != null)
+            Text(
+              timerLabel!,
+              style: TextStyle(
+                fontFeatures: const [FontFeature.tabularFigures()],
+                fontSize: 13,
+                color: Colors.grey.shade700,
+              ),
+            ),
+          if (timerLabel != null) const SizedBox(width: 8),
+          AnimatedSwitcher(
+            duration: const Duration(milliseconds: 200),
+            child:
+                isRunning
+                    ? IconButton(
+                      key: const ValueKey('stop'),
+                      icon: const Icon(Icons.stop),
+                      onPressed: onStop,
+                    )
+                    : IconButton(
+                      key: const ValueKey('play'),
+                      icon: const Icon(Icons.play_arrow),
+                      onPressed: onPlay,
+                    ),
+          ),
+        ],
       ),
     );
   }

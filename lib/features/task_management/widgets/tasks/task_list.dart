@@ -50,11 +50,16 @@ class TaskList extends StatelessWidget {
                       listColor: listColor,
                       isSelected: controller.selectedTaskId == task.id,
                       onTap: () => _showTaskDetails(context, task),
-                      // TODO: Implementar timer quando necessário
-                      timerLabel: null,
-                      isRunning: false,
-                      onPlay: null,
-                      onStop: null,
+                      // Configurações do pomodoro (usando tempo dinâmico da tarefa)
+                      pomodoroTargetSeconds: task.pomodoroTimeMinutes * 60, // Converter minutos para segundos
+                      onPomodoroComplete: () {
+                        debugPrint('Pomodoro completo para tarefa: ${task.title}');
+                      },
+                      onToggleCompletion: () => controller.toggleTaskCompletion(task.id),
+                      // 🆕 Dados para log interno do PomodoroTimerModule
+                      task: task,
+                      taskList: selectedList,
+                      shouldLog: true, // Sempre registrar log para tarefas
                     );
                   },
                 ),

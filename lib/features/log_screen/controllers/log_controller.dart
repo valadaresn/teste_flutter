@@ -283,6 +283,79 @@ class LogController extends ChangeNotifier {
     }
   }
 
+  /// Método genérico para iniciar log de qualquer entidade (Task, Habit, etc.)
+  Future<void> startEntityLog({
+    required String entityId,
+    required String entityType, // "task" ou "habit"
+    required String entityTitle,
+    String? listId,
+    String? listTitle,
+    String? parentId,
+    String? parentTitle,
+    List<String> tags = const [],
+    Map<String, dynamic> metrics = const {},
+    int? pomodoroTimeMinutes,
+  }) async {
+    try {
+      _setLoading(true);
+
+      // Verifica se já existe log ativo para essa entidade
+      if (_activeLogIds.containsKey(entityId)) {
+        // Se existe log ativo mas timer pausado, retoma
+        if (!_timers.containsKey(entityId)) {
+          await resumeTaskLog(entityId);
+          _setLoading(false);
+          return;
+        } else {
+          // Log já está rodando
+          throw Exception('Já existe um log ativo para esta entidade');
+        }
+      }
+
+      // Cria novo log
+      final log = Log.create(
+        entityId: entityId,
+        entityType: entityType,
+        entityTitle: entityTitle,
+        listId: listId,
+        listTitle: listTitle,
+        parentTaskId: parentId,
+        parentTaskTitle: parentTitle,
+        startTime: DateTime.now(),
+        tags: tags,
+        metrics: metrics,
+      );
+
+      // Salva no repository
+      final logId = await _repository.startLog(log);
+
+      // Atualiza estado local
+      _activeLogIds[entityId] = logId;
+
+      // Inicia timer local
+      _startTimerForLog(log);
+
+      // Integra com PomodoroService se disponível
+      if (_pomodoroService != null) {
+        // Usa o tempo de pomodoro configurado (convertendo minutos para segundos)
+        final pomodoroSeconds = (pomodoroTimeMinutes ?? 25) * 60;
+        _pomodoroService!.startPomodoro(entityId, entityTitle, pomodoroSeconds);
+      }
+
+      // Notifica sucesso
+      await showNotification(
+        'Log Iniciado',
+        'Iniciando cronômetro para: $entityTitle',
+      );
+
+      _setLoading(false);
+      notifyListeners();
+    } catch (e) {
+      _setError('Erro ao iniciar log: $e');
+      _setLoading(false);
+    }
+  }
+
   /// Parar log de uma tarefa
   Future<void> stopTaskLog(String taskId) async {
     try {

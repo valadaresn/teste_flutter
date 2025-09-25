@@ -57,13 +57,15 @@ class HabitCard extends StatelessWidget {
         style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
       ), // Sem .center() - fica na posição normal após o leading
       
-      // � Timer modular (substitui toda a lógica anterior)
+      // 🍅 Timer modular (substitui toda a lógica anterior)
       actions: habit.hasTimer && habit.targetTime != null
           ? PomodoroTimerModule(
-              targetSeconds: habit.targetTime!,
+              habit: habit,                      // ✅ Passa objeto Habit diretamente
+              targetSeconds: habit.targetTime! * 60, // Converter minutos para segundos
               color: habit.color,
-              habitTitle: habit.title,
+              shouldLog: true,                   // ✅ Habilita logging para hábitos
               onToggleCompletion: onToggleTodayCompletion,
+              habitTitle: habit.title,           // 🔄 Compatibilidade legacy
             )
           : null,
     );
