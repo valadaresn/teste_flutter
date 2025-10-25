@@ -1,0 +1,429 @@
+================================================================================
+📋 PLANEJAMENTO: REFATORAÇÃO DE SUBTASK PARA ARQUITETURA MODULAR
+================================================================================
+Data: 2025-10-21
+Status: ⚠️ DOCUMENTAÇÃO - AGUARDANDO IMPLEMENTAÇÃO
+
+================================================================================
+🎯 OBJETIVO
+================================================================================
+
+Refatorar `CleanSubtaskItem` (~400 linhas) para usar `ModularCard` + módulos 
+reutilizáveis, seguindo o padrão elegante do `TaskCard`.
+
+RESULTADO ESPERADO:
+- Redução de 400+ linhas → ~80 linhas
+- Código modular, reutilizável e manutenível
+- Visual limpo: checkbox circular + sem bordas + layout clean
+- Menu de contexto responsivo (desktop/mobile)
+
+================================================================================
+🧩 ARQUITETURA PROPOSTA
+================================================================================
+
+SubtaskCard (ModularCard)
+├── Checkbox Circular (leading) - INLINE, não é módulo
+├── TextField Editável (title)
+├── Tempo Acumulado (content) - condicional
+├── PomodoroTimerModule (actions) - módulo existente ✅
+└── ContextMenuModule (contextMenu) - módulo novo 🆕
+
+================================================================================
+📦 MÓDULOS E ARQUIVOS
+================================================================================
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ 1. CRIAR: context_menu_module.dart                                          │
+│    lib/widgets/common/modules/context_menu_module.dart                      │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+RESPONSABILIDADE:
+- Menu de contexto genérico e reutilizável
+- Suporta clique direito (desktop) + toque longo (mobile)
+- Widget wrapper que adiciona gestos ao child
+- Lista configurável de ações (edit, delete, etc.)
+
+FUNCIONALIDADES:
+✅ showMenu() para desktop (clique direito com posição específica)
+✅ showModalBottomSheet() para mobile (toque longo)
+✅ Lista de ContextMenuItem configurável
+✅ Callback onActionSelected(String action)
+✅ Suporte a ações destrutivas (vermelho)
+✅ Suporte a dividers entre ações
+
+API PROPOSTA:
+```dart
+ContextMenuModule(
+  items: [
+    ContextMenuItem(value: 'edit', label: 'Editar', icon: Icons.edit),
+    ContextMenuItem.divider(),
+    ContextMenuItem(
+      value: 'delete', 
+      label: 'Excluir', 
+      icon: Icons.delete,
+      isDestructive: true,
+    ),
+  ],
+  onActionSelected: (action) {
+    if (action == 'edit') handleEdit();
+    if (action == 'delete') handleDelete();
+  },
+  child: MyWidget(), // Widget que receberá os gestos
+)
+```
+
+FACTORIES ÚTEIS:
+```dart
+// Ações pré-configuradas comuns
+ContextMenuModule.editDelete({
+  required VoidCallback onEdit,
+  required VoidCallback onDelete,
+  required Widget child,
+})
+
+ContextMenuModule.custom({
+  required List<ContextMenuItem> items,
+  required Function(String) onActionSelected,
+  required Widget child,
+})
+```
+
+INSPIRAÇÃO:
+- list_context_menu.dart (desktop + mobile)
+- project_context_menu.dart (validações)
+- action_menu_module.dart (PopupMenuButton base)
+
+DECISÃO: ❌ DISPENSAR edit_delete_module.dart
+MOTIVO: Redundante - ContextMenuModule.editDelete() factory já resolve
+
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ 2. CRIAR: subtask_card.dart                                                 │
+│    lib/widgets/common/cards/subtask_card.dart                               │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+RESPONSABILIDADE:
+- Card de subtarefa usando ModularCard como base
+- Layout limpo sem bordas (background transparente)
+- Checkbox circular inline (não é módulo separado)
+- Integração com PomodoroTimerModule (já existe)
+- Integração com ContextMenuModule (menu edit/delete)
+
+SLOTS DO MODULARCARD:
+├── leading: Checkbox circular (24x24, verde quando completo)
+├── title: Text com título da subtarefa (lineThrough se completo)
+├── content: Tempo acumulado (condicional, só se > 0)
+├── actions: PomodoroTimerModule
+└── contextMenu: ContextMenuModule.editDelete()
+
+PROPS:
+- subtask: Task (objeto completo da subtarefa)
+- controller: TaskController (para operações)
+- onToggleComplete: VoidCallback? (marcar/desmarcar)
+- onEdit: VoidCallback? (abrir dialog de edição)
+- onDelete: VoidCallback? (excluir subtarefa)
+
+VISUAL ESPERADO (conforme imagem anexada):
+✅ Checkbox circular à esquerda
+✅ Texto editável no centro
+✅ Tempo acumulado (se houver) antes do timer
+✅ Botão timer play/stop à direita
+✅ Menu de contexto (clique direito/toque longo)
+✅ SEM bordas, SEM sombras, background transparente
+
+EXEMPLO DE CÓDIGO:
+```dart
+class SubtaskCard extends StatelessWidget {
+  final Task subtask;
+  final TaskController controller;
+  final VoidCallback? onToggleComplete;
+  final VoidCallback? onEdit;
+  final VoidCallback? onDelete;
+
+  @override
+  Widget build(BuildContext context) {
+    return ContextMenuModule.editDelete(
+      onEdit: onEdit ?? () {},
+      onDelete: onDelete ?? () {},
+      child: ModularCard(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        borderRadius: BorderRadius.zero,
+        
+        // Checkbox circular inline
+        leading: GestureDetector(
+          onTap: onToggleComplete,
+          child: Container(
+            width: 24,
+            height: 24,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: subtask.isCompleted 
+                  ? Colors.green 
+                  : Colors.grey.shade400,
+                width: 2,
+              ),
+              color: subtask.isCompleted 
+                ? Colors.green 
+                : Colors.transparent,
+            ),
+            child: subtask.isCompleted
+              ? Icon(Icons.check, size: 16, color: Colors.white)
+              : null,
+          ),
+        ),
+        
+        title: Text(
+          subtask.title,
+          style: TextStyle(
+            fontSize: 14,
+            decoration: subtask.isCompleted 
+              ? TextDecoration.lineThrough 
+              : null,
+            color: subtask.isCompleted 
+              ? Colors.grey.shade600 
+              : null,
+          ),
+        ),
+        
+        content: subtask.accumulatedTimeSeconds > 0 
+          ? _buildTimeDisplay()
+          : null,
+        
+        actions: PomodoroTimerModule(
+          task: subtask,
+          listTitle: controller.getListById(subtask.listId)?.name,
+          targetSeconds: subtask.pomodoroTimeMinutes * 60,
+          color: Theme.of(context).colorScheme.primary,
+          shouldLog: true,
+        ),
+      ),
+    );
+  }
+}
+```
+
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ 3. ALTERAR: modular_card.dart                                               │
+│    lib/widgets/common/cards/modular_card.dart                               │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+MUDANÇAS NECESSÁRIAS:
+❌ NENHUMA! 
+
+DECISÃO REVISADA:
+Após análise, ContextMenuModule deve ENVOLVER o ModularCard, não ser parte dele.
+Isso mantém ModularCard focado apenas em layout, e ContextMenuModule focado 
+apenas em gestos.
+
+PADRÃO:
+```dart
+ContextMenuModule(
+  items: [...],
+  onActionSelected: (action) => ...,
+  child: ModularCard(...), // Card é o child do menu
+)
+```
+
+VANTAGEM: Separação de responsabilidades clara
+
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ 4. ALTERAR: clean_subtask_item.dart                                         │
+│    lib/features/task_management/widgets/tasks/detail/clean_subtask_item.dart│
+└─────────────────────────────────────────────────────────────────────────────┘
+
+ESTRATÉGIA: Manter compatibilidade mas usar nova implementação
+
+ANTES: ~400 linhas com lógica complexa
+DEPOIS: ~30 linhas delegando para SubtaskCard
+
+CÓDIGO:
+```dart
+class CleanSubtaskItem extends StatelessWidget {
+  final Task subtask;
+  final TaskController taskController;
+  final TextEditingController textController; // ⚠️ Não usado no novo design
+  final VoidCallback onToggleComplete;
+  final VoidCallback onDelete;
+  final Function(String) onTitleChanged; // ⚠️ Não usado no novo design
+
+  @override
+  Widget build(BuildContext context) {
+    return SubtaskCard(
+      subtask: subtask,
+      controller: taskController,
+      onToggleComplete: onToggleComplete,
+      onEdit: () => _showEditDialog(context),
+      onDelete: onDelete,
+    );
+  }
+  
+  void _showEditDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => SubtaskEditDialog(
+        subtask: subtask, 
+        controller: taskController,
+      ),
+    );
+  }
+}
+```
+
+BREAKING CHANGES:
+⚠️ textController não é mais usado (título editado via dialog)
+⚠️ onTitleChanged não é mais usado (edição via dialog)
+
+MITIGAÇÃO:
+Manter assinaturas antigas para compatibilidade mas ignorar internamente
+
+
+================================================================================
+🎨 DESIGN VISUAL (CONFORME IMAGEM)
+================================================================================
+
+Layout horizontal:
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ [○] Título da subtarefa                          00:03 [▶]  [⋮]            │
+└─────────────────────────────────────────────────────────────────────────────┘
+  ↑   ↑                                             ↑     ↑    ↑
+  │   │                                             │     │    └─ Menu (3 pontos)
+  │   └─ Título (com lineThrough se completo)      │     └─ Play/Stop timer
+  └─ Checkbox circular (verde se completo)         └─ Tempo acumulado
+
+ESTADOS:
+- Normal: checkbox vazio + texto preto + sem tempo
+- Completo: checkbox verde ✓ + texto riscado cinza + tempo parado
+- Timer ativo: checkbox ? + botão stop vermelho + tempo contando
+- Hover: mostra menu de 3 pontos
+
+SEM:
+❌ Bordas no card
+❌ Sombras
+❌ Background colorido
+❌ Padding excessivo
+
+
+================================================================================
+📊 COMPARAÇÃO ANTES/DEPOIS
+================================================================================
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ MÉTRICA              │ ANTES (CleanSubtaskItem)  │ DEPOIS (SubtaskCard)     │
+├──────────────────────┼───────────────────────────┼──────────────────────────┤
+│ Linhas de código     │ ~400 linhas               │ ~80 linhas               │
+│ Componentes inline   │ Todos (checkbox, timer)   │ Apenas checkbox          │
+│ Módulos usados       │ 0 (tudo custom)           │ 2 (Pomodoro + Context)   │
+│ Lógica de menu       │ 150 linhas inline         │ 0 (delegado)             │
+│ Lógica de timer      │ 100 linhas inline         │ 0 (delegado)             │
+│ Testabilidade        │ Baixa (tudo acoplado)     │ Alta (módulos isolados)  │
+│ Reutilização         │ 0% (tudo específico)      │ 80% (módulos genéricos)  │
+│ Manutenibilidade     │ Difícil (elefante)        │ Fácil (modular)          │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+
+================================================================================
+🔄 REUTILIZAÇÃO DOS MÓDULOS
+================================================================================
+
+ContextMenuModule pode ser usado em:
+✅ SubtaskCard (edit/delete)
+✅ TaskCard (edit/delete/duplicate/move)
+✅ NoteCard (edit/delete/share)
+✅ HabitCard (edit/delete/reset)
+✅ ProjectCard (edit/delete/archive)
+✅ ListCard (edit/delete/color)
+✅ Qualquer widget que precise de menu de contexto
+
+PomodoroTimerModule já é usado em:
+✅ TaskCard
+✅ HabitCard
+✅ SubtaskCard (novo)
+
+
+================================================================================
+🚀 PLANO DE IMPLEMENTAÇÃO
+================================================================================
+
+FASE 1: Criar módulos base
+├── 1.1. Criar context_menu_module.dart
+│        - ContextMenuModule widget
+│        - ContextMenuItem model
+│        - Factories (editDelete, custom)
+│        - Testes de gestos (desktop + mobile)
+│
+└── 1.2. Criar subtask_card.dart
+         - SubtaskCard usando ModularCard
+         - Checkbox circular inline
+         - Integração com PomodoroTimerModule
+         - Integração com ContextMenuModule
+
+FASE 2: Refatorar CleanSubtaskItem
+├── 2.1. Substituir implementação por SubtaskCard
+├── 2.2. Manter compatibilidade de API
+└── 2.3. Testar em TaskDetailPanel
+
+FASE 3: Validação
+├── 3.1. Testar visual (comparar com imagem)
+├── 3.2. Testar interações (checkbox, timer, menu)
+├── 3.3. Testar responsividade (desktop + mobile)
+└── 3.4. Testar com múltiplas subtarefas
+
+
+================================================================================
+⚠️ DECISÕES E TRADE-OFFS
+================================================================================
+
+DECISÃO 1: ❌ NÃO criar CheckboxModule
+MOTIVO: Muito simples (~20 linhas), inline é mais direto
+RESULTADO: Checkbox fica inline no SubtaskCard
+
+DECISÃO 2: ❌ NÃO criar EditDeleteModule  
+MOTIVO: Redundante com ContextMenuModule.editDelete() factory
+RESULTADO: Apenas 1 módulo (ContextMenuModule) em vez de 2
+
+DECISÃO 3: ✅ ContextMenuModule ENVOLVE ModularCard (não é parte dele)
+MOTIVO: Separação de responsabilidades (layout vs gestos)
+RESULTADO: ModularCard continua focado apenas em layout
+
+DECISÃO 4: ⚠️ TextField inline → Dialog de edição
+MOTIVO: Edição inline no título é complexa e propensa a bugs
+RESULTADO: Clique no título abre dialog (melhor UX)
+BREAKING: textController e onTitleChanged não são mais usados
+
+
+================================================================================
+🎯 CRITÉRIOS DE SUCESSO
+================================================================================
+
+✅ CleanSubtaskItem reduzido de 400+ → ~30 linhas
+✅ SubtaskCard criado com ~80 linhas
+✅ ContextMenuModule genérico e reutilizável
+✅ Visual bate com imagem (checkbox circular, sem bordas)
+✅ Menu de contexto funciona (desktop + mobile)
+✅ Timer funciona com PomodoroTimerModule
+✅ Código modular, testável e manutenível
+✅ Zero regressões no TaskDetailPanel
+
+
+================================================================================
+📚 REFERÊNCIAS
+================================================================================
+
+Arquivos existentes para referência:
+- lib/widgets/common/cards/task_card.dart (padrão de simplicidade)
+- lib/widgets/common/cards/note_card.dart (uso de ModularCard)
+- lib/widgets/common/modules/pomodoro_timer_module.dart (módulo pronto)
+- lib/features/task_management/widgets/lists/list_context_menu.dart (menu desktop/mobile)
+- lib/features/task_management/widgets/projects/project_context_menu.dart (menu com validações)
+- lib/widgets/common/cards/modules/action_menu_module.dart (PopupMenuButton base)
+
+Imagem de referência:
+- Visual esperado: checkbox circular, layout limpo, sem bordas
+
+================================================================================
+FIM DA DOCUMENTAÇÃO
+================================================================================
