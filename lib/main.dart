@@ -16,7 +16,6 @@ import 'package:teste_flutter/features/task_management/controllers/task_controll
 import 'package:teste_flutter/features/task_management/themes/theme_provider.dart';
 import 'package:teste_flutter/features/log_screen/controllers/log_controller.dart';
 import 'package:teste_flutter/widgets/navigation/vertical_navigation_bar.dart';
-import 'screens/task_screen/task_screen.dart';
 import 'firebase_options.dart';
 import 'services/notification_service.dart';
 import 'services/tag_initialization_service.dart';
@@ -81,7 +80,6 @@ class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
 
   final List<Widget> _screens = [
-    const TaskScreen(),
     DiaryFeature.DiaryScreen(), // Nova tela de diário - removido const pois usa Provider
     const NotesScreen(),
     const HabitsScreen(),
@@ -156,10 +154,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 listColor: Colors.blue, // Cor padrão para lista
               ),
               destinations: const [
-                NavigationDestination(
-                  icon: Icon(Icons.task_alt),
-                  label: 'Tarefas',
-                ),
                 NavigationDestination(icon: Icon(Icons.book), label: 'Diário'),
                 NavigationDestination(icon: Icon(Icons.note), label: 'Notas'),
                 NavigationDestination(

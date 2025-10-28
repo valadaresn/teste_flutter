@@ -47,20 +47,12 @@ class VerticalNavigationBar extends StatelessWidget {
           child: Column(
             children: [
               const SizedBox(height: 20),
-              // Tarefas
-              _buildNavItem(
-                context: context,
-                icon: Icons.task_alt,
-                label: 'Tarefas',
-                index: 0,
-              ),
-              const SizedBox(height: 20),
               // Diário
               _buildNavItem(
                 context: context,
                 icon: Icons.book,
                 label: 'Diário',
-                index: 1,
+                index: 0,
               ),
               const SizedBox(height: 20),
               // Notas
@@ -68,7 +60,7 @@ class VerticalNavigationBar extends StatelessWidget {
                 context: context,
                 icon: Icons.note,
                 label: 'Notas',
-                index: 2,
+                index: 1,
               ),
               const SizedBox(height: 20),
               // Hábitos
@@ -76,7 +68,7 @@ class VerticalNavigationBar extends StatelessWidget {
                 context: context,
                 icon: Icons.fitness_center,
                 label: 'Hábitos',
-                index: 3,
+                index: 2,
               ),
               const SizedBox(height: 20),
               // Tarefas+
@@ -84,7 +76,7 @@ class VerticalNavigationBar extends StatelessWidget {
                 context: context,
                 icon: Icons.dashboard_customize,
                 label: 'Tarefas+',
-                index: 4,
+                index: 3,
               ),
             ],
           ),

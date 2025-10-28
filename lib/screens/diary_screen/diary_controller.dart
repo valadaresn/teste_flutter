@@ -3,11 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
 import 'dart:async';
 import '../../models/diary_entry.dart';
-import 'views/temporal_view.dart';
-import 'views/mood_view.dart';
-import 'views/tag_view.dart';
-import 'diary_view_type.dart';
-import 'widgets/diary_card.dart';
 
 /// Controller unificado para gerenciamento do diário e acesso ao Firestore
 /// Otimizado para evitar reconstrução desnecessária da lista
@@ -405,49 +400,6 @@ class DiaryController extends ChangeNotifier {
       return _entries.where((entry) => _favorites[entry.id] ?? false).toList();
     }
     return _entries;
-  }
-
-  /// Constrói a visualização baseada no tipo selecionado
-  Widget buildView({
-    required String currentView,
-    required Function(DiaryEntry) onTap,
-    required DiaryCardLayout cardLayout,
-  }) {
-    final filteredEntries = getFilteredEntries(currentView);
-
-    switch (currentView) {
-      case 'mood':
-        return MoodView(
-          entries: filteredEntries,
-          onTap: onTap,
-          onDelete: deleteEntry,
-          cardLayout: cardLayout,
-          onToggleFavorite: toggleFavorite,
-          favorites: _favorites,
-        );
-      case 'tags':
-        return TagView(
-          entries: filteredEntries,
-          onTap: onTap,
-          onDelete: deleteEntry,
-          cardLayout: cardLayout,
-          onToggleFavorite: toggleFavorite,
-          favorites: _favorites,
-        );
-      default:
-        return TemporalView(
-          entries: filteredEntries,
-          onTap: onTap,
-          onDelete: deleteEntry,
-          viewType:
-              currentView == 'favorites'
-                  ? DiaryViewType.daily
-                  : DiaryViewType.monthly,
-          cardLayout: cardLayout,
-          onToggleFavorite: toggleFavorite,
-          favorites: _favorites,
-        );
-    }
   }
 
   @override
